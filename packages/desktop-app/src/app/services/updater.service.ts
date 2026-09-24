@@ -97,7 +97,7 @@ export class UpdaterService {
 
   async getReleaseNote(): Promise<string> {
     return new Promise((resolve) => {
-      this.httpClient.get("https://asset.noovolari.com/CHANGELOG.md", { responseType: "text" }).subscribe(
+      this.httpClient.get("https://raw.githubusercontent.com/sergioarojasm98/freeleapp/master/CHANGELOG.md", { responseType: "text" }).subscribe(
         (data) => {
           resolve(this.markdown.render(data));
         },

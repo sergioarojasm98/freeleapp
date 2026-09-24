@@ -1,5 +1,5 @@
-owner: Noovolari
-repo: leapp
+owner: sergioarojasm98
+repo: freeleapp
 provider: github
 releaseType: release
-updaterCacheDirName: leapp-updater
+updaterCacheDirName: freeleapp-updater

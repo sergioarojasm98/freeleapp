@@ -6,9 +6,9 @@
     "name": "Noovolari",
     "email": "info@noovolari.com"
   },
-  "description": "Leapp is a Cross-Platform Cloud access App, built on top of Electron.",
+  "description": "Freeleapp is a community fork of Leapp, a cross-platform cloud access app built on top of Electron.",
   "main": "electron/dist/electron/main.js",
-  "homepage": "https://github.com/Noovolari/leapp",
+  "homepage": "https://github.com/sergioarojasm98/freeleapp",
   "scripts": {
     "setup": "gushio ../../gushio/clean-and-bootstrap.js desktop-app",
     "clean": "gushio gushio/target-clean.js",
@@ -44,12 +44,12 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "Noovolari",
-        "repo": "leapp",
+        "owner": "sergioarojasm98",
+        "repo": "freeleapp",
         "releaseType": "release"
       }
     ],
-    "productName": "Leapp",
+    "productName": "Freeleapp",
     "icon": "src/assets/icons/icon.icns",
     "files": [
       "dist/assets/images/Leapp.icns",
@@ -69,7 +69,7 @@
       "output": "release",
       "buildResources": "dist"
     },
-    "appId": "com.leapp.app",
+    "appId": "io.github.sergioarojasm98.freeleapp",
     "dmg": {
       "icon": "src/assets/icons/icon.icns",
       "background": "src/assets/icons/background.png",
@@ -88,13 +88,14 @@
     },
     "linux": {
       "category": "Utility",
+      "executableName": "freeleapp",
       "synopsis": "Leapp Client is a tool that allows the user to obtain secure, temporary and refreshable credentials to access AWS Services with AWS CLI and tools based on it",
       "description": "Leapp Client is a tool that allows the user to obtain secure, temporary and refreshable credentials to access AWS Services with AWS CLI and tools based on it, with versioning tools that work with AWS CodeCommit service and to easily use AWS SDK from your local environment during your everyday development.",
       "icon": "src/assets/icons/1024x1024.png",
       "desktop": {
         "desktopActions": {
           "NewWindow": {
-            "Exec": "leapp %U"
+            "Exec": "freeleapp %U"
           }
         }
       },
@@ -131,7 +132,6 @@
     },
     "win": {
       "icon": "src/assets/images/Leapp.ico",
-      "legalTrademarks": "beSharp",
       "requestedExecutionLevel": "asInvoker",
       "verifyUpdateCodeSignature": false,
       "target": [

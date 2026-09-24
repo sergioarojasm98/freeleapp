@@ -60,15 +60,15 @@ jobs:
       - name: Ad-hoc sign app bundle
         working-directory: packages/desktop-app/release/mac-arm64
         run: |
-          codesign --force --deep --sign - Leapp.app
-          codesign --verify --deep --strict --verbose=2 Leapp.app
-          codesign --display --verbose=2 Leapp.app
+          codesign --force --deep --sign - Freeleapp.app
+          codesign --verify --deep --strict --verbose=2 Freeleapp.app
+          codesign --display --verbose=2 Freeleapp.app
 
       - name: Package dmg
         working-directory: packages/desktop-app
         run: >
           npx electron-builder build --mac dmg --arm64 --publish never
-          --prepackaged release/mac-arm64/Leapp.app
+          --prepackaged release/mac-arm64/Freeleapp.app
           -c.mac.identity=null
           -c.mac.forceCodeSigning=false
           -c.mac.notarize=false

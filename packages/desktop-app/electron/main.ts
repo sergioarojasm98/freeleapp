@@ -77,9 +77,9 @@ const buildAutoUpdater = (win: any): void => {
   const minutes = 10;
 
   const data = {
-    provider: "generic",
-    url: "https://asset.noovolari.com/latest",
-    channel: "latest",
+    provider: "github",
+    owner: "sergioarojasm98",
+    repo: "freeleapp",
   };
   autoUpdater.setFeedURL(data);
 
@@ -253,7 +253,7 @@ const generateMainWindow = () => {
   const createTray = () => {
     if (!taskbar) {
       taskbar = new Tray(windowDefaultConfig.dir + `/assets/images/LeappTemplate.png`);
-      taskbar.setToolTip("Leapp");
+      taskbar.setToolTip("Freeleapp");
       taskbar.on("click", () => {
         trayOpen = !trayOpen;
         if (trayOpen) {
@@ -335,7 +335,7 @@ const generateMainWindow = () => {
     });
   }
   if (process.platform === "win32") {
-    app.setAppUserModelId("Leapp");
+    app.setAppUserModelId("io.github.sergioarojasm98.freeleapp");
   }
 };
 // =============================== //

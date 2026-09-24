@@ -36,7 +36,7 @@
         <!--        <button class="icon-button top-right-option-button" (click)="showOptionDialog();" matTooltip="Show Leapp Options"><i-->
         <!--          class="moon-Settings"></i></button>-->
         <button class="icon-button top-right-option-button margin-right-fix notification" [matMenuTriggerFor]="notification_menu"
-                matTooltip="Show Leapp Notifications">
+                matTooltip="Show Notifications">
           <img
             class="{{optionsService.colorTheme === eConstants.darkTheme || (optionsService.colorTheme === eConstants.systemDefaultTheme && appService.isDarkMode()) ? 'invert' : ''}}"
             src="assets/images/notifications.svg" alt="notifications button" title=""/>
@@ -52,13 +52,6 @@
           <button class="notification-menu-item" mat-menu-item (click)="goToGettingStarted();">
             <i
               class="icon-not-menu moon-Check {{optionsService.colorTheme === eConstants.darkTheme || (optionsService.colorTheme === eConstants.systemDefaultTheme && appService.isDarkMode()) ? 'invert' : ''}}"></i>&nbsp;<span>Getting started</span>
-          </button>
-
-          <button class="notification-menu-item" mat-menu-item (click)="goToJoinTheCommunity();">
-            <img
-              class="icon-not-menu {{optionsService.colorTheme === eConstants.darkTheme || (optionsService.colorTheme === eConstants.systemDefaultTheme && appService.isDarkMode()) ? 'invert' : ''}}"
-              src="assets/images/slack.svg"/>
-            &nbsp;<span>Join the community</span>
           </button>
 
           <button class="notification-menu-item" mat-menu-item (click)="openAnIssue();" [disabled]="!isIssueButtonEnabled">
@@ -92,7 +85,7 @@
 
 
         <button class="icon-button top-right-option-button" (click)="showOptionDialog();"
-                matTooltip="Show Leapp Options"><i class="moon-Settings"></i></button>
+                matTooltip="Show Options"><i class="moon-Settings"></i></button>
       </div>
 
       <div class="window-buttons">

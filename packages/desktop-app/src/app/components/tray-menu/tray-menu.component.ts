@@ -16,7 +16,6 @@ import { AppNativeService } from "../../services/app-native.service";
 import { MessageToasterService } from "../../services/message-toaster.service";
 import { LoggedEntry, LogLevel, LogService } from "@noovolari/leapp-core/services/log-service";
 import { OperatingSystem } from "@noovolari/leapp-core/models/operating-system";
-import { constants } from "@noovolari/leapp-core/models/constants";
 
 @Component({
   selector: "app-tray-menu",
@@ -106,19 +105,12 @@ export class TrayMenuComponent implements OnInit, OnDestroy {
         },
       },
       {
-        label: "Join Slack Community",
-        type: "normal",
-        click: () => {
-          this.windowService.openExternalUrl(constants.slackUrl);
-        },
-      },
-      {
         label: "Open Issue",
         type: "normal",
         enabled: this.appService.awsSsmPluginVersion && this.appService.awsCliVersion && this.appService.issueBody,
         click: () => {
           this.windowService.openExternalUrl(
-            `https://github.com/noovolari/leapp/issues/new?labels=bug&body=${encodeURIComponent(this.appService.issueBody)}`
+            `https://github.com/sergioarojasm98/freeleapp/issues/new?labels=bug&body=${encodeURIComponent(this.appService.issueBody)}`
           );
         },
       },
@@ -134,11 +126,11 @@ export class TrayMenuComponent implements OnInit, OnDestroy {
     // Remove unused voices from contextual menu
     const template = [
       {
-        label: "Leapp",
+        label: "Freeleapp",
         submenu: [
           { label: "About", role: "about" },
           { type: "separator" },
-          { label: "Hide Leapp", accelerator: "CmdOrCtrl+H", role: "hide" },
+          { label: "Hide Freeleapp", accelerator: "CmdOrCtrl+H", role: "hide" },
           { label: "Hide Others", accelerator: "Alt+CmdOrCtrl+H", role: "hideOthers" },
           { label: "Close Window", accelerator: "CmdOrCtrl+W", role: "close" },
           { type: "separator" },
@@ -184,7 +176,7 @@ export class TrayMenuComponent implements OnInit, OnDestroy {
 
     const contextMenu = this.appService.getMenu().buildFromTemplate(this.voices);
     if (this.appService.detectOs() !== OperatingSystem.windows && this.appService.detectOs() !== OperatingSystem.linux) {
-      this.currentTray.setToolTip("Leapp");
+      this.currentTray.setToolTip("Freeleapp");
     }
     this.currentTray.setContextMenu(contextMenu);
   }

@@ -7,7 +7,6 @@ import { WindowService } from "./window.service";
 import { BsModalService } from "ngx-bootstrap/modal";
 import { LogService, LoggedEntry, LogLevel, LoggedException } from "@noovolari/leapp-core/services/log-service";
 import { OperatingSystem, osMap } from "@noovolari/leapp-core/models/operating-system";
-import { constants } from "@noovolari/leapp-core/models/constants";
 import { LeappBaseError } from "@noovolari/leapp-core/errors/leapp-base-error";
 import { LeappLinkError } from "@noovolari/leapp-core/errors/leapp-link-error";
 import { MessageToasterService, ToastLevel } from "./message-toaster.service";
@@ -122,7 +121,8 @@ export class AppService {
   async logout(): Promise<void> {
     try {
       // Clear all extra data
-      const getAppPath = this.appNativeService.path.join(this.appNativeService.app.getPath("appData"), constants.appName);
+      // userData follows the product name, so login partitions are found after a rename
+      const getAppPath = this.appNativeService.app.getPath("userData");
       this.appNativeService.rimraf.sync(getAppPath + "/Partitions/leapp*");
 
       // Cleaning Library Electron Cache
@@ -138,7 +138,7 @@ export class AppService {
         this.restart();
       }, 2000);
     } catch (err) {
-      this.logService.log(new LoggedEntry("Leapp has an error re-creating your configuration file and cache.", this, LogLevel.error, true));
+      this.logService.log(new LoggedEntry("Freeleapp has an error re-creating your configuration file and cache.", this, LogLevel.error, true));
     }
   }
 
@@ -239,7 +239,7 @@ export class AppService {
     this.windowService.getCurrentWindow().show();
     this.getDialog().showMessageBox({
       icon: __dirname + `/assets/images/Leapp.png`,
-      message: `Leapp\n` + `Version ${version} (Core: ${coreVersion})\n` + "© 2022 Noovolari",
+      message: `Freeleapp\n` + `Version ${version} (Core: ${coreVersion})\n` + "Community fork of Leapp © 2022 Noovolari",
       buttons: ["Ok"],
     });
   }

@@ -308,19 +308,15 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
     this.windowService.openExternalUrl("https://docs.leapp.cloud/");
   }
 
-  goToJoinTheCommunity(): void {
-    this.windowService.openExternalUrl(constants.slackUrl);
-  }
-
   openAnIssue(): void {
     this.windowService.openExternalUrl(
-      `https://github.com/noovolari/leapp/issues/new?labels=bug&body=${encodeURIComponent(this.appService.issueBody)}`
+      `https://github.com/sergioarojasm98/freeleapp/issues/new?labels=bug&body=${encodeURIComponent(this.appService.issueBody)}`
     );
   }
 
   requestAFeature(): void {
     this.windowService.openExternalUrl(
-      `https://github.com/noovolari/leapp/issues/new?labels=enhancement&body=${encodeURIComponent(this.appService.featureBody)}`
+      `https://github.com/sergioarojasm98/freeleapp/issues/new?labels=enhancement&body=${encodeURIComponent(this.appService.featureBody)}`
     );
   }
 

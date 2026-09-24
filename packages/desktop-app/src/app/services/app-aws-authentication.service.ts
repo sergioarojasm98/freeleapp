@@ -4,7 +4,6 @@ import { CloudProviderType } from "@noovolari/leapp-core/models/cloud-provider-t
 import { AppProviderService } from "./app-provider.service";
 import { WindowService } from "./window.service";
 import { AwsIamRoleFederatedSession } from "@noovolari/leapp-core/models/aws/aws-iam-role-federated-session";
-import { constants } from "@noovolari/leapp-core/models/constants";
 import { AppNativeService } from "./app-native.service";
 import { AppService } from "./app.service";
 import { Session } from "@noovolari/leapp-core/models/session";
@@ -118,7 +117,8 @@ export class AppAwsAuthenticationService implements IAwsSamlAuthenticationServic
       const url = this.leappCoreService.idpUrlService.getIdpUrl((session as AwsIamRoleFederatedSession).idpUrlId)?.url;
       const sanitizedField = this.domSanitizer.sanitize(SecurityContext.URL, url ? url : "");
 
-      const getAppPath = this.electronService.path.join(this.electronService.app.getPath("appData"), constants.appName);
+      // userData follows the product name, so login partitions are found after a rename
+      const getAppPath = this.electronService.app.getPath("userData");
 
       this.electronService.rimraf(getAppPath + `/Partitions/leapp-${btoa(sanitizedField)}`, async () => {
         if (session) {
@@ -130,7 +130,12 @@ export class AppAwsAuthenticationService implements IAwsSamlAuthenticationServic
         }
 
         this.leappCoreService.logService.log(
-          new LoggedEntry("Cache and configuration file cleaned. Stopping session and restarting Leapp to take effect.", this, LogLevel.info, true)
+          new LoggedEntry(
+            "Cache and configuration file cleaned. Stopping session and restarting Freeleapp to take effect.",
+            this,
+            LogLevel.info,
+            true
+          )
         );
 
         // Restart
@@ -142,12 +147,12 @@ export class AppAwsAuthenticationService implements IAwsSamlAuthenticationServic
       this.electronService.session.defaultSession.clearStorageData([], (_data) => {});
     } catch (err) {
       this.leappCoreService.logService.log(
-        new LoggedEntry("Leapp has an error re-creating your configuration file and cache.", this, LogLevel.error, false, err.stack)
+        new LoggedEntry("Freeleapp has an error re-creating your configuration file and cache.", this, LogLevel.error, false, err.stack)
       );
       if (this.appService.detectOs() === OperatingSystem.windows) {
         this.leappCoreService.logService.log(
           new LoggedEntry(
-            "Leapp needs Admin permissions to do this: please restart the application as an Administrator and retry.",
+            "Freeleapp needs Admin permissions to do this: please restart the application as an Administrator and retry.",
             this,
             LogLevel.warn,
             true
@@ -155,7 +160,7 @@ export class AppAwsAuthenticationService implements IAwsSamlAuthenticationServic
         );
       } else {
         this.leappCoreService.logService.log(
-          new LoggedEntry("Leapp has an error re-creating your configuration file and cache.", this, LogLevel.error, true)
+          new LoggedEntry("Freeleapp has an error re-creating your configuration file and cache.", this, LogLevel.error, true)
         );
       }
     }

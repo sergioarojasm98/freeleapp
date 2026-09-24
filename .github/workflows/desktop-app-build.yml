@@ -1,4 +1,4 @@
-name: Desktop App Build
+name: CI
 
 on:
   push:
@@ -11,6 +11,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install root dependencies
+        run: npm install
+
+      - name: Build and test core
+        working-directory: packages/core
+        run: |
+          npm install
+          npm run build
+          npx jest
+
+      # Native modules and the Electron binary are not needed for the Angular unit tests
+      - name: Install desktop app dependencies
+        working-directory: packages/desktop-app
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+        run: npm install --ignore-scripts
+
+      - name: Test desktop app
+        working-directory: packages/desktop-app
+        run: npx ng test --watch=false --browsers=ChromeHeadlessCI
+
   build-macos-arm64:
     runs-on: macos-latest
     timeout-minutes: 45

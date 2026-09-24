@@ -46,11 +46,30 @@ jobs:
         working-directory: packages/desktop-app
         run: npx gushio gushio/target-build.js 'configuration production'
 
-      - name: Package dmg (ad-hoc signed)
+      # Apple Silicon refuses to launch unsigned bundles, so the app gets an
+      # ad-hoc signature before it is wrapped in the dmg
+      - name: Package app bundle
         working-directory: packages/desktop-app
         run: >
-          npx electron-builder build --mac --arm64 --publish never
-          -c.mac.identity=-
+          npx electron-builder build --mac dir --arm64 --publish never
+          -c.mac.identity=null
+          -c.mac.forceCodeSigning=false
+          -c.mac.notarize=false
+          -c.mac.hardenedRuntime=false
+
+      - name: Ad-hoc sign app bundle
+        working-directory: packages/desktop-app/release/mac-arm64
+        run: |
+          codesign --force --deep --sign - Leapp.app
+          codesign --verify --deep --strict --verbose=2 Leapp.app
+          codesign --display --verbose=2 Leapp.app
+
+      - name: Package dmg
+        working-directory: packages/desktop-app
+        run: >
+          npx electron-builder build --mac dmg --arm64 --publish never
+          --prepackaged release/mac-arm64/Leapp.app
+          -c.mac.identity=null
           -c.mac.forceCodeSigning=false
           -c.mac.notarize=false
           -c.mac.hardenedRuntime=false

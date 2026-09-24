@@ -12,8 +12,6 @@ import { AwsCredentialsPlugin } from "@noovolari/leapp-core/plugin-sdk/aws-crede
 import { SelectedSessionActionsService } from "../../services/selected-session-actions.service";
 import { ExtensionWebsocketService, FetchingState } from "../../services/extension-websocket.service";
 import { Subscription } from "rxjs";
-import { AnalyticsService } from "../../services/analytics.service";
-import { AwsSsoRoleSession } from "@noovolari/leapp-core/models/aws/aws-sso-role-session";
 import { Role } from "../../services/team-service";
 
 @Component({
@@ -40,8 +38,7 @@ export class ContextualMenuComponent implements OnInit, OnDestroy {
     public optionsService: OptionsService,
     public appProviderService: AppProviderService,
     private selectedSessionActionsService: SelectedSessionActionsService,
-    private extensionWebsocketService: ExtensionWebsocketService,
-    private readonly analyticsService: AnalyticsService
+    private extensionWebsocketService: ExtensionWebsocketService
   ) {}
 
   get isLeappTeamUser(): boolean {
@@ -89,18 +86,7 @@ export class ContextualMenuComponent implements OnInit, OnDestroy {
   }
 
   async startSession(): Promise<void> {
-    const integrationId = (this.selectedSession as AwsSsoRoleSession).awsSsoConfigurationId;
-    const integration = this.appProviderService.awsSsoIntegrationService.getIntegration(integrationId);
-
     await this.selectedSessionActionsService.startSession(this.selectedSession);
-
-    if (this.selectedSession.type === SessionType.awsSsoRole && this.selectedSession.status === SessionStatus.active && !integration.isOnline) {
-      await this.analyticsService.captureEvent("Integration Login", {
-        integrationId: (this.selectedSession as AwsSsoRoleSession).awsSsoConfigurationId,
-        integrationType: "AWS SSO",
-        startedAt: new Date().toISOString(),
-      });
-    }
   }
 
   async stopSession(): Promise<void> {
@@ -125,13 +111,6 @@ export class ContextualMenuComponent implements OnInit, OnDestroy {
     } else {
       await this.selectedSessionActionsService.openAwsWebConsole(this.selectedSession);
     }
-
-    await this.analyticsService.captureEvent("Web Console opened", {
-      withExtension: this.optionsService.extensionEnabled,
-      sessionType: this.selectedSession.type,
-      sessionId: this.selectedSession.sessionId,
-      startedAt: new Date().toISOString(),
-    });
   }
 
   async editSession(): Promise<void> {
@@ -168,10 +147,5 @@ export class ContextualMenuComponent implements OnInit, OnDestroy {
 
   async applyPluginAction(plugin: AwsCredentialsPlugin): Promise<void> {
     await this.selectedSessionActionsService.applyPluginAction(this.selectedSession, plugin);
-
-    await this.analyticsService.captureEvent("Plugin started", {
-      pluginName: plugin.metadata.uniqueName,
-      startedAt: new Date().toISOString(),
-    });
   }
 }

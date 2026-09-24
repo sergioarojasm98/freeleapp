@@ -8,7 +8,6 @@ import { SsmService } from "@noovolari/leapp-core/services/ssm-service";
 import { LeappBaseError } from "@noovolari/leapp-core/errors/leapp-base-error";
 import { LogLevel } from "@noovolari/leapp-core/services/log-service";
 import { constants } from "@noovolari/leapp-core/models/constants";
-import { AnalyticsService } from "../../../services/analytics.service";
 
 @Component({
   selector: "app-ssm-modal-dialog",
@@ -28,7 +27,7 @@ export class SsmModalDialogComponent implements OnInit {
   private sessionFactory: SessionFactory;
   private ssmService: SsmService;
 
-  constructor(private appService: AppService, private appProviderService: AppProviderService, private analyticsService: AnalyticsService) {}
+  constructor(private appService: AppService, private appProviderService: AppProviderService) {}
 
   get sessionService(): AwsSessionService {
     return this.sessionFactory.getSessionService(this.session.type) as AwsSessionService;

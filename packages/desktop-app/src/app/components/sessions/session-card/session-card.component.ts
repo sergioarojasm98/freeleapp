@@ -11,7 +11,6 @@ import { constants } from "@noovolari/leapp-core/models/constants";
 import { OptionsService } from "../../../services/options.service";
 import { SelectedSessionActionsService } from "../../../services/selected-session-actions.service";
 import { ExtensionWebsocketService } from "../../../services/extension-websocket.service";
-import { AnalyticsService } from "../../../services/analytics.service";
 
 @Component({
   // eslint-disable-next-line @angular-eslint/component-selector
@@ -47,8 +46,7 @@ export class SessionCardComponent implements OnInit {
     public appProviderService: AppProviderService,
     public optionService: OptionsService,
     private selectedSessionActionService: SelectedSessionActionsService,
-    private extensionWebSocketService: ExtensionWebsocketService,
-    private readonly analyticsService: AnalyticsService
+    private extensionWebSocketService: ExtensionWebsocketService
   ) {
     this.behaviouralSubjectService = this.appProviderService.behaviouralSubjectService;
   }

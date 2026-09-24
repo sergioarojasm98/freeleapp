@@ -22,7 +22,6 @@ import { Integration } from "@noovolari/leapp-core/models/integration";
 import { IntegrationType } from "@noovolari/leapp-core/models/integration-type";
 import { AzureIntegration } from "@noovolari/leapp-core/models/azure/azure-integration";
 import { IntegrationParams } from "@noovolari/leapp-core/models/integration-params";
-import { AnalyticsService } from "../../services/analytics.service";
 
 export interface SelectedIntegration {
   id: string;
@@ -100,8 +99,7 @@ export class IntegrationBarComponent implements OnInit, OnDestroy {
     private windowService: WindowService,
     private messageToasterService: MessageToasterService,
     public appProviderService: AppProviderService,
-    private ngZone: NgZone,
-    private analyticsService: AnalyticsService
+    private ngZone: NgZone
   ) {
     this.awsSsoRoleService = this.appProviderService.awsSsoRoleService;
     this.behaviouralSubjectService = this.appProviderService.behaviouralSubjectService;
@@ -217,11 +215,6 @@ export class IntegrationBarComponent implements OnInit, OnDestroy {
     this.loadingInBrowser = false;
     this.loadingInApp = false;
     this.setValues();
-
-    await this.analyticsService.captureEvent("Integration Logout", {
-      integrationId,
-      logoutAt: new Date().toISOString(),
-    });
   }
 
   async forceSync(integrationId: string): Promise<void> {
@@ -246,7 +239,6 @@ export class IntegrationBarComponent implements OnInit, OnDestroy {
         this.modalRef = this.bsModalService.show(this.ssoModalTemplate, { class: "sso-modal" });
       }
       await this.appProviderService.awsSsoIntegrationService.syncSessions(integrationId, () => {
-        this.analyticsService.captureEvent("Integration Login", { integrationId, integrationType: "AWS SSO", startedAt: new Date().toISOString() });
         if (this.modalRef) {
           this.modalRef.hide();
         }
@@ -272,10 +264,6 @@ export class IntegrationBarComponent implements OnInit, OnDestroy {
       return;
     }
     await this.appProviderService.azureIntegrationService.syncSessions(integrationId);
-    const userLoggedIn = this.appProviderService.teamService.signedInUserState.getValue();
-    if (userLoggedIn) {
-      await this.analyticsService.captureEvent("Integration Login", { integrationId, integrationType: "Azure", startedAt: new Date().toISOString() });
-    }
   }
 
   async gotoWebForm(integrationId: string): Promise<void> {

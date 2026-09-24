@@ -20,7 +20,6 @@ import { CreateDialogComponent } from "../components/dialogs/create-dialog/creat
 import { AwsIamRoleFederatedSession } from "@noovolari/leapp-core/models/aws/aws-iam-role-federated-session";
 import { AwsIamUserService } from "@noovolari/leapp-core/services/session/aws/aws-iam-user-service";
 import { AwsCredentialsPlugin } from "@noovolari/leapp-core/plugin-sdk/aws-credentials-plugin";
-import { AnalyticsService } from "./analytics.service";
 import { SessionService } from "@noovolari/leapp-core/services/session/session-service";
 
 @Injectable({
@@ -37,8 +36,7 @@ export class SelectedSessionActionsService {
     private windowService: WindowService,
     private optionService: OptionsService,
     private appService: AppService,
-    private messageToasterService: MessageToasterService,
-    private analyticsService: AnalyticsService
+    private messageToasterService: MessageToasterService
   ) {
     this.sessionFactory = this.appProviderService.sessionFactory;
     this.logService = this.appProviderService.logService;
@@ -54,28 +52,12 @@ export class SelectedSessionActionsService {
     this.logSessionData(session, "Starting Session");
     await this.getSelectedSessionService(session).start(session.sessionId);
     document.querySelector(".table thead tr").scrollIntoView();
-
-    this.analyticsService
-      .captureEvent("Session Started", {
-        sessionId: session.sessionId,
-        sessionType: session.type,
-        startedAt: new Date().toISOString(),
-      })
-      .then();
   }
 
   async stopSession(session: Session): Promise<void> {
     this.behaviouralSubjectService.unselectSessions();
     this.logSessionData(session, `Stopped Session`);
     await this.getSelectedSessionService(session).stop(session.sessionId);
-
-    this.analyticsService
-      .captureEvent("Session Stopped", {
-        sessionId: session.sessionId,
-        sessionType: session.type,
-        stoppedAt: new Date().toISOString(),
-      })
-      .then();
   }
 
   async openAwsWebConsole(session: Session): Promise<void> {

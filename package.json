@@ -4,10 +4,10 @@
     "name": "Noovolari",
     "email": "info@noovolari.com"
   },
-  "repository": "https://github.com/Noovolari/leapp",
+  "repository": "https://github.com/sergioarojasm98/freeleapp",
   "private": true,
   "category": "public.app-category.developer-tools",
-  "homepage": "https://leapp.cloud",
+  "homepage": "https://github.com/sergioarojasm98/freeleapp",
   "devDependencies": {
     "@angular-eslint/builder": "13.1.0",
     "@angular-eslint/eslint-plugin": "13.1.0",

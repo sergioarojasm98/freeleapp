@@ -1,94 +1,67 @@
-<p align="center">
-  <img src=".github/images/README-1.png#gh-dark-mode-only" alt="Leapp" height="150" />
-    <img src=".github/images/README-1-dark.png#gh-light-mode-only" alt="Leapp" height="150" />
-</p>
+# Freeleapp
 
-<h1 align="center">Leapp</h1>
+A maintained community fork of [Leapp](https://github.com/Noovolari/leapp), the desktop app that manages temporary cloud credentials for AWS and Azure.
 
-<h4 align="center">
-  <a href="https://www.leapp.cloud">Website</a> |
-  <a href="https://roadmap.leapp.cloud/tabs/4-in-progress">Roadmap</a> |
-  <a href="https://medium.com/leapp-cloud">Blog</a> |
-  <a href="https://join.slack.com/t/noovolari/shared_invite/zt-opn8q98k-HDZfpJ2_2U3RdTnN~u_B~Q">TOPS community</a> |
-  <a href="https://docs.leapp.cloud">Documentation</a> |
-  <a href="https://docs.leapp.cloud/latest/troubleshooting/app-data/">Troubleshooting</a>
+## About
 
-</h4>
+Leapp has had no release since v0.26.1 (June 2024), after Noovolari shut down. Freeleapp keeps the app working on current macOS versions and removes everything that depended on the discontinued company services.
 
-<p align="center">
-  <a href="https://github.com/Noovolari/leapp/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/github/license/noovolari/leapp"></a>
-  <a href="https://join.slack.com/t/noovolari/shared_invite/zt-opn8q98k-HDZfpJ2_2U3RdTnN~u_B~Q"><img src="https://img.shields.io/badge/slack-online-green" alt="Slack"></a>
-  <img src="https://d3o59asa8udcq9.cloudfront.net/coverage-badges/core-badges.svg">
-  <img src="https://d3o59asa8udcq9.cloudfront.net/coverage-badges/cli-badges.svg">
-</p>
+Differences from upstream Leapp:
 
-<p align="center">⚡ Lightning Fast, Safe, Desktop App for Cloud credentials managing and generation</p>
+- No telemetry: the PostHog analytics client is removed.
+- No Leapp Pro or Team: the sign-in, plans and workspace sync screens are removed; everything runs on the local workspace.
+- Update checks and release notes come from this repository's GitHub Releases.
+- Data stays compatible: sessions live in `~/.Leapp` and the system keychain under the same keys as Leapp, so an existing setup carries over, and the IPC channel `leapp-cli` uses is unchanged.
 
-**Leapp** is a Cross-Platform Cloud access App, built on top of [Electron](https://github.com/electron/electron).
+Freeleapp is not affiliated with Noovolari or beSharp. "Leapp" is a trademark of its respective owners.
 
-The App is designed to **manage and secure Cloud Access in multi-account environments,** and it is available for MacOS, Windows, and Linux.
+## How It Works
 
-For more information about features go to [our documentation](https://docs.leapp.cloud/).
+```mermaid
+flowchart LR
+    UI[Desktop app<br/>Electron + Angular] --> Core[leapp-core]
+    CLI[leapp-cli] --> Core
+    Core --> Vault[(System keychain)]
+    Core --> Cfg[(~/.Leapp)]
+    Core --> Creds[~/.aws/credentials<br/>~/.azure]
+    Core --> Cloud[AWS STS / IAM Identity Center<br/>Microsoft Entra ID]
+```
 
-<p align="center">
-  <img src=".github/images/Leapp-animation.gif" alt="Web interface gif" />
-</p>
+`leapp-core` holds the session logic; the desktop app and the CLI are clients on top of it. Temporary credentials are written to the standard AWS and Azure CLI files, so any tool that reads them works unchanged.
 
-# ✨ Features
+## Stack
 
-- **Cloud credentials generation in 1 click**
-- **Data [stored locally encrypted](https://docs.leapp.cloud/latest/security/system-vault/) in the OS System Vault**
-- **Multiple Cloud-Access supported [strategies](https://docs.leapp.cloud/latest/configuration/)**
-- **Automatic [short-lived credentials rotation](https://docs.leapp.cloud/latest/security/credentials-generation/aws/)**
-- **Automatic provisioning of [Sessions](https://docs.leapp.cloud/latest/sessions/) from [AWS Single Sign-on](https://docs.leapp.cloud/latest/configuring-integration/configure-aws-single-sign-on-integration/)**
-- **Open multiple AWS console from different AWS accounts in [Firefox](https://addons.mozilla.org/it/firefox/addon/leapp-multi-console-extension/) and [Chrome](https://docs.leapp.cloud/0.16.2/built-in-features/multi-console/#chrome-edge-and-other-chromium-based-browsers) web extensions!**
-- **Connect to EC2 instances straight away**
-- **Managing Leapp with its [CLI](https://docs.leapp.cloud/latest/cli/)**
-- **[Create your own Leapp plugin](https://docs.leapp.cloud/0.14.1/plugins/plugins-introduction/)** to customize the App functionalities from the [template](https://github.com/Noovolari/leapp-plugin-template)
+| Layer | Technology |
+|-------|------------|
+| Desktop shell | Electron |
+| UI | Angular, Angular Material |
+| Core library | TypeScript, AWS SDK v3, MSAL |
+| Secrets | macOS Keychain / Windows Credential Manager / libsecret (keytar) |
+| Packaging | electron-builder, GitHub Actions (macOS arm64) |
 
-All the covered access methods can be found [here](https://docs.leapp.cloud/latest/configuration/).
+## Install
 
+Download the `.dmg` from [Releases](https://github.com/sergioarojasm98/freeleapp/releases) (Apple Silicon). Builds are ad-hoc signed until notarization is set up, so clear the quarantine flag after copying the app:
 
-# Download
-You can find all the information needed to download and install Leapp in the [documentation](https://docs.leapp.cloud/latest/installation/install-leapp/).
-Leapp can be installed on macOS, Linux, and Windows systems.
+```bash
+xattr -dr com.apple.quarantine /Applications/Freeleapp.app
+```
 
-... and nothing stops you from compiling Leapp yourself! You can find more information about how to
-compile Leapp in our [contributing guidelines](CONTRIBUTING.md).
+A Homebrew tap is planned.
 
-# Contributing
+## Build
 
-Thank you for thinking about contributing to Leapp! 
+```bash
+nvm use                      # Node version from .nvmrc
+npm install
+cd packages/core && npm install && npm run build
+cd ../desktop-app && npm install
+npx gushio gushio/target-build.js 'configuration production'
+npx electron-builder build --mac dir --arm64 --publish never
+```
 
-Read through our [contributing guidelines](CONTRIBUTING.md)
-to learn how you can bring your value to our project by submitting your first contribution.
+Tests: `npx jest` in `packages/core`, and `npx ng test --watch=false --browsers=ChromeHeadless` in `packages/desktop-app`.
 
-Want to start developing with Leapp? [Check out our developing guidelines!](DEVELOPMENT.md)
+## License
 
-You can report bugs or suggest features using the GitHub issues channel; moreover, you can pick
-[a good first issue](https://github.com/noovolari/leapp/contribute) and make your first code contribution.
-
-We want to thank you all!
-
-<a href="https://github.com/noovolari/leapp/graphs/contributors"><img src="https://opencollective.com/noovolari/contributors.svg?width=800&button=false" /></a>
-
-# Our Sponsors
-
-[<img hspace="5" src="https://avatars.githubusercontent.com/u/1290287?s=60&amp;v=4" width="90" height="90" alt="@taimos">](https://github.com/taimos)
-[<img hspace="5" src="https://avatars.githubusercontent.com/u/2232217?s=60&amp;v=4" width="90" height="90" alt="@aws">](https://github.com/aws)
-
-A special thanks to our individual sponsors!
-
-[<img hspace="5" src="https://avatars.githubusercontent.com/u/1392040?v=4" width="90" height="90" alt="@Gowiem">](https://github.com/Gowiem)
-[<img hspace="5" src="https://avatars.githubusercontent.com/u/6387224?v=4" width="90" height="90" alt="@dharada1">](https://github.com/dharada1)
-
-# Documentation
-
-Refer to the documentation [website](https://docs.leapp.cloud).
-
-# Contacts
-
-You can chat with us inside our community so [join us](https://join.slack.com/t/noovolari/shared_invite/zt-noc0ju05-18_GRX~Zi6Jz8~95j5CySA), or send us a message through the [contacts form](https://www.leapp.cloud/contacts).
-
-# License
-[Mozilla Public License v2.0](https://github.com/Noovolari/leapp/blob/master/LICENSE)
+[Mozilla Public License 2.0](LICENSE), same as upstream. Original work © Noovolari and the Leapp contributors.

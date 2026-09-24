@@ -272,5 +272,8 @@
     "ts-node": "^9.1.1",
     "typescript": "^4.9.0",
     "util": "^0.12.4"
+  },
+  "overrides": {
+    "@electron/node-gyp": "10.2.0-electron.1"
   }
 }

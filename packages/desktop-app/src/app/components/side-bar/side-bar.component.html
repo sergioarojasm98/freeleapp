@@ -33,19 +33,6 @@
 
         <div class="divider"></div>
 
-        <div [disabled]="doesRemoteWorkspaceExist || isLeappTeamStubbed" mat-menu-item
-             (click)="doesRemoteWorkspaceExist ? false : loginToRemoteWorkspace()">
-          <img class="workspace-menu-icon" src="assets/images/sign-in.svg" alt="sign-in">
-          <span>Sign-in Workspace</span>
-        </div>
-
-        <div [disabled]="isLeappTeamStubbed" mat-menu-item (click)="showManageWorkspacesDialog()">
-          <img class="workspace-menu-icon" src="assets/images/buildings.svg" alt="manage-workspaces">
-          <span>Manage Workspaces</span>
-        </div>
-
-        <div class="divider"></div>
-
         <div mat-menu-item (click)="openWorkspaceDocumentation()">
           <img class="workspace-menu-icon" src="assets/images/book-open-text.svg" alt="settings">
           <span>What's a workspace?</span>
@@ -54,11 +41,6 @@
         <div mat-menu-item (click)="showOptionDialog()">
           <img class="workspace-menu-icon" src="assets/images/gear.svg" alt="settings">
           <span>Settings...</span>
-        </div>
-
-        <div [disabled]="!canLockWorkspace || isLeappTeamStubbed" mat-menu-item (click)="logoutFromRemoteWorkspace(true)">
-          <img class="workspace-menu-icon" src="assets/images/sign-out.svg" alt="sign-out">
-          <span>Lock</span>
         </div>
       </mat-menu>
     </div>
@@ -90,8 +72,4 @@
     </mat-expansion-panel>
   </mat-accordion>
 </mat-list>
-<!--<div *ngIf="!isLocalWorkspaceSelected">
-  <button (click)="exportProWorkspace()">Export PRO workspace <i *ngIf="exporting" class="fa fa-spinner fa-spin"></i></button>
-</div>-->
-<app-sync-pro-widget></app-sync-pro-widget>
 </div>

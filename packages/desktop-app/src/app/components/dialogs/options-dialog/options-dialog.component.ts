@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, Input, OnDestroy, OnInit, ViewChild, ViewEncapsulation } from "@angular/core";
+import { AfterViewInit, Component, Input, OnInit, ViewChild, ViewEncapsulation } from "@angular/core";
 import { FormControl, FormGroup } from "@angular/forms";
 import { AppService } from "../../../services/app.service";
 import { Router } from "@angular/router";
@@ -17,18 +17,7 @@ import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
 import { OperatingSystem } from "@noovolari/leapp-core/models/operating-system";
 import { AppNativeService } from "../../../services/app-native.service";
 import { PluginContainer } from "@noovolari/leapp-core/plugin-sdk/plugin-manager-service";
-import { BillingPeriod, LeappProPreCheckoutDialogComponent } from "../leapp-pro-pre-checkout-dialog/leapp-pro-pre-checkout-dialog.component";
-import { BehaviorSubject, Subscription } from "rxjs";
 import { colorThemeSubject } from "../../check-icon-svg/check-icon-svg.component";
-
-export enum LeappPlanStatus {
-  free = "free",
-  proPending = "proPending",
-  proEnabled = "proEnabled",
-  enterprise = "enterprise",
-}
-
-export const globalLeappProPlanStatus = new BehaviorSubject<LeappPlanStatus>(LeappPlanStatus.free);
 
 @Component({
   selector: "app-options-dialog",
@@ -36,7 +25,7 @@ export const globalLeappProPlanStatus = new BehaviorSubject<LeappPlanStatus>(Lea
   styleUrls: ["./options-dialog.component.scss"],
   encapsulation: ViewEncapsulation.None,
 })
-export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy {
+export class OptionsDialogComponent implements OnInit, AfterViewInit {
   @Input()
   selectedIndex;
 
@@ -45,7 +34,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
 
   eConstants = constants;
   eOperatingSystem = OperatingSystem;
-  eBillingPeriod = BillingPeriod;
 
   awsProfileValue: { id: string; name: string };
   idpUrlValue;
@@ -75,7 +63,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   fetchingPlugins: boolean;
 
   selectedSsmRegionBehaviour: string;
-  selectedPeriod: BillingPeriod = BillingPeriod.yearly;
 
   form = new FormGroup({
     idpUrl: new FormControl(""),
@@ -104,14 +91,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
 
   extensionEnabled: boolean;
 
-  eEnabledLeappPlanStatus = LeappPlanStatus;
-  leappStatusSubscription: Subscription;
-  leappPlanStatus;
-
-  exporting: boolean;
-  isUserSignedIn: boolean;
-  signedInUserStateSubscription: Subscription;
-
   /* Simple profile page: shows the Idp Url and the workspace json */
   private sessionService: SessionService;
 
@@ -139,15 +118,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     this.selectedTouchIdEnabled = this.optionsService.touchIdEnabled ?? constants.touchIdEnabled;
 
     this.extensionEnabled = this.optionsService.extensionEnabled || false;
-
-    this.exporting = false;
-
-    this.isUserSignedIn = false;
-  }
-
-  ngOnDestroy(): void {
-    this.leappStatusSubscription?.unsubscribe();
-    this.signedInUserStateSubscription?.unsubscribe();
   }
 
   async ngOnInit(): Promise<void> {
@@ -185,22 +155,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     this.pluginList = this.appProviderService.pluginManagerService.pluginContainers;
 
     this.selectedSsmRegionBehaviour = this.optionsService.ssmRegionBehaviour || constants.ssmRegionNo;
-
-    this.leappStatusSubscription = globalLeappProPlanStatus.subscribe((value) => (this.leappPlanStatus = value));
-
-    try {
-      const plan = await this.appProviderService.keychainService.getSecret("Leapp", "leapp-enabled-plan");
-      if (plan) {
-        globalLeappProPlanStatus.next(plan as unknown as LeappPlanStatus);
-      } else {
-        globalLeappProPlanStatus.next(LeappPlanStatus.free);
-      }
-    } catch (err) {
-      globalLeappProPlanStatus.next(LeappPlanStatus.free);
-    }
-
-    const selectedWorkspace = this.appProviderService.teamService.workspacesState.getValue().find((workspaceState) => workspaceState.selected);
-    this.isUserSignedIn = selectedWorkspace.name !== constants.localWorkspaceName;
   }
 
   ngAfterViewInit(): void {
@@ -582,31 +536,5 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   toggleExtension(): void {
     this.extensionEnabled = !this.extensionEnabled;
     this.optionsService.extensionEnabled = this.extensionEnabled;
-  }
-
-  openLeappProPreCheckoutDialog(): void {
-    this.modalService.show(LeappProPreCheckoutDialogComponent, { animated: false, class: "pre-checkout-modal", backdrop: "static", keyboard: false });
-  }
-
-  setBillingPeriod(): void {
-    this.selectedPeriod = this.selectedPeriod === BillingPeriod.yearly ? BillingPeriod.monthly : BillingPeriod.yearly;
-  }
-
-  async contactSupport(): Promise<void> {
-    const email = await this.appProviderService.keychainService.getSecret("Leapp", "leapp-enabled-plan-email");
-    this.windowService.openExternalUrl(`mailto:support@noovolari.com?subject=Leapp%20Sign-up%20support%20request%20${email}`);
-  }
-
-  contactSales(): void {
-    this.windowService.openExternalUrl("https://www.leapp.cloud/solutions/business");
-  }
-
-  async exportProWorkspace(): Promise<void> {
-    this.exporting = true;
-    await this.appProviderService.teamService.exportProWorkspace();
-    await new Promise((resolve, _reject) => {
-      setTimeout(resolve, 2000);
-    });
-    this.exporting = false;
   }
 }

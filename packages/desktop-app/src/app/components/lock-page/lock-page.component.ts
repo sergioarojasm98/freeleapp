@@ -5,12 +5,10 @@ import { ApiErrorCodes, FormErrorCodes, TeamService } from "../../services/team-
 import { AppService } from "../../services/app.service";
 import { AppProviderService } from "../../services/app-provider.service";
 import { ActivatedRoute, Router } from "@angular/router";
-import { globalLeappProPlanStatus, LeappPlanStatus } from "../dialogs/options-dialog/options-dialog.component";
 import { constants } from "@noovolari/leapp-core/models/constants";
 import { MessageToasterService, ToastLevel } from "../../services/message-toaster.service";
 import { AppNativeService } from "../../services/app-native.service";
 import { OptionsService } from "../../services/options.service";
-import { AnalyticsService } from "../../services/analytics.service";
 
 @Component({
   selector: "app-lock-page",
@@ -39,8 +37,7 @@ export class LockPageComponent implements OnInit {
     private optionService: OptionsService,
     private messageToasterService: MessageToasterService,
     private appNativeService: AppNativeService,
-    private routeCalled: ActivatedRoute,
-    private analyticsService: AnalyticsService
+    private routeCalled: ActivatedRoute
   ) {
     this.previousRoute = this.router.getCurrentNavigation().previousNavigation.finalUrl.toString();
   }
@@ -88,18 +85,7 @@ export class LockPageComponent implements OnInit {
         const signedInUser = await this.teamService.signedInUserState.getValue();
         const doesWorkspaceExist = !!signedInUser;
         await this.teamService.signIn(formValue.email, formValue.password);
-        // Get the user again after login
-        const userLoggedIn = await this.teamService.signedInUserState.getValue();
-
-        this.analyticsService.init(userLoggedIn);
-        await this.analyticsService.captureEvent("Sign In");
-
         this.appService.closeAllMenuTriggers();
-
-        const teamOrPro = this.teamService.workspacesState.getValue().find((wState) => wState.type === "pro" || wState.type === "team");
-        const planStatus = teamOrPro.type === "team" ? LeappPlanStatus.enterprise : LeappPlanStatus.proEnabled;
-        await this.appProviderService.keychainService.saveSecret("Leapp", "leapp-enabled-plan", planStatus);
-        globalLeappProPlanStatus.next(planStatus);
 
         if (doesWorkspaceExist) {
           await this.teamService.pullFromRemote();
@@ -142,8 +128,6 @@ export class LockPageComponent implements OnInit {
   async switchToLocalWorkspace(): Promise<void> {
     await this.appProviderService.teamService.signOut();
     this.appService.closeAllMenuTriggers();
-    globalLeappProPlanStatus.next(LeappPlanStatus.free);
-    await this.appProviderService.keychainService.saveSecret("Leapp", "leapp-enabled-plan", LeappPlanStatus.free);
     await this.router.navigate(["/dashboard"]);
   }
 
@@ -169,10 +153,6 @@ export class LockPageComponent implements OnInit {
         this.appProviderService.fileService.aesKey = oldKey;
         this.password.setValue(decodedSecret, { emitEvent: true });
         await this.signIn();
-        // Get the user again after login
-        const userLoggedIn = await this.teamService.signedInUserState.getValue();
-        this.analyticsService.init(userLoggedIn);
-        await this.analyticsService.captureEvent("Sign In");
       } catch (err) {
         this.messageToasterService.toast(`${err.toString().replace("Error: ", "")}`, ToastLevel.warn, "Touch ID authentication");
       }

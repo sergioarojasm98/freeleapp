@@ -18,11 +18,8 @@ import { integrationHighlight } from "../integration-bar/integration-bar.compone
 import { MatMenuTrigger } from "@angular/material/menu";
 import { AppService } from "../../services/app.service";
 import { OptionsDialogComponent } from "../dialogs/options-dialog/options-dialog.component";
-import { LoginWorkspaceDialogComponent } from "../dialogs/login-team-dialog/login-workspace-dialog.component";
-import { ManageTeamWorkspacesDialogComponent } from "../dialogs/manage-team-workspaces-dialog/manage-team-workspaces-dialog.component";
 import { WorkspaceState } from "../../services/team-service";
 import { Router } from "@angular/router";
-import { AnalyticsService } from "../../services/analytics.service";
 
 export interface SelectedSegment {
   name: string;
@@ -54,8 +51,6 @@ export class SideBarComponent implements OnInit, OnDestroy {
   showPinned: boolean;
   modalRef: BsModalRef;
   workspacesState: WorkspaceState[];
-  isLeappTeamStubbed: boolean;
-  exporting = false;
 
   private unsubscribe: () => void;
   private behaviouralSubjectService: BehaviouralSubjectService;
@@ -64,8 +59,7 @@ export class SideBarComponent implements OnInit, OnDestroy {
     private router: Router,
     private bsModalService: BsModalService,
     private appProviderService: AppProviderService,
-    private appService: AppService,
-    private readonly analyticsService: AnalyticsService
+    private appService: AppService
   ) {
     this.behaviouralSubjectService = appProviderService.behaviouralSubjectService;
     this.showAll = true;
@@ -74,14 +68,6 @@ export class SideBarComponent implements OnInit, OnDestroy {
 
   get isLocalWorkspaceSelected(): boolean {
     return !!this.workspacesState.find((state) => state.type === "local" && state.selected);
-  }
-
-  get doesRemoteWorkspaceExist(): boolean {
-    return !!this.workspacesState.find((state) => state.type !== "local");
-  }
-
-  get canLockWorkspace(): boolean {
-    return !!this.workspacesState.find((state) => (state.type === "team" || state.type === "pro") && !state.locked);
   }
 
   get selectedWorkspace(): WorkspaceState {
@@ -103,7 +89,6 @@ export class SideBarComponent implements OnInit, OnDestroy {
     const workspaceStateSubscription = this.appProviderService.teamService.workspacesState.subscribe((workspacesState: WorkspaceState[]) => {
       this.workspacesState = workspacesState;
     });
-    this.isLeappTeamStubbed = this.appProviderService.teamService.isLeappTeamStubbed;
     this.unsubscribe = () => {
       segmentFilterSubscription.unsubscribe();
       sidebarHighlightSubscription.unsubscribe();
@@ -198,24 +183,6 @@ export class SideBarComponent implements OnInit, OnDestroy {
     this.bsModalService.show(OptionsDialogComponent, { animated: false, class: "option-modal" });
   }
 
-  async loginToRemoteWorkspace(): Promise<void> {
-    if (this.isLeappTeamStubbed) return;
-    this.bsModalService.show(LoginWorkspaceDialogComponent, {
-      animated: false,
-      class: "create-modal",
-      backdrop: "static",
-      keyboard: false,
-    });
-  }
-
-  async logoutFromRemoteWorkspace(lock: boolean = false): Promise<void> {
-    if (!this.canLockWorkspace || this.isLeappTeamStubbed) return;
-    await this.analyticsService.captureEvent("Sign Out", undefined, false, true);
-    await this.appProviderService.teamService.signOut(lock);
-    this.appService.closeAllMenuTriggers();
-    await this.router.navigate(["/lock"]);
-  }
-
   async switchToWorkspace(workspace: WorkspaceState): Promise<void> {
     if (workspace.type === "local") {
       if (this.isLocalWorkspaceSelected) return;
@@ -231,26 +198,7 @@ export class SideBarComponent implements OnInit, OnDestroy {
     }
   }
 
-  showManageWorkspacesDialog(): void {
-    if (this.isLeappTeamStubbed) return;
-    this.bsModalService.show(ManageTeamWorkspacesDialogComponent, {
-      animated: false,
-      class: "create-modal",
-      backdrop: "static",
-      keyboard: false,
-    });
-  }
-
   openWorkspaceDocumentation(): void {
     this.appProviderService.windowService.openExternalUrl("https://docs.leapp.cloud/latest/workspaces/");
-  }
-
-  async exportProWorkspace(): Promise<void> {
-    this.exporting = true;
-    await this.appProviderService.teamService.exportProWorkspace();
-    await new Promise((resolve, _reject) => {
-      setTimeout(resolve, 2000);
-    });
-    this.exporting = false;
   }
 }

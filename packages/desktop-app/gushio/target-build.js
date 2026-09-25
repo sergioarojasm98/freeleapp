@@ -27,6 +27,9 @@ module.exports = {
 
       await compileFunction(path, shellJs, args[0])
 
+      // Ship the changelog with the app so What's new shows the notes of the installed version
+      shellJs.cp(path.join(__dirname, '../../../CHANGELOG.md'), path.join(__dirname, '../dist/leapp-client/CHANGELOG.md'))
+
       await makeDirFunction(path, '../electron/dist/electron/assets/images')
       await copyFunction(path, '../electron/assets/images', '../electron/dist/electron/assets/images')
 

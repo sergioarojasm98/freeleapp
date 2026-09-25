@@ -284,7 +284,7 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
 
   async goToWhatsNew(): Promise<void> {
     const title = "What's new";
-    const releaseNotes = await this.updaterService.getReleaseNote();
+    const releaseNotes = await this.updaterService.getInstalledReleaseNote();
 
     this.bsModalService.show(InfoDialogComponent, {
       animated: false,

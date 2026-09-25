@@ -1,0 +1,110 @@
+name: Build macOS
+
+# Reusable build of the macOS arm64 app, shared by CI and Release
+on:
+  workflow_call:
+
+jobs:
+  build-macos-arm64:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    env:
+      # Unsigned build until an Apple Developer ID is available
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      # node-gyp bundled with npm 8 still needs distutils (removed in Python 3.12)
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Install root dependencies
+        run: npm install
+
+      - name: Build core
+        working-directory: packages/core
+        run: |
+          npm install
+          npm run build
+
+      - name: Install desktop app dependencies
+        working-directory: packages/desktop-app
+        run: npm install
+
+      - name: Build desktop app
+        working-directory: packages/desktop-app
+        run: npx gushio gushio/target-build.js 'configuration production'
+
+      # Apple Silicon refuses to launch unsigned bundles, so the app gets an
+      # ad-hoc signature before it is wrapped in the dmg
+      - name: Package app bundle
+        working-directory: packages/desktop-app
+        run: >
+          npx electron-builder build --mac dir --arm64 --publish never
+          -c.mac.identity=null
+          -c.mac.forceCodeSigning=false
+          -c.mac.notarize=false
+          -c.mac.hardenedRuntime=false
+
+      # macOS 26+ renders the Icon Composer icon (Liquid Glass) from Assets.car;
+      # older versions keep using the icns. Must happen before signing.
+      - name: Add Liquid Glass icon
+        working-directory: packages/desktop-app
+        run: |
+          mkdir -p build/icon-assets
+          xcrun actool build/Freeleapp.icon --compile build/icon-assets --platform macosx \
+            --minimum-deployment-target 11.0 --app-icon Freeleapp \
+            --output-partial-info-plist build/icon-assets/partial.plist
+          cp build/icon-assets/Assets.car release/mac-arm64/Freeleapp.app/Contents/Resources/
+          PLIST=release/mac-arm64/Freeleapp.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIconName Freeleapp" "$PLIST" 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Add :CFBundleIconName string Freeleapp" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$PLIST"
+
+      - name: Ad-hoc sign app bundle
+        working-directory: packages/desktop-app/release/mac-arm64
+        run: |
+          codesign --force --deep --sign - Freeleapp.app
+          codesign --verify --deep --strict --verbose=2 Freeleapp.app
+          codesign --display --verbose=2 Freeleapp.app
+
+      # The zip and latest-mac.yml are what the in-app update check reads from GitHub Releases
+      - name: Package dmg and zip
+        working-directory: packages/desktop-app
+        run: >
+          npx electron-builder build --mac dmg zip --arm64 --publish never
+          --prepackaged release/mac-arm64/Freeleapp.app
+          -c.mac.identity=null
+          -c.mac.forceCodeSigning=false
+          -c.mac.notarize=false
+          -c.mac.hardenedRuntime=false
+
+      - name: List release files
+        working-directory: packages/desktop-app/release
+        run: |
+          ls -la
+          test -f latest-mac.yml && cat latest-mac.yml
+
+      # The dmg alone, unzipped, for manual testing from the Actions page
+      - uses: actions/upload-artifact@v7
+        with:
+          archive: false
+          path: packages/desktop-app/release/*.dmg
+          if-no-files-found: error
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-files
+          path: |
+            packages/desktop-app/release/*.dmg
+            packages/desktop-app/release/*.zip
+            packages/desktop-app/release/*.blockmap
+            packages/desktop-app/release/latest-mac.yml
+          if-no-files-found: error
+          retention-days: 14

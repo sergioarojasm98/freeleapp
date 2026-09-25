@@ -89,8 +89,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
   selectedCredentialMethod: string;
   webConsoleSessionDuration: number;
 
-  extensionEnabled: boolean;
-
   /* Simple profile page: shows the Idp Url and the workspace json */
   private sessionService: SessionService;
 
@@ -116,8 +114,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
     this.selectedRequirePassword = this.optionsService.requirePassword || constants.requirePasswordEveryTwoWeeks.value;
 
     this.selectedTouchIdEnabled = this.optionsService.touchIdEnabled ?? constants.touchIdEnabled;
-
-    this.extensionEnabled = this.optionsService.extensionEnabled || false;
   }
 
   async ngOnInit(): Promise<void> {
@@ -531,10 +527,5 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
   openPluginFolder(): void {
     this.appProviderService.pluginManagerService.verifyAndGeneratePluginFolderIfMissing();
     this.appNativeService.shell.showItemInFolder(this.appNativeService.path.join(this.appNativeService.os.homedir(), ".Leapp", "plugins"));
-  }
-
-  toggleExtension(): void {
-    this.extensionEnabled = !this.extensionEnabled;
-    this.optionsService.extensionEnabled = this.extensionEnabled;
   }
 }

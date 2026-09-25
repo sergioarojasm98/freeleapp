@@ -1318,7 +1318,6 @@ describe("Repository", () => {
     mockedWorkspace.credentialMethod = "mock-credential-method";
     mockedWorkspace.defaultLocation = "mock-default-location";
     mockedWorkspace.defaultRegion = "mock-default-region";
-    mockedWorkspace.extensionEnabled = "mock-extension-enabled";
     mockedWorkspace.macOsTerminal = "mock-terminal";
     mockedWorkspace.pluginsStatus = "mock-plugin-status";
     mockedWorkspace.samlRoleSessionDuration = "mock-saml-role-session-duration";
@@ -1334,7 +1333,6 @@ describe("Repository", () => {
       credentialMethod: "mock-credential-method",
       defaultLocation: "mock-default-location",
       defaultRegion: "mock-default-region",
-      extensionEnabled: "mock-extension-enabled",
       macOsTerminal: "mock-terminal",
       notifications: mockedNotifications,
       pluginsStatus: "mock-plugin-status",
@@ -1354,7 +1352,6 @@ describe("Repository", () => {
       credentialMethod: "mock-credential-method",
       defaultLocation: "mock-default-location",
       defaultRegion: "mock-default-region",
-      extensionEnabled: "mock-extension-enabled",
       macOsTerminal: "mock-terminal",
       pluginsStatus: "mock-plugin-status",
       samlRoleSessionDuration: "mock-saml-role-session-duration",
@@ -1372,7 +1369,6 @@ describe("Repository", () => {
     expect(mockedWorkspace.credentialMethod).toEqual("mock-credential-method");
     expect(mockedWorkspace.defaultLocation).toEqual("mock-default-location");
     expect(mockedWorkspace.defaultRegion).toEqual("mock-default-region");
-    expect(mockedWorkspace.extensionEnabled).toEqual("mock-extension-enabled");
     expect(mockedWorkspace.macOsTerminal).toEqual("mock-terminal");
     expect(mockedWorkspace.pluginsStatus).toEqual("mock-plugin-status");
     expect(mockedWorkspace.samlRoleSessionDuration).toEqual("mock-saml-role-session-duration");

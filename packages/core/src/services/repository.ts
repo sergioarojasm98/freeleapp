@@ -466,7 +466,6 @@ export class Repository {
       credentialMethod: workspace.credentialMethod,
       defaultLocation: workspace.defaultLocation,
       defaultRegion: workspace.defaultRegion,
-      extensionEnabled: workspace.extensionEnabled,
       macOsTerminal: workspace.macOsTerminal,
       pluginsStatus: workspace.pluginsStatus,
       samlRoleSessionDuration: workspace.samlRoleSessionDuration,
@@ -486,7 +485,6 @@ export class Repository {
     workspace.credentialMethod = globalSettingsInput.credentialMethod;
     workspace.defaultLocation = globalSettingsInput.defaultLocation;
     workspace.defaultRegion = globalSettingsInput.defaultRegion;
-    workspace.extensionEnabled = globalSettingsInput.extensionEnabled;
     workspace.macOsTerminal = globalSettingsInput.macOsTerminal;
     workspace.pluginsStatus = globalSettingsInput.pluginsStatus;
     workspace.samlRoleSessionDuration = globalSettingsInput.samlRoleSessionDuration;

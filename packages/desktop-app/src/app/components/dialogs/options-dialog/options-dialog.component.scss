@@ -80,40 +80,6 @@
   }
 }
 
-.hero-unit {
-  height: 136px;
-  margin-top: -68px;
-  position: absolute;
-  top: 50%;
-  width: 99%;
-  display: flex;
-  align-content: space-around;
-  justify-content: center;
-  border-radius: 5px;
-  border: 1px solid $silver-50;
-
-  img {
-    display: inline-flex;
-    justify-self: center;
-  }
-
-  p {
-    width: 71%;
-    padding: 20px 10px;
-
-    strong {
-      font-weight: 500;
-      font-size: 18px;
-      display: block;
-    }
-
-    span {
-      display: block;
-      font-size: 16px;
-    }
-  }
-}
-
 .panel {
   animation: fadein .8s;
   overflow-x: hidden;
@@ -213,75 +179,6 @@
 .centered-column {
   display: inline-block;
   padding-bottom: 10px;
-}
-
-.hero-unit-extension {
-  top: 34%;
-  border: none;
-}
-
-.extension-info {
-  position: relative;
-  bottom: 40px;
-
-  strong {
-    bottom: 5px;
-    position: relative;
-  }
-}
-
-.install-firefox-button, .extension-documentation-button, .install-chrome-button {
-  font-size: 14px;
-  padding: 10px 12px;
-  margin: 0 10px 10px 0;
-}
-
-.extension-info span strong {
-  font-weight: bold;
-  display: inline;
-  font-size: 16px;
-  top: 0;
-}
-
-.description-container {
-  position: relative;
-  top: 16px;
-
-  a {
-    color: #5ea9ee !important;
-
-    &:hover {
-      color: #a9d4ff !important;
-    }
-  }
-}
-
-.button-container {
-  position: relative !important;
-  top: 16px !important;
-}
-
-.enable-option {
-  top: 54%;
-  position: fixed;
-  text-align: right !important;
-  display: inline-block;
-  right: 388px;
-  border-top: 0.5px solid $silver-50 !important;
-  width: 37%;
-  padding: 15px;
-
-  .extension-description {
-    text-align: left;
-    justify-content: left;
-    display: inline-block;
-    margin-top: 5px;
-  }
-}
-
-.enable-extension-toggle {
-  right: -16px;
-  position: relative;
 }
 
 .touch-id-enable-checkbox {

@@ -1,10 +1,9 @@
-import { Component, Input, OnInit } from "@angular/core";
+import { Component, Input } from "@angular/core";
 import { SessionType } from "@noovolari/leapp-core/models/session-type";
 import { Session } from "@noovolari/leapp-core/models/session";
 import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
 import { SelectedSessionActionsService } from "../../services/selected-session-actions.service";
 import { OptionsService } from "../../services/options.service";
-import { ExtensionWebsocketService, FetchingState } from "../../services/extension-websocket.service";
 import { AppProviderService } from "../../services/app-provider.service";
 import { Role } from "../../services/team-service";
 import { constants } from "@noovolari/leapp-core/models/constants";
@@ -14,7 +13,7 @@ import { constants } from "@noovolari/leapp-core/models/constants";
   templateUrl: "./bottom-bar.component.html",
   styleUrls: ["./bottom-bar.component.scss"],
 })
-export class BottomBarComponent implements OnInit {
+export class BottomBarComponent {
   @Input()
   selectedSession: Session;
 
@@ -23,20 +22,12 @@ export class BottomBarComponent implements OnInit {
 
   public eSessionType = SessionType;
   public eSessionStatus = SessionStatus;
-  public isWebConsoleFetching: boolean;
 
   constructor(
     private selectedSessionActionsService: SelectedSessionActionsService,
     public optionsService: OptionsService,
-    private appProviderService: AppProviderService,
-    private extensionWebsocketService: ExtensionWebsocketService
+    private appProviderService: AppProviderService
   ) {}
-
-  ngOnInit(): void {
-    this.extensionWebsocketService.fetching$.subscribe((value) => {
-      this.isWebConsoleFetching = value !== FetchingState.notFetching;
-    });
-  }
 
   get isLeappTeamUser(): boolean {
     const localWorkspace = this.appProviderService.teamService.workspacesState
@@ -62,11 +53,7 @@ export class BottomBarComponent implements OnInit {
   }
 
   async openAwsWebConsole(): Promise<void> {
-    if (this.optionsService.extensionEnabled && !this.isWebConsoleFetching) {
-      await this.extensionWebsocketService.openWebConsoleWithExtension(this.selectedSession);
-    } else {
-      await this.selectedSessionActionsService.openAwsWebConsole(this.selectedSession);
-    }
+    await this.selectedSessionActionsService.openAwsWebConsole(this.selectedSession);
   }
 
   async changeRegionModalOpen(): Promise<void> {

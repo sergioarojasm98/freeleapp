@@ -135,8 +135,8 @@ const generateMainWindow = () => {
     win.loadURL(url.format({ pathname: windowDefaultConfig.dir + "/index.html", protocol: "file:", slashes: true }));
     win.center();
 
-    // Set new minimum windows for opened tool. Note: it can also be modified at runtime
-    win.setMinimumSize(1200, 680);
+    // Small enough for window managers such as Rectangle (halves, thirds); the layout adapts below 900px
+    win.setMinimumSize(560, 480);
 
     // Open the dev tools only if not in production
     if (!environment.production) {
@@ -156,31 +156,6 @@ const generateMainWindow = () => {
     ipc.on("closed", () => {
       win.destroy();
       app.quit();
-    });
-
-    ipc.on("resize-window", (evt, data) => {
-      if (evt.sender.getOwnerBrowserWindow().id === win.id) {
-        if (data.compactMode) {
-          // Double setSize/setMinimumSize here is to address a strange behavior between mac and windows,
-          // where the first is used by windows and the last by mac. If we don't put either the first or the last
-          // couple the behaviour is not consistent.
-          win.setMinimumSize(560, 680);
-          win.setSize(560, 680);
-          win.setResizable(false);
-          win.setMaximizable(false);
-          win.setFullScreenable(false);
-          win.setMinimumSize(560, 680);
-          win.setSize(560, 680);
-        } else {
-          win.setMinimumSize(1200, 680);
-          win.setSize(1200, 680);
-          win.setResizable(true);
-          win.setMaximizable(true);
-          win.setFullScreenable(true);
-          win.setMinimumSize(1200, 680);
-          win.setSize(1200, 680);
-        }
-      }
     });
 
     app.on("browser-window-focus", () => {

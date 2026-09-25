@@ -11,7 +11,7 @@
     </mat-menu>
   </div>
 
-  <button class="icon-button line-end" (click)="toggleCompactMode();"><i class="moon-Sidebar"></i></button>
+  <button class="icon-button line-end" (click)="toggleSidebar();" matTooltip="Show or hide the sidebar"><i class="moon-Sidebar"></i></button>
 </div>
 <div class="right {{filterExtended ? 'extended' : ''}}">
   <form [formGroup]="filterForm">
@@ -92,7 +92,7 @@
         <span class="minimize" (click)="appNativeService.currentWindow.minimize()"><img
           src="assets/images/windows_minimize{{optionsService.colorTheme === eConstants.darkTheme || (optionsService.colorTheme === eConstants.systemDefaultTheme && appService.isDarkMode()) ? '_dark' : ''}}.png"
           alt="" title=""></span>
-        <span class="maximize {{compactMode ? 'disabled' : ''}}" (click)="windowMaximizeAction();"><img
+        <span class="maximize" (click)="windowMaximizeAction();"><img
           src="assets/images/windows_maximize{{windowButtonDetectTheme()}}.png" alt="" title=""></span>
         <span class="quit" (click)="appNativeService.currentWindow.hide()"><img
           src="assets/images/windows_close{{optionsService.colorTheme === eConstants.darkTheme || (optionsService.colorTheme === eConstants.systemDefaultTheme && appService.isDarkMode()) ? '_dark' : ''}}.png"

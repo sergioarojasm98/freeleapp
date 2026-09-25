@@ -19,13 +19,15 @@ import { constants } from "@noovolari/leapp-core/models/constants";
 import { WindowService } from "../../services/window.service";
 import { OptionsService } from "../../services/options.service";
 import { AzureSession } from "@noovolari/leapp-core/models/azure/azure-session";
-import { OperatingSystem } from "@noovolari/leapp-core/models/operating-system";
 import { UpdaterService } from "../../services/updater.service";
 import { LeappNotification } from "@noovolari/leapp-core/models/notification";
 import { InfoDialogComponent } from "../dialogs/info-dialog/info-dialog.component";
 import { NotificationService } from "@noovolari/leapp-core/services/notification-service";
 
+// Narrow layout (fewer columns, shorter labels): derived from the window width by MainLayoutComponent
 export const compactMode = new BehaviorSubject<boolean>(false);
+// Sidebar toggled by the user; it never resizes the window
+export const sidebarCollapsed = new BehaviorSubject<boolean>(false);
 export const globalFilteredSessions = new BehaviorSubject<Session[]>([]);
 export const globalFilterGroup = new BehaviorSubject<GlobalFilters>(null);
 export const globalHasFilter = new BehaviorSubject<boolean>(false);
@@ -73,6 +75,7 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
 
   notificationService: NotificationService;
 
+  private compactModeSubscription;
   private subscription0;
   private subscription1;
   private subscription2;
@@ -134,6 +137,8 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   }
 
   ngOnInit(): void {
+    this.compactModeSubscription = compactMode.subscribe((value) => (this.compactMode = value));
+
     this.subscription0 = globalFilterGroup.subscribe((values: GlobalFilters) => {
       this.applyFiltersToSessions(values, this.behaviouralSubjectService.sessions);
     });
@@ -193,6 +198,7 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   }
 
   ngOnDestroy(): void {
+    this.compactModeSubscription?.unsubscribe();
     this.subscription0?.unsubscribe();
     this.subscription1?.unsubscribe();
     this.subscription2?.unsubscribe();
@@ -218,21 +224,8 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
     this.bsModalService.show(CreateDialogComponent, { animated: false, class: "create-modal", backdrop: "static", keyboard: false });
   }
 
-  toggleCompactMode(): void {
-    this.compactMode = !this.compactMode;
-    this.filterExtended = false;
-
-    this.windowService.getCurrentWindow().unmaximize();
-    this.windowService.getCurrentWindow().restore();
-
-    if (this.appService.detectOs() === OperatingSystem.mac && this.windowService.getCurrentWindow().isFullScreen()) {
-      this.windowService.getCurrentWindow().setFullScreen(false);
-      this.windowService.getCurrentWindow().setMaximizable(false);
-    }
-
-    compactMode.next(this.compactMode);
-    globalHasFilter.next(this.filterExtended);
-    document.querySelector(".sessions").classList.remove("filtered");
+  toggleSidebar(): void {
+    sidebarCollapsed.next(!sidebarCollapsed.value);
   }
 
   toggleFilters(): void {
@@ -280,12 +273,10 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   }
 
   windowMaximizeAction(): void {
-    if (!this.compactMode) {
-      if (this.windowService.getCurrentWindow().isMaximized()) {
-        this.windowService.getCurrentWindow().restore();
-      } else {
-        this.windowService.getCurrentWindow().maximize();
-      }
+    if (this.windowService.getCurrentWindow().isMaximized()) {
+      this.windowService.getCurrentWindow().restore();
+    } else {
+      this.windowService.getCurrentWindow().maximize();
     }
   }
 

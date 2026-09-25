@@ -7,10 +7,6 @@
   -webkit-user-select: auto;
   -webkit-user-drag: auto;
   -webkit-app-region: drag;
-
-  &.compact {
-    width: $compact-fixed-width!important;
-  }
 }
 
 .side-bar {
@@ -21,9 +17,11 @@
   border-right: 1px solid $silver-75;
   overflow-y: auto;
   overflow-x: hidden;
+  transition: width 0.2s ease;
 
-  &.compact {
-    display: none!important;
+  &.collapsed {
+    width: 0;
+    border-right-width: 0; // a leftover 1px border would push the floated list onto a new line
   }
 }
 
@@ -34,6 +32,10 @@
   width: calc(100% - #{$menubar-width});
   height: calc(100vh - #{$commandbar-height});
   overflow: hidden;
+  transition: width 0.2s ease;
+  &.full-width {
+    width: 100%;
+  }
   &.filtered:not(.option-bar-opened) {
     height: calc(100vh - #{$commandbar-height} - 51px);
   }
@@ -42,8 +44,5 @@
   }
   &.option-bar-opened.filtered {
     height: calc(100vh - #{$commandbar-height} - 111px);
-  }
-  &.compact {
-    width: $compact-fixed-width!important;
   }
 }

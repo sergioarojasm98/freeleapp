@@ -28,7 +28,7 @@
 
 // Keep the dialog inside the window like the settings dialog: the modal never grows past the viewport
 // (50px top offset + Bootstrap's 1.75rem margins) and only the instance list scrolls.
-::ng-deep .ssm-modal .modal-content {
+::ng-deep .ssm-instances-modal .modal-content {
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 50px - 3.5rem);

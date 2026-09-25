@@ -90,7 +90,7 @@ export class SelectedSessionActionsService {
     this.behaviouralSubjectService.unselectSessions();
     this.modalService.show(SsmModalDialogComponent, {
       animated: false,
-      class: "edit-modal",
+      class: "edit-modal ssm-instances-modal",
       initialState: { session },
     });
   }

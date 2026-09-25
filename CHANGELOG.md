@@ -21,6 +21,7 @@ First Freeleapp release, a maintained fork of Leapp for current macOS versions.
 - The window stays resizable when the sidebar is hidden, works with window managers such as Rectangle, and adapts to narrow widths: the sidebar hides itself and the sidebar button shows it on top of the list.
 - Double-clicking the top bar follows the macOS title bar setting (zoom, minimize or nothing).
 - Documentation, updates, release notes and issue links point to Freeleapp.
+- *What's new* shows the release notes of the installed version.
 
 ### Bug fixes
 

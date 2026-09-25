@@ -29,9 +29,14 @@ h4 {
 .modal {
   top: 50px;
 }
-.modal-backdrop {
+.modal-backdrop,
+.modal-backdrop.fade,
+.modal-backdrop.show {
   top: $commandbar-height;
-  background-color: #0f1115;
+  background-color: $overlay-backdrop;
+  backdrop-filter: blur($overlay-backdrop-blur);
+  // The color carries the transparency; Bootstrap's opacity classes are not always applied by ngx-bootstrap
+  opacity: 1;
   &::after {
     content: '';
     position: fixed;
@@ -39,7 +44,8 @@ h4 {
     height: $commandbar-height;
     left: 0;
     right: 0;
-    background-color: #0f1115;
+    background-color: $overlay-backdrop;
+    backdrop-filter: blur($overlay-backdrop-blur);
   }
 }
 

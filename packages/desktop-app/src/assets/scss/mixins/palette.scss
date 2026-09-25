@@ -45,6 +45,10 @@ $bright-red: #FF3B30;
 $local-workspace-blu: #5ea9ee;
 $remote-workspace-purple: #8b929c;
 
+/* Dim layer behind anything shown on top of the main window: modals and the overlay sidebar, both themes */
+$overlay-backdrop: rgba(0, 0, 0, 0.5);
+$overlay-backdrop-blur: 2px;
+
 /* Freeleapp dark-mode palette: cool graphite surfaces, blue accents */
 $dark-main-text-color: #dce1e7;
 $dark-main-background: #23272d;

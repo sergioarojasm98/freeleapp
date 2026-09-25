@@ -50,7 +50,7 @@ export class UpdaterService {
   }
 
   getSavedAppVersion(): string {
-    return this.electronService.fs.readFileSync(this.electronService.os.homedir() + `/.Leapp/.latest.json`).toString();
+    return this.electronService.fs.readFileSync(this.electronService.os.homedir() + `/${constants.appDataDir}/.latest.json`).toString();
   }
 
   setUpdateInfo(version: string, releaseName: string, releaseDate: string, releaseNotes: string): void {
@@ -92,7 +92,7 @@ export class UpdaterService {
   }
 
   updateVersionJson(version: string): void {
-    this.electronService.fs.writeFileSync(this.electronService.os.homedir() + "/.Leapp/.latest.json", version);
+    this.electronService.fs.writeFileSync(this.electronService.os.homedir() + `/${constants.appDataDir}/.latest.json`, version);
   }
 
   /**
@@ -126,8 +126,8 @@ export class UpdaterService {
 
   createFoldersIfMissing(): void {
     try {
-      if (!this.electronService.fs.existsSync(this.electronService.os.homedir() + "/.Leapp/")) {
-        this.electronService.fs.mkdirSync(this.electronService.os.homedir() + "/.Leapp/");
+      if (!this.electronService.fs.existsSync(this.electronService.os.homedir() + `/${constants.appDataDir}/`)) {
+        this.electronService.fs.mkdirSync(this.electronService.os.homedir() + `/${constants.appDataDir}/`);
       }
       if (!this.electronService.fs.existsSync(this.electronService.os.homedir() + "/.aws/")) {
         this.electronService.fs.mkdirSync(this.electronService.os.homedir() + "/.aws/");

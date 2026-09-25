@@ -126,7 +126,9 @@ export class WorkspaceConsistencyService {
     this.fileService.writeFileSync(this.fileLockPath, backupWorkspaceContents);
     const workspace = deserialize(Workspace, this.fileService.decryptText(backupWorkspaceContents));
     this.checkConsistency(workspace);
-    this.logService.log(new LoggedEntry("Leapp-lock.json was corrupted and has been restored from the latest backup.", this, LogLevel.error, true));
+    this.logService.log(
+      new LoggedEntry("The configuration file was corrupted and has been restored from the latest backup.", this, LogLevel.error, true)
+    );
     return workspace;
   }
 
@@ -139,7 +141,7 @@ export class WorkspaceConsistencyService {
       this.fileService.writeFileSync(this.fileLockBackupPath, encryptedWorkspace);
     }
     this.logService.log(
-      new LoggedEntry("Leapp failed to restore the latest Leapp-lock.json backup. Leapp-lock.json was reinitialized.", this, LogLevel.error, true)
+      new LoggedEntry("The configuration backup could not be restored either, so the configuration was reinitialized.", this, LogLevel.error, true)
     );
     return newWorkspace;
   }

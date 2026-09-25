@@ -23,13 +23,13 @@ describe("WorkspaceConsistencyService", () => {
   test("fileLockPath", () => {
     nativeService.os = { homedir: () => "homedir" };
     const fileLockPath = service.fileLockPath;
-    expect(fileLockPath).toBe("homedir/.Leapp/Leapp-lock.json");
+    expect(fileLockPath).toBe("homedir/.freeleapp/freeleapp-lock.json");
   });
 
   test("fileLockBackupPath", () => {
     nativeService.os = { homedir: () => "homedir" };
     const fileLockBackupPath = service.fileLockBackupPath;
-    expect(fileLockBackupPath).toBe("homedir/.Leapp/Leapp-lock.backup.bin");
+    expect(fileLockBackupPath).toBe("homedir/.freeleapp/freeleapp-lock.backup.bin");
   });
 
   test("getWorkspace, everything ok", () => {
@@ -268,7 +268,7 @@ describe("WorkspaceConsistencyService", () => {
     expect(fileService.decryptText).toHaveBeenCalledWith("backup-content");
     expect(service.checkConsistency).toHaveBeenCalledWith(workspace);
     expect(logService.log).toHaveBeenCalledWith(
-      new LoggedEntry("Leapp-lock.json was corrupted and has been restored from the latest backup.", service, LogLevel.error, true)
+      new LoggedEntry("The configuration file was corrupted and has been restored from the latest backup.", service, LogLevel.error, true)
     );
     expect(resultWorkspace).toStrictEqual(workspace);
   });
@@ -298,7 +298,7 @@ describe("WorkspaceConsistencyService", () => {
     expect(service.fileService.writeFileSync).toHaveBeenNthCalledWith(1, "homedir-mock/" + constants.lockFileDestination, "encrypted-text-mock");
     expect(service.fileService.writeFileSync).toHaveBeenNthCalledWith(2, "homedir-mock/" + constants.lockFileBackupPath, "encrypted-text-mock");
     expect(logService.log).toHaveBeenCalledWith(
-      new LoggedEntry("Leapp failed to restore the latest Leapp-lock.json backup. Leapp-lock.json was reinitialized.", service, LogLevel.error, true)
+      new LoggedEntry("The configuration backup could not be restored either, so the configuration was reinitialized.", service, LogLevel.error, true)
     );
     expect(resultWorkspace).toBe(newWorkspace);
   });

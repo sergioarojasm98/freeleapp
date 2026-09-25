@@ -43,9 +43,9 @@ export class AppService {
     // Global Configure logger
     if (this.appNativeService.log) {
       const logPaths = {
-        [OperatingSystem.mac]: `${this.appNativeService.process.env.HOME}/Library/Logs/Leapp/log.electronService.log`,
-        [OperatingSystem.linux]: `${this.appNativeService.process.env.HOME}/.config/Leapp/logs/log.electronService.log`,
-        [OperatingSystem.windows]: `${this.appNativeService.process.env.USERPROFILE}\\AppData\\Roaming\\Leapp\\log.electronService.log`,
+        [OperatingSystem.mac]: `${this.appNativeService.process.env.HOME}/Library/Logs/Freeleapp/log.electronService.log`,
+        [OperatingSystem.linux]: `${this.appNativeService.process.env.HOME}/.config/Freeleapp/logs/log.electronService.log`,
+        [OperatingSystem.windows]: `${this.appNativeService.process.env.USERPROFILE}\\AppData\\Roaming\\Freeleapp\\log.electronService.log`,
       };
 
       this.appNativeService.log.transports.console.format = "[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{processType}] {text}";

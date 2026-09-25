@@ -2,7 +2,7 @@
 // `ng build --prod` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
 const environment = {
-  appName: "Leapp",
+  appName: "Freeleapp",
   samlRoleSessionDuration: 3600, // 1h
   sessionDuration: 1200,
   sessionTokenDuration: 36000, // 10h
@@ -10,7 +10,7 @@ const environment = {
   lockFileDestination: "",
   production: true,
   credentialsDestination: ".aws/credentials",
-  deeplinkFile: ".Leapp/deeplink",
+  deeplinkFile: ".freeleapp/deeplink",
   azureMsalCacheFile: ".azure/msal_token_cache.json",
   defaultRegion: "us-east-1",
   defaultLocation: "eastus",
@@ -21,5 +21,5 @@ const environment = {
   apiEndpoint: "http://localhost:3000",
 };
 
-environment.lockFileDestination = `.Leapp/Leapp-lock.json`;
+environment.lockFileDestination = `.freeleapp/freeleapp-lock.json`;
 export { environment };

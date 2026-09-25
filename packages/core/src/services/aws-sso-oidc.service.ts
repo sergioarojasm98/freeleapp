@@ -124,7 +124,7 @@ export class AwsSsoOidcService {
   }
 
   private async registerSsoOidcClient(): Promise<RegisterClientResponse> {
-    const registerClientRequest: RegisterClientRequest = { clientName: "leapp", clientType: "public" };
+    const registerClientRequest: RegisterClientRequest = { clientName: "freeleapp", clientType: "public" };
     return await this.getAwsSsoOidcClient().registerClient(registerClientRequest);
   }
 

@@ -745,7 +745,7 @@ describe("RetroCompatibilityService", () => {
     const retrocompatibilityService = new RetroCompatibilityService(fileService, null, null, null);
     (retrocompatibilityService as any).persists(workspace);
     jest.spyOn(retrocompatibilityService as any, "lockFilePath", "get");
-    expect((retrocompatibilityService as any).lockFilePath).toBe("/home/.Leapp/Leapp-lock.json");
-    expect(fileService.writeFileSync).toHaveBeenCalledWith("/home/.Leapp/Leapp-lock.json", '"{\\"fakeKey\\":\\"fakeValue\\"}"');
+    expect((retrocompatibilityService as any).lockFilePath).toBe("/home/.freeleapp/freeleapp-lock.json");
+    expect(fileService.writeFileSync).toHaveBeenCalledWith("/home/.freeleapp/freeleapp-lock.json", '"{\\"fakeKey\\":\\"fakeValue\\"}"');
   });
 });

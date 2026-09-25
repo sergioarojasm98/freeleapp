@@ -53,8 +53,8 @@ describe("PluginManagerService", () => {
     (pluginManager as any)._pluginDir = "plugin-dir";
     pluginManager.verifyAndGeneratePluginFolderIfMissing();
     expect(nativeService.os.homedir).toHaveBeenCalled();
-    expect(nativeService.fs.existsSync).toHaveBeenCalledWith("homedir" + "/.Leapp/" + "plugin-dir");
-    expect(nativeService.fs.mkdirSync).toHaveBeenCalledWith("homedir" + "/.Leapp/" + "plugin-dir");
+    expect(nativeService.fs.existsSync).toHaveBeenCalledWith("homedir" + "/.freeleapp/" + "plugin-dir");
+    expect(nativeService.fs.mkdirSync).toHaveBeenCalledWith("homedir" + "/.freeleapp/" + "plugin-dir");
   });
 
   test("loadFromPluginDir", async () => {
@@ -97,10 +97,10 @@ describe("PluginManagerService", () => {
         readdirSync: jest.fn(() => pluginDirContent),
         existsSync: jest.fn(
           (pluginFilePath) =>
-            pluginFilePath === homedir + "/.Leapp/" + pluginDir + "/" + "plugin-1" ||
-            pluginFilePath === homedir + "/.Leapp/" + pluginDir + "/" + "plugin-2" ||
-            pluginFilePath === homedir + "/.Leapp/" + pluginDir + "/" + "plugin-1" + "/plugin.js" ||
-            pluginFilePath === homedir + "/.Leapp/" + pluginDir + "/" + "plugin-2" + "/plugin.js"
+            pluginFilePath === homedir + "/.freeleapp/" + pluginDir + "/" + "plugin-1" ||
+            pluginFilePath === homedir + "/.freeleapp/" + pluginDir + "/" + "plugin-2" ||
+            pluginFilePath === homedir + "/.freeleapp/" + pluginDir + "/" + "plugin-1" + "/plugin.js" ||
+            pluginFilePath === homedir + "/.freeleapp/" + pluginDir + "/" + "plugin-2" + "/plugin.js"
         ),
         mkdirSync: jest.fn(),
         lstatSync: jest.fn(() => ({
@@ -130,11 +130,11 @@ describe("PluginManagerService", () => {
 
     await pluginManager.loadFromPluginDir();
 
-    expect(nativeService.fs.readdirSync).toHaveBeenCalledWith(homedir + "/.Leapp/" + pluginDir);
+    expect(nativeService.fs.readdirSync).toHaveBeenCalledWith(homedir + "/.freeleapp/" + pluginDir);
     expect(nativeService.os.homedir).toHaveBeenCalled();
 
     for (let i = 0; i < pluginDirContent.length; i++) {
-      const pluginFilePath = homedir + "/.Leapp/" + pluginDir + "/" + pluginDirContent[i];
+      const pluginFilePath = homedir + "/.freeleapp/" + pluginDir + "/" + pluginDirContent[i];
       expect(nativeService.fs.existsSync).toHaveBeenCalledWith(pluginFilePath);
       expect(nativeService.fs.lstatSync).toHaveBeenCalledWith(pluginFilePath);
       expect((pluginManager as any).validatePlugin).toHaveBeenCalledWith(pluginFilePath, options, pluginDirContent[i]);
@@ -165,7 +165,7 @@ describe("PluginManagerService", () => {
       hashElement: { hashElement: null },
       fs: {
         readdirSync: () => pluginDirContent,
-        existsSync: (pluginFilePath) => pluginFilePath === homedir + "/.Leapp/" + pluginDir + "/" + "plugin-1",
+        existsSync: (pluginFilePath) => pluginFilePath === homedir + "/.freeleapp/" + pluginDir + "/" + "plugin-1",
         mkdirSync: () => {},
         lstatSync: () => ({
           isDirectory: () => true,
@@ -195,7 +195,7 @@ describe("PluginManagerService", () => {
     const homedir = "homedir";
     const pluginDirContent = ["plugin-1"];
     const packageJson1 = {};
-    const path = homedir + "/.Leapp/" + pluginDir + "/" + "plugin-1";
+    const path = homedir + "/.freeleapp/" + pluginDir + "/" + "plugin-1";
     const nativeService = {
       requireModule: null,
       hashElement: { hashElement: null },
@@ -231,7 +231,7 @@ describe("PluginManagerService", () => {
     const homedir = "homedir";
     const pluginDirContent = ["plugin-1"];
     const packageJson1 = {};
-    const path = homedir + "/.Leapp/" + pluginDir + "/" + "plugin-1";
+    const path = homedir + "/.freeleapp/" + pluginDir + "/" + "plugin-1";
     const nativeService = {
       requireModule: () => {
         throw new Error("error");
@@ -240,7 +240,7 @@ describe("PluginManagerService", () => {
       fs: {
         readdirSync: () => pluginDirContent,
         existsSync: (pluginFilePath) =>
-          pluginFilePath === path || pluginFilePath === homedir + "/.Leapp/" + pluginDir + "/" + "plugin-1" + "/plugin.js",
+          pluginFilePath === path || pluginFilePath === homedir + "/.freeleapp/" + pluginDir + "/" + "plugin-1" + "/plugin.js",
         mkdirSync: () => {},
         lstatSync: () => ({
           isDirectory: () => true,
@@ -491,7 +491,7 @@ describe("PluginManagerService", () => {
         toPromise: async () => (param2.responseType === "json" ? npmMetadata : new ArrayBuffer(10)),
       })),
     };
-    await pluginManager.installPlugin(`leapp://${packageName}`);
+    await pluginManager.installPlugin(`freeleapp://${packageName}`);
     expect(nativeService.os.homedir).toHaveBeenCalled();
     expect(logService.log).toHaveBeenNthCalledWith(
       1,
@@ -501,7 +501,7 @@ describe("PluginManagerService", () => {
     expect((pluginManager as any).http.get).toHaveBeenNthCalledWith(2, npmMetadata.versions[npmMetadata["dist-tags"].latest].dist.tarball, {
       responseType: "arraybuffer",
     });
-    const pluginsDir = homedir + "/.Leapp/plugins";
+    const pluginsDir = homedir + "/.freeleapp/plugins";
     expect(nativeService.path.join).toHaveBeenNthCalledWith(1, pluginsDir, tarballFileName);
     expect(nativeService.fs.writeFileSync).toHaveBeenCalledWith(tarballFilePath, Buffer.from(new ArrayBuffer(10)));
     expect(nativeService.path.join).toHaveBeenNthCalledWith(2, pluginsDir, packageName);
@@ -545,7 +545,7 @@ describe("PluginManagerService", () => {
         toPromise: async () => (param2.responseType === "json" ? npmMetadata : ""),
       })),
     };
-    await expect(pluginManager.installPlugin(`leapp://${packageName}`)).rejects.toEqual(
+    await expect(pluginManager.installPlugin(`freeleapp://${packageName}`)).rejects.toEqual(
       new LoggedException(`${npmMetadata["name"]} is not a Leapp plugin`, this, LogLevel.error, true)
     );
   });

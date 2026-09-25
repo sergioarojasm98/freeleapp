@@ -1,9 +1,13 @@
 export const constants = {
   //General
-  appName: "Leapp",
-  rsaBinFileDestination: ".Leapp/rsa.bin",
-  lockFileDestination: ".Leapp/Leapp-lock.json",
-  lockFileBackupPath: ".Leapp/Leapp-lock.backup.bin",
+  // Keychain service name and data folder. Leapp's ".Leapp" folder and "Leapp" keychain items are migrated on first run.
+  appName: "Freeleapp",
+  appDataDir: ".freeleapp",
+  legacyAppName: "Leapp",
+  legacyAppDataDir: ".Leapp",
+  rsaBinFileDestination: ".freeleapp/rsa.bin",
+  lockFileDestination: ".freeleapp/freeleapp-lock.json",
+  lockFileBackupPath: ".freeleapp/freeleapp-lock.backup.bin",
   latestUrl: "https://github.com/sergioarojasm98/freeleapp/releases/latest",
   docsUrl: "https://freeleapp.com",
   workspaceLastVersion: 7,
@@ -59,8 +63,8 @@ export const constants = {
   ssmRegionDefault: "Use default region",
 
   // Contains Env for SSM on macOS
-  ssmSourceFileDestination: ".Leapp/ssm-env",
-  pluginEnvFileDestination: ".Leapp/plugin-env",
+  ssmSourceFileDestination: ".freeleapp/ssm-env",
+  pluginEnvFileDestination: ".freeleapp/plugin-env",
 
   npmRequiredPluginKeyword: "leapp-plugin",
   skipPluginValidation: true,

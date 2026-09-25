@@ -36,9 +36,9 @@
   },
   "build": {
     "protocols": {
-      "name": "leapp-deep-linking",
+      "name": "freeleapp-deep-linking",
       "schemes": [
-        "leapp"
+        "freeleapp"
       ]
     },
     "publish": [
@@ -105,7 +105,7 @@
         "AppImage"
       ],
       "mimeTypes": [
-        "x-scheme-handler/leapp"
+        "x-scheme-handler/freeleapp"
       ]
     },
     "mac": {

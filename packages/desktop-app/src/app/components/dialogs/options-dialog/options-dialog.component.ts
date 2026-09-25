@@ -502,6 +502,8 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
 
   openPluginFolder(): void {
     this.appProviderService.pluginManagerService.verifyAndGeneratePluginFolderIfMissing();
-    this.appNativeService.shell.showItemInFolder(this.appNativeService.path.join(this.appNativeService.os.homedir(), ".Leapp", "plugins"));
+    this.appNativeService.shell.showItemInFolder(
+      this.appNativeService.path.join(this.appNativeService.os.homedir(), constants.appDataDir, "plugins")
+    );
   }
 }

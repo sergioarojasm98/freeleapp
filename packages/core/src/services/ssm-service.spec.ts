@@ -136,7 +136,7 @@ describe("SsmService", () => {
     };
 
     const mockedHomeDir = "/Users/mock";
-    const path = `${mockedHomeDir}/.Leapp/ssm-env`;
+    const path = `${mockedHomeDir}/.freeleapp/ssm-env`;
     const mockedFileContent = `export AWS_SESSION_TOKEN=${env.AWS_SESSION_TOKEN} &&
           export AWS_SECRET_ACCESS_KEY=${env.AWS_SECRET_ACCESS_KEY} &&
           export AWS_ACCESS_KEY_ID=${env.AWS_ACCESS_KEY_ID}`;

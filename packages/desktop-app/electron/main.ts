@@ -1,4 +1,5 @@
 import { contextMenu } from "./context-menu";
+import { migrateLegacyData } from "./legacy-data-migration";
 import * as path from "path";
 import { environment } from "../src/environments/environment";
 
@@ -29,7 +30,7 @@ if (process.platform === "linux") {
   app.commandLine.appendSwitch("in-process-gpu");
 }
 
-app.setAsDefaultProtocolClient('leapp');
+app.setAsDefaultProtocolClient('freeleapp');
 
 
 // Main Window configuration: set here the options to make it works with your app
@@ -202,9 +203,9 @@ const generateMainWindow = () => {
     // Protocol handler for win32 and linux for deep linking when the app is already launched.
     // The url is passed in the args so we read and write to a temp file before the frontend is
     // launched, this way the frontend can read the temp file and load the plugin
-    if (process.platform !== 'darwin' && process.argv[1] && process.argv[1].split("leapp://")[1]) {
+    if (process.platform !== 'darwin' && process.argv[1] && process.argv[1].split("freeleapp://")[1]) {
       // Keep only command line / deep linked arguments
-      fs.writeFileSync(path.join(os.homedir(),environment.deeplinkFile), process.argv[1].split("leapp://")[1]);
+      fs.writeFileSync(path.join(os.homedir(),environment.deeplinkFile), process.argv[1].split("freeleapp://")[1]);
     }
   };
 
@@ -278,6 +279,12 @@ const generateMainWindow = () => {
   });
 
   app.on("ready", () => {
+    // Must run before the window loads: the renderer reads the configuration on startup
+    try {
+      console.log("[MIGRATION]", migrateLegacyData().reason);
+    } catch (err) {
+      console.log("[MIGRATION] Could not copy ~/.Leapp to ~/.freeleapp:", err);
+    }
     createWindow();
     // createTray();
     buildAutoUpdater(win);
@@ -310,8 +317,8 @@ const generateMainWindow = () => {
         if (win) {
           // Win32 and Linux on app already open
           if(argv.length > 0) {
-            if(argv[argv.length-1] && argv[argv.length-1]?.split("leapp://")[1]) {
-              win.webContents.send("PLUGIN_URL", argv[argv.length-1]?.split("leapp://")[1]);
+            if(argv[argv.length-1] && argv[argv.length-1]?.split("freeleapp://")[1]) {
+              win.webContents.send("PLUGIN_URL", argv[argv.length-1]?.split("freeleapp://")[1]);
             }
           }
           win.focus();

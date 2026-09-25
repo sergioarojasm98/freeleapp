@@ -50,8 +50,8 @@ export class PluginManagerService {
   }
 
   verifyAndGeneratePluginFolderIfMissing(): void {
-    if (!this.nativeService.fs.existsSync(this.nativeService.os.homedir() + "/.Leapp/" + this._pluginDir)) {
-      this.nativeService.fs.mkdirSync(this.nativeService.os.homedir() + "/.Leapp/" + this._pluginDir);
+    if (!this.nativeService.fs.existsSync(this.nativeService.os.homedir() + `/${constants.appDataDir}/` + this._pluginDir)) {
+      this.nativeService.fs.mkdirSync(this.nativeService.os.homedir() + `/${constants.appDataDir}/` + this._pluginDir);
     }
   }
 
@@ -62,9 +62,9 @@ export class PluginManagerService {
       files: { exclude: ["signature", ".DS_Store", "package-lock.json"] },
     };
 
-    const pluginDirContent = this.nativeService.fs.readdirSync(this.nativeService.os.homedir() + "/.Leapp/" + this._pluginDir);
+    const pluginDirContent = this.nativeService.fs.readdirSync(this.nativeService.os.homedir() + `/${constants.appDataDir}/` + this._pluginDir);
     for (const pluginName of pluginDirContent) {
-      const pluginFilePath = this.nativeService.os.homedir() + "/.Leapp/" + this._pluginDir + "/" + pluginName;
+      const pluginFilePath = this.nativeService.os.homedir() + `/${constants.appDataDir}/` + this._pluginDir + "/" + pluginName;
       const isDir = this.nativeService.fs.existsSync(pluginFilePath) && this.nativeService.fs.lstatSync(pluginFilePath).isDirectory();
       if (isDir) {
         // VALIDATION PROCESS
@@ -155,8 +155,8 @@ export class PluginManagerService {
   }
 
   async installPlugin(url: string): Promise<void> {
-    const packageName = url.replace("leapp://", "");
-    const pluginsDir = this.nativeService.os.homedir() + "/.Leapp/plugins";
+    const packageName = url.replace("freeleapp://", "");
+    const pluginsDir = this.nativeService.os.homedir() + `/${constants.appDataDir}/plugins`;
 
     this.logService.log(new LoggedEntry(`We are ready to install Plugin ${packageName}, please wait...`, this, LogLevel.info, true));
 

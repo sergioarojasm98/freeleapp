@@ -51,7 +51,7 @@ export class WebConsoleService {
     // Sign in directly (no preceding logout) so AWS multi-session can keep several consoles open side by side
     const loginUrl = new URL(federationUrl);
     loginUrl.searchParams.append("Action", "login");
-    loginUrl.searchParams.append("Issuer", "Leapp");
+    loginUrl.searchParams.append("Issuer", "Freeleapp");
     loginUrl.searchParams.append("Destination", consoleHomeUrl);
     loginUrl.searchParams.append("SigninToken", (response as any).SigninToken);
 

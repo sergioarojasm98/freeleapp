@@ -1,15 +1,17 @@
 import { MainLayoutComponent } from "./main-layout.component";
-import { compactMode, sidebarCollapsed } from "../../components/command-bar/command-bar.component";
+import { compactMode, sidebarCollapsed, sidebarToggleRequests } from "../../components/command-bar/command-bar.component";
 
 describe("MainLayoutComponent", () => {
   let component: MainLayoutComponent;
+  let ipcSend: jasmine.Spy;
 
   const resizeTo = (width: number) => (component as any).windowWidth$.next(width);
 
   beforeEach(() => {
     sidebarCollapsed.next(false);
     compactMode.next(false);
-    component = new MainLayoutComponent({ behaviouralSubjectService: { unselectSessions: () => {} } } as any);
+    ipcSend = jasmine.createSpy("send");
+    component = new MainLayoutComponent({ behaviouralSubjectService: { unselectSessions: () => {} } } as any, { ipcRenderer: { send: ipcSend } } as any);
     component.ngOnInit();
   });
 
@@ -49,5 +51,59 @@ describe("MainLayoutComponent", () => {
 
     resizeTo(1200);
     expect(compactMode.value).toBeFalse();
+  });
+
+  it("collapses the docked sidebar when the button is clicked on a wide window", () => {
+    resizeTo(1200);
+    sidebarToggleRequests.next();
+
+    expect(sidebarCollapsed.value).toBeTrue();
+    expect(component.sidebarOverlay).toBeFalse();
+  });
+
+  it("shows the sidebar as an overlay on a narrow window and hides it after 2s without hover", () => {
+    jasmine.clock().install();
+    try {
+      resizeTo(760);
+      sidebarToggleRequests.next();
+      expect(component.sidebarOverlay).toBeTrue();
+      expect(sidebarCollapsed.value).toBeFalse();
+
+      jasmine.clock().tick(1999);
+      expect(component.sidebarOverlay).toBeTrue();
+      jasmine.clock().tick(1);
+      expect(component.sidebarOverlay).toBeFalse();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
+  it("keeps the overlay open while hovered and closes it 2s after the pointer leaves", () => {
+    jasmine.clock().install();
+    try {
+      resizeTo(760);
+      sidebarToggleRequests.next();
+      component.cancelSidebarOverlayClose();
+      jasmine.clock().tick(5000);
+      expect(component.sidebarOverlay).toBeTrue();
+
+      component.scheduleSidebarOverlayClose();
+      jasmine.clock().tick(2000);
+      expect(component.sidebarOverlay).toBeFalse();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
+  it("forwards double-clicks on empty title bar areas only", () => {
+    const bar = document.createElement("div");
+    const button = document.createElement("button");
+    bar.appendChild(button);
+
+    component.onTitleBarDoubleClick({ target: button } as any);
+    expect(ipcSend).not.toHaveBeenCalled();
+
+    component.onTitleBarDoubleClick({ target: bar } as any);
+    expect(ipcSend).toHaveBeenCalledWith("title-bar-double-click");
   });
 });

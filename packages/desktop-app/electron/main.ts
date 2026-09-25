@@ -2,7 +2,7 @@ import { contextMenu } from "./context-menu";
 import * as path from "path";
 import { environment } from "../src/environments/environment";
 
-const { app, BrowserWindow, ipcMain, Tray, Menu } = require("electron");
+const { app, BrowserWindow, ipcMain, Tray, Menu, systemPreferences } = require("electron");
 const electronLocalshortcut = require('electron-localshortcut');
 const { autoUpdater } = require("electron-updater");
 
@@ -150,6 +150,24 @@ const generateMainWindow = () => {
         win.hide();
       } else {
         win.webContents.send("app-close");
+      }
+    });
+
+    // The hidden title bar is drawn by the app, so double-clicks are forwarded from the renderer and
+    // handled like the native one, following System Settings > Desktop & Dock > "Double-click a window's title bar"
+    ipc.on("title-bar-double-click", (evt) => {
+      if (evt.sender.getOwnerBrowserWindow().id !== win.id) {
+        return;
+      }
+      const action = systemPreferences.getUserDefault("AppleActionOnDoubleClick", "string");
+      if (action === "Minimize" || (!action && systemPreferences.getUserDefault("AppleMiniaturizeOnDoubleClick", "boolean"))) {
+        win.minimize();
+      } else if (action !== "None") {
+        if (win.isMaximized()) {
+          win.unmaximize();
+        } else {
+          win.maximize();
+        }
       }
     });
 

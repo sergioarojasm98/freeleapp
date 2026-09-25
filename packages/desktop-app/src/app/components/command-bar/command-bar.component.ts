@@ -4,7 +4,7 @@ import { OptionsDialogComponent } from "../dialogs/options-dialog/options-dialog
 import { CreateDialogComponent } from "../dialogs/create-dialog/create-dialog.component";
 import { SegmentDialogComponent } from "../dialogs/segment-dialog/segment-dialog.component";
 import { FormControl, FormGroup } from "@angular/forms";
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, Subject } from "rxjs";
 import { globalOrderingFilter } from "../sessions/sessions.component";
 import { Session } from "@noovolari/leapp-core/models/session";
 import Segment, { GlobalFilters } from "@noovolari/leapp-core/models/segment";
@@ -28,6 +28,8 @@ import { NotificationService } from "@noovolari/leapp-core/services/notification
 export const compactMode = new BehaviorSubject<boolean>(false);
 // Sidebar toggled by the user; it never resizes the window
 export const sidebarCollapsed = new BehaviorSubject<boolean>(false);
+// Clicks on the sidebar button; MainLayoutComponent decides between collapsing and showing it as an overlay
+export const sidebarToggleRequests = new Subject<void>();
 export const globalFilteredSessions = new BehaviorSubject<Session[]>([]);
 export const globalFilterGroup = new BehaviorSubject<GlobalFilters>(null);
 export const globalHasFilter = new BehaviorSubject<boolean>(false);
@@ -225,7 +227,7 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   }
 
   toggleSidebar(): void {
-    sidebarCollapsed.next(!sidebarCollapsed.value);
+    sidebarToggleRequests.next();
   }
 
   toggleFilters(): void {

@@ -46,3 +46,37 @@
     height: calc(100vh - #{$commandbar-height} - 111px);
   }
 }
+
+// Sidebar shown on top of the list on narrow windows (see MainLayoutComponent.sidebarOverlay)
+.side-bar.collapsed.overlay {
+  position: absolute;
+  top: $commandbar-height;
+  left: 0;
+  z-index: 30;
+  width: $menubar-width;
+  border-right-width: 1px;
+  background: $background;
+  box-shadow: 8px 0 24px rgba(0, 0, 0, 0.35);
+}
+
+:host-context(body.dark-theme) .side-bar.collapsed.overlay {
+  background: $dark-main-background;
+}
+
+.sidebar-backdrop {
+  position: absolute;
+  top: $commandbar-height;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+
+  &.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

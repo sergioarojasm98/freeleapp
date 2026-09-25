@@ -3,8 +3,8 @@
   "version": "0.26.1",
   "private": true,
   "author": {
-    "name": "Noovolari",
-    "email": "info@noovolari.com"
+    "name": "Sergio Rojas",
+    "email": "sergioarojasm98@users.noreply.github.com"
   },
   "description": "Freeleapp is a community fork of Leapp, a cross-platform cloud access app built on top of Electron.",
   "main": "electron/dist/electron/main.js",
@@ -51,6 +51,7 @@
       }
     ],
     "productName": "Freeleapp",
+    "copyright": "Copyright © 2026 Sergio Rojas. Based on Leapp © 2022 Noovolari.",
     "icon": "src/assets/icons/icon.icns",
     "files": [
       "dist/assets/images/Leapp.icns",

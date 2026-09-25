@@ -239,7 +239,7 @@ export class AppService {
     this.windowService.getCurrentWindow().show();
     this.getDialog().showMessageBox({
       icon: __dirname + `/assets/images/Leapp.png`,
-      message: `Freeleapp\n` + `Version ${version} (Core: ${coreVersion})\n` + "Community fork of Leapp © 2022 Noovolari",
+      message: `Freeleapp\n` + `Version ${version} (Core: ${coreVersion})\n` + "© 2026 Sergio Rojas. Based on Leapp © 2022 Noovolari.",
       buttons: ["Ok"],
     });
   }

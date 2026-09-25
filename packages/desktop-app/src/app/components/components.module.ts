@@ -57,7 +57,6 @@ import { MatInputModule } from "@angular/material/input";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { InfoDialogComponent } from "./dialogs/info-dialog/info-dialog.component";
 import { OverlayModule } from "@angular/cdk/overlay";
-import { LockPageComponent } from "./lock-page/lock-page.component";
 import { CheckIconSvgComponent } from "./check-icon-svg/check-icon-svg.component";
 import { AuthorizationDialogComponent } from "./dialogs/authorization-dialog/authorization-dialog.component";
 
@@ -91,7 +90,6 @@ import { AuthorizationDialogComponent } from "./dialogs/authorization-dialog/aut
     ContextualMenuComponent,
     BottomBarComponent,
     InfoDialogComponent,
-    LockPageComponent,
     CheckIconSvgComponent,
   ],
   imports: [

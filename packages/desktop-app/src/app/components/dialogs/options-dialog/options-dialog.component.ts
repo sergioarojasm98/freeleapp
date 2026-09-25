@@ -51,8 +51,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
   regions: { region: string }[];
   selectedLocation: string;
   selectedRegion: string;
-  selectedRequirePassword: number;
-  selectedTouchIdEnabled: boolean;
   selectedBrowserOpening = constants.inApp.toString();
   selectedTerminal;
 
@@ -82,8 +80,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
     sessionDuration: new FormControl(""),
     pluginDeepLink: new FormControl(""),
     ssmRegionBehaviourSelect: new FormControl(""),
-    requirePasswordSelect: new FormControl(""),
-    touchIdEnableSelect: new FormControl(""),
   });
 
   selectedCredentialMethod: string;
@@ -110,10 +106,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
     this.selectedCredentialMethod = this.optionsService.credentialMethod || constants.credentialFile;
 
     this.selectedSsmRegionBehaviour = this.optionsService.ssmRegionBehaviour || constants.ssmRegionNo;
-
-    this.selectedRequirePassword = this.optionsService.requirePassword || constants.requirePasswordEveryTwoWeeks.value;
-
-    this.selectedTouchIdEnabled = this.optionsService.touchIdEnabled ?? constants.touchIdEnabled;
   }
 
   async ngOnInit(): Promise<void> {
@@ -192,23 +184,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
       this.optionsService.defaultLocation = this.selectedLocation;
       this.optionsService.macOsTerminal = this.selectedTerminal;
       this.optionsService.samlRoleSessionDuration = parseInt(this.form.controls["sessionDuration"].value, 10);
-
-      const previousRequirePassword = this.optionsService.requirePassword;
-      if (previousRequirePassword !== this.selectedRequirePassword) {
-        const keychainItem = await this.appProviderService.keychainService.getSecret(constants.appName, constants.touchIdKeychainItemName);
-        if (keychainItem) {
-          const updatedRequirePassword = JSON.parse(keychainItem);
-          updatedRequirePassword.nextExpiration = new Date().setDate(new Date().getDate() + this.selectedRequirePassword);
-          await this.appProviderService.keychainService.saveSecret(
-            constants.appName,
-            constants.touchIdKeychainItemName,
-            JSON.stringify(updatedRequirePassword)
-          );
-        }
-      }
-
-      this.optionsService.requirePassword = this.selectedRequirePassword;
-      this.optionsService.touchIdEnabled = (this.form.controls["touchIdEnableSelect"].value as any) === true;
 
       this.optionsService.ssmRegionBehaviour = this.selectedSsmRegionBehaviour;
 

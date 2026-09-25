@@ -4,9 +4,6 @@ import { Session } from "@noovolari/leapp-core/models/session";
 import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
 import { SelectedSessionActionsService } from "../../services/selected-session-actions.service";
 import { OptionsService } from "../../services/options.service";
-import { AppProviderService } from "../../services/app-provider.service";
-import { Role } from "../../services/team-service";
-import { constants } from "@noovolari/leapp-core/models/constants";
 
 @Component({
   selector: "app-bottom-bar",
@@ -23,22 +20,7 @@ export class BottomBarComponent {
   public eSessionType = SessionType;
   public eSessionStatus = SessionStatus;
 
-  constructor(
-    private selectedSessionActionsService: SelectedSessionActionsService,
-    public optionsService: OptionsService,
-    private appProviderService: AppProviderService
-  ) {}
-
-  get isLeappTeamUser(): boolean {
-    const localWorkspace = this.appProviderService.teamService.workspacesState
-      .getValue()
-      .find((workspace) => workspace.name === constants.localWorkspaceName);
-    return (
-      (this.appProviderService.teamService.signedInUserState?.getValue()?.role === Role.manager ||
-        this.appProviderService.teamService.signedInUserState?.getValue()?.role === Role.user) &&
-      localWorkspace.selected === false
-    );
-  }
+  constructor(private selectedSessionActionsService: SelectedSessionActionsService, public optionsService: OptionsService) {}
 
   get isPinned(): boolean {
     return this.selectedSessionActionsService.isPinned(this.selectedSession);

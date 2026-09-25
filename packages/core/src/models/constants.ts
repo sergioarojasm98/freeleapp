@@ -8,7 +8,6 @@ export const constants = {
   workspaceLastVersion: 7,
   localWorkspaceName: "Local workspace",
   localWorkspaceDescription: "Community Edition",
-  currentWorkspaceKeychainKey: "current-workspace",
   localWorkspaceKeychainValue: "local",
 
   //Aws
@@ -84,10 +83,6 @@ export const constants = {
     "aNqnY3aBtCwmaesTlrc5bR8CAwEAAQ==\n" +
     "-----END PUBLIC KEY-----",
 
-  touchIdKeychainItemName: "touch-id-lock",
   touchIdEnabled: true,
-  requirePasswordEveryWeek: { key: "Every week", value: 7 },
   requirePasswordEveryTwoWeeks: { key: "Every 2 weeks", value: 14 },
-  requirePasswordEveryMonth: { key: "Every month", value: 30 },
-  requirePasswordNever: { key: "Never", value: 999999 },
 };

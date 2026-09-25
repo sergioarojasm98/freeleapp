@@ -11,7 +11,6 @@ import { OptionsService } from "../../services/options.service";
 import { AwsCredentialsPlugin } from "@noovolari/leapp-core/plugin-sdk/aws-credentials-plugin";
 import { SelectedSessionActionsService } from "../../services/selected-session-actions.service";
 import { Subscription } from "rxjs";
-import { Role } from "../../services/team-service";
 
 @Component({
   selector: "app-contextual-menu",
@@ -36,17 +35,6 @@ export class ContextualMenuComponent implements OnInit, OnDestroy {
     public appProviderService: AppProviderService,
     private selectedSessionActionsService: SelectedSessionActionsService
   ) {}
-
-  get isLeappTeamUser(): boolean {
-    const localWorkspace = this.appProviderService.teamService.workspacesState
-      .getValue()
-      .find((workspace) => workspace.name === constants.localWorkspaceName);
-    return (
-      (this.appProviderService.teamService.signedInUserState?.getValue()?.role === Role.manager ||
-        this.appProviderService.teamService.signedInUserState?.getValue()?.role === Role.user) &&
-      localWorkspace.selected === false
-    );
-  }
 
   ngOnInit(): void {
     this.sessionSelectionsSubscription = this.appProviderService.behaviouralSubjectService.sessionSelections$.subscribe(

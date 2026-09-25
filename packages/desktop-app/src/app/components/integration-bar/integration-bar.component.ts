@@ -1,4 +1,4 @@
-import { Component, Input, NgZone, OnDestroy, OnInit, QueryList, TemplateRef, ViewChild, ViewChildren } from "@angular/core";
+import { Component, NgZone, OnDestroy, OnInit, QueryList, TemplateRef, ViewChild, ViewChildren } from "@angular/core";
 import { globalFilterGroup } from "../command-bar/command-bar.component";
 import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { Router } from "@angular/router";
@@ -43,9 +43,6 @@ export class IntegrationBarComponent implements OnInit, OnDestroy {
 
   @ViewChild("ssoModalTemplate", { static: false })
   ssoModalTemplate: TemplateRef<any>;
-
-  @Input()
-  isTeamWorkspace: boolean;
 
   eConstants = constants;
   regions = [];
@@ -315,10 +312,6 @@ export class IntegrationBarComponent implements OnInit, OnDestroy {
   }
 
   gotoForm(modifying: number, integration: Integration, overrideType?: IntegrationType): void {
-    if (this.isTeamWorkspace) {
-      return;
-    }
-
     // Change graphical values to show the form
     this.chooseIntegration = false;
     this.modifying = modifying;
@@ -371,23 +364,9 @@ export class IntegrationBarComponent implements OnInit, OnDestroy {
         if (this.modifying === 1) {
           await this.appProviderService.integrationFactory.create(this.selectedIntegration as any, integrationParams);
 
-          try {
-            await this.appProviderService.teamService.pushToRemote();
-          } catch (error) {
-            this.appProviderService.teamService.setSyncState("failed");
-            throw error;
-          }
-
           this.messageToasterService.toast(`Integration: ${integrationParams.alias}, created.`, ToastLevel.success, "");
         } else if (this.modifying === 2) {
           await this.appProviderService.integrationFactory.update(this.selectedConfiguration.id, integrationParams);
-
-          try {
-            await this.appProviderService.teamService.pushToRemote();
-          } catch (error) {
-            this.appProviderService.teamService.setSyncState("failed");
-            throw error;
-          }
 
           this.messageToasterService.toast(`Integration: ${integrationParams.alias}, edited.`, ToastLevel.success, "");
         }
@@ -419,13 +398,6 @@ export class IntegrationBarComponent implements OnInit, OnDestroy {
             this.loggingService.log(new LoggedEntry(`Removing sessions with attached integration id: ${integration.id}`, this, LogLevel.info));
             await this.logout(integration.id);
             await this.appProviderService.integrationFactory.delete(integration.id);
-
-            try {
-              await this.appProviderService.teamService.pushToRemote();
-            } catch (error) {
-              this.appProviderService.teamService.setSyncState("failed");
-              throw error;
-            }
 
             this.messageToasterService.toast(`Integration: ${integration.alias}, deleted.`, ToastLevel.success, "");
             this.setValues();

@@ -28,7 +28,6 @@ import { IntegrationIsOnlineStateRefreshService } from "@noovolari/leapp-core/se
 import { AzureSessionService } from "@noovolari/leapp-core/services/session/azure/azure-session-service";
 import { AzureCoreService } from "@noovolari/leapp-core/services/azure-core-service";
 import { PluginManagerService } from "@noovolari/leapp-core/plugin-sdk/plugin-manager-service";
-import { TeamService, Role } from "./services/team-service";
 
 @Component({
   selector: "app-root",
@@ -36,7 +35,6 @@ import { TeamService, Role } from "./services/team-service";
   styleUrls: ["./app.component.scss"],
 })
 export class AppComponent implements OnInit {
-  isSyncingWorkspace: boolean;
   fetchingState: string | undefined;
 
   private fileService: FileService;
@@ -54,7 +52,6 @@ export class AppComponent implements OnInit {
   private azureSessionService: AzureSessionService;
   private azureCoreService: AzureCoreService;
   private pluginManagerService: PluginManagerService;
-  private teamService: TeamService;
 
   /* Main app file: launches the Angular framework inside Electron app */
   constructor(
@@ -89,7 +86,6 @@ export class AppComponent implements OnInit {
     this.azureSessionService = appProviderService.azureSessionService;
     this.azureCoreService = appProviderService.azureCoreService;
     this.pluginManagerService = appProviderService.pluginManagerService;
-    this.teamService = appProviderService.teamService;
 
     this.setInitialColorSchema();
     this.setColorSchemaChangeEventListener();
@@ -157,23 +153,11 @@ export class AppComponent implements OnInit {
       );
     }
 
-    let teamMemberEmail;
-    let teamMemberFirstName;
-    let teamMemberLastName;
-    let teamMemberTeamName;
-
     // Deep link with app closed
     if (this.fileService.existsSync(this.appNativeService.path.join(this.appNativeService.os.homedir(), environment.deeplinkFile))) {
       try {
         const deepLink = this.fileService.readFileSync(this.appNativeService.path.join(this.appNativeService.os.homedir(), environment.deeplinkFile));
-        if (this.isOpenLeappDeepLink(deepLink)) {
-          const afterQuestionMark = deepLink.split("?")[1];
-          const splitByAmpersand = afterQuestionMark.split("&");
-          teamMemberEmail = splitByAmpersand[0].split("=")[1];
-          teamMemberFirstName = decodeURIComponent(splitByAmpersand[1].split("=")[1]);
-          teamMemberLastName = decodeURIComponent(splitByAmpersand[2].split("=")[1]);
-          teamMemberTeamName = decodeURIComponent(splitByAmpersand[3].split("=")[1]);
-        } else if (!constants.disablePluginSystem) {
+        if (!constants.disablePluginSystem) {
           await this.pluginManagerService.installPlugin(deepLink);
           await this.pluginManagerService.loadFromPluginDir();
         }
@@ -184,34 +168,11 @@ export class AppComponent implements OnInit {
       }
     }
 
-    this.teamService.syncingWorkspaceState.subscribe((isSyncingWorkspace: boolean) => (this.isSyncingWorkspace = isSyncingWorkspace));
-
     this.behaviouralSubjectService.fetchingIntegrationState$.subscribe((fetchingState: string | undefined) => {
       this.fetchingState = fetchingState;
     });
 
-    // Check the existence of a current-workspace key in the system keychain and
-    // load the corresponding workspace
-    await this.teamService.setCurrentWorkspace();
-
-    // Go to initial page if no sessions are already created or
-    // go to the list page if is your second visit.
-    // If there is a pro user registered go to login page instead
-    const userRole = this.teamService.signedInUserState.getValue()?.role;
-    if (userRole === Role.pro || userRole === Role.user || userRole === Role.manager || teamMemberEmail !== undefined) {
-      if (userRole === Role.pro || ((userRole === Role.user || userRole === Role.manager) && teamMemberEmail === undefined)) {
-        await this.router.navigate(["/lock"]);
-      } else if (
-        teamMemberEmail !== undefined &&
-        teamMemberFirstName !== undefined &&
-        teamMemberLastName !== undefined &&
-        teamMemberTeamName !== undefined
-      ) {
-        await this.router.navigate(["/lock"], { queryParams: { teamMemberEmail, teamMemberFirstName, teamMemberLastName, teamMemberTeamName } });
-      }
-    } else {
-      await this.router.navigate(["/dashboard"]);
-    }
+    await this.router.navigate(["/dashboard"]);
 
     (async (): Promise<void> => this.remoteProceduresServer.startServer())();
   }
@@ -236,9 +197,6 @@ export class AppComponent implements OnInit {
 
     // Stop all the sessions
     await this.appProviderService.sessionManagementService.stopAllSessions();
-
-    // Lock team-workspace before exit, to properly save global settings
-    await this.teamService.signOut(true);
 
     // Finally quit
     this.appService.quit();
@@ -307,17 +265,7 @@ export class AppComponent implements OnInit {
     });
 
     ipc.on("PLUGIN_URL", (_, url) => {
-      if (this.isOpenLeappDeepLink(url)) {
-        const afterQuestionMark = url.split("?")[1];
-        const splitByAmpersand = afterQuestionMark.split("&");
-        const teamMemberEmail = splitByAmpersand[0].split("=")[1];
-        const teamMemberFirstName = decodeURIComponent(splitByAmpersand[1].split("=")[1]);
-        const teamMemberLastName = decodeURIComponent(splitByAmpersand[2].split("=")[1]);
-        const teamMemberTeamName = decodeURIComponent(splitByAmpersand[3].split("=")[1]);
-        if (teamMemberEmail) {
-          this.router.navigate(["/lock"], { queryParams: { teamMemberEmail, teamMemberFirstName, teamMemberLastName, teamMemberTeamName } });
-        }
-      } else if (!constants.disablePluginSystem) {
+      if (!constants.disablePluginSystem) {
         this.pluginManagerService.installPlugin(url);
       }
     });
@@ -351,9 +299,5 @@ export class AppComponent implements OnInit {
         }
       }
     });
-  }
-
-  private isOpenLeappDeepLink(deepLinkUrl: string): boolean {
-    return deepLinkUrl.indexOf("01255ef8-open-leapp?email=") > -1;
   }
 }

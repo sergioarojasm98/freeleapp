@@ -99,3 +99,7 @@ packages/desktop-app/.sentry-token
 
 # Icon generator local outputs
 design/icon/preview/
+
+# Icon generator caches and actool output
+design/icon/__pycache__/
+packages/desktop-app/build/icon-assets/

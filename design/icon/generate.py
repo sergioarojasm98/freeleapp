@@ -125,6 +125,10 @@ VARIANTS = {
 }
 
 
+# Variant shipped in the app: separate glass groups let the front cloud show the others through it
+APP_ICON_VARIANT = "per-cloud-groups"
+
+
 def icon_package(variant, groups):
     pkg = OUT / f"Freeleapp-{variant}.icon"
     shutil.rmtree(pkg, ignore_errors=True)
@@ -139,7 +143,78 @@ def icon_package(variant, groups):
     (pkg / "icon.json").write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
 
 
+def _silhouette(render):
+    """Alpha mask for monochrome uses: the two back clouds merged, the front cloud cut out by a gap.
+
+    Separating all three clouds turns into noise at 16 px; two planes still read as layered clouds.
+    """
+    from PIL import ImageChops
+
+    def shape(center, gap=0):
+        stroke = f' stroke="#000" stroke-width="{gap * 2}" stroke-linejoin="round"' if gap else ""
+        return render(f'<path d="{cloud_path(center, CLOUD_WIDTH)}" fill="#000"{stroke}/>').getchannel("A")
+
+    back = ImageChops.lighter(shape(WHITE), shape(GREY))
+    return ImageChops.lighter(ImageChops.subtract(back, shape(BLUE, gap=34)), shape(BLUE))
+
+
+def export_app_assets(desktop_app):
+    """Render every raster icon the desktop app ships, keeping upstream file names and sizes."""
+    import io
+
+    import cairosvg
+    from PIL import Image
+
+    def render(svg, width, height=None):
+        png = cairosvg.svg2png(bytestring=svg.encode(), output_width=width, output_height=height or width)
+        return Image.open(io.BytesIO(png)).convert("RGBA")
+
+    def render_shape(inner):
+        return render(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">{inner}</svg>', 1024)
+
+    silhouette = _silhouette(render_shape).crop((190, 170, 870, 790))  # tight box around the clouds
+
+    full = render(flat_svg(), 1024)
+    body = full.crop((100, 100, 924, 924))  # upstream PNGs are the rounded body without the grid margin
+    icons = desktop_app / "src/assets/icons"
+    images = desktop_app / "src/assets/images"
+    electron_images = desktop_app / "electron/assets/images"
+    ico_sizes = [(s, s) for s in (16, 24, 32, 48, 64, 128, 256)]
+
+    full.save(icons / "icon.png")
+    full.save(icons / "1024x1024.png")
+    full.save(icons / "icon.icns")
+    full.save(icons / "icon.ico", sizes=ico_sizes)
+    for folder in (images, electron_images):
+        body.save(folder / "Leapp.png")
+        full.save(folder / "Leapp.icns")
+        full.save(folder / "Leapp.ico", sizes=ico_sizes)
+    # macOS 26+ Liquid Glass icon, compiled to Assets.car with actool by CI (see desktop-app-build.yml)
+    target = desktop_app / "build/Freeleapp.icon"
+    shutil.rmtree(target, ignore_errors=True)
+    shutil.copytree(OUT / f"Freeleapp-{APP_ICON_VARIANT}.icon", target)
+    body.resize((384, 384), Image.LANCZOS).save(images / "Leapp-rounded.png")
+    for scale, suffix in ((1, ""), (2, "@2x")):
+        size = 16 * scale
+        body.resize((size, size), Image.LANCZOS).save(images / f"LeappMini{suffix}.png")
+        tmpl = Image.new("RGBA", silhouette.size, (0, 0, 0, 255))
+        tmpl.putalpha(silhouette)
+        tmpl.thumbnail((size, size), Image.LANCZOS)
+        canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        canvas.paste(tmpl, ((size - tmpl.width) // 2, (size - tmpl.height) // 2), tmpl)
+        canvas.save(images / f"LeappTemplate{suffix}.png")
+    for scale, suffix in ((1, ""), (2, "@2x")):
+        bg = Image.new("RGBA", (540 * scale, 380 * scale), "#f6f8fb")
+        mark = Image.new("RGBA", silhouette.size, (139, 146, 156, 255))
+        mark.putalpha(silhouette.point(lambda a: a * 18 // 255))
+        mark = mark.resize((int(silhouette.width * 0.34 * scale), int(silhouette.height * 0.34 * scale)), Image.LANCZOS)
+        bg.paste(mark, ((bg.width - mark.width) // 2, int(40 * scale)), mark)
+        bg.save(icons / f"background{suffix}.png")
+
+
 if __name__ == "__main__":
+    import sys
+
     (OUT / "freeleapp-flat.svg").write_text(flat_svg())
     for variant, groups in VARIANTS.items():
         icon_package(variant, groups)
@@ -149,4 +224,6 @@ if __name__ == "__main__":
         cairosvg.svg2png(url=str(OUT / "freeleapp-flat.svg"), write_to=str(OUT / "freeleapp-flat.png"), output_width=1024)
     except ImportError:
         pass
+    if "--app-assets" in sys.argv:
+        export_app_assets(OUT.parent.parent / "packages/desktop-app")
     print("generated", sorted(p.name for p in OUT.iterdir()))

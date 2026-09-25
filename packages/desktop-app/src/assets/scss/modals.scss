@@ -31,7 +31,7 @@ h4 {
 }
 .modal-backdrop {
   top: $commandbar-height;
-  background-color: #292044;
+  background-color: #0f1115;
   &::after {
     content: '';
     position: fixed;
@@ -39,7 +39,7 @@ h4 {
     height: $commandbar-height;
     left: 0;
     right: 0;
-    background-color: #292044;
+    background-color: #0f1115;
   }
 }
 

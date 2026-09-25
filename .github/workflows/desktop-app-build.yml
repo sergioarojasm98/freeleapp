@@ -93,6 +93,7 @@ jobs:
       - name: Add Liquid Glass icon
         working-directory: packages/desktop-app
         run: |
+          mkdir -p build/icon-assets
           xcrun actool build/Freeleapp.icon --compile build/icon-assets --platform macosx \
             --minimum-deployment-target 11.0 --app-icon Freeleapp \
             --output-partial-info-plist build/icon-assets/partial.plist

@@ -5,6 +5,7 @@ export const constants = {
   lockFileDestination: ".Leapp/Leapp-lock.json",
   lockFileBackupPath: ".Leapp/Leapp-lock.backup.bin",
   latestUrl: "https://github.com/sergioarojasm98/freeleapp/releases/latest",
+  docsUrl: "https://freeleapp.com",
   workspaceLastVersion: 7,
   localWorkspaceName: "Local workspace",
   localWorkspaceDescription: "Community Edition",

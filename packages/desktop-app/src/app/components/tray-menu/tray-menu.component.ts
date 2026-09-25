@@ -1,3 +1,4 @@
+import { constants } from "@noovolari/leapp-core/models/constants";
 import { Component, OnDestroy, OnInit } from "@angular/core";
 import { AppService } from "../../services/app.service";
 import { environment } from "../../../environments/environment";
@@ -101,7 +102,7 @@ export class TrayMenuComponent implements OnInit, OnDestroy {
         label: "Open Documentation",
         type: "normal",
         click: () => {
-          this.windowService.openExternalUrl("https://docs.leapp.cloud/");
+          this.windowService.openExternalUrl(`${constants.docsUrl}/`);
         },
       },
       {

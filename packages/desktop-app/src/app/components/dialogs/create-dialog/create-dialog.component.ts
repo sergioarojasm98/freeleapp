@@ -293,11 +293,11 @@ export class CreateDialogComponent implements OnInit {
    *
    */
   openAccessStrategyDocumentation(): void {
-    let url = "https://docs.leapp.cloud/latest/configuring-session/configure-aws-iam-role-federated/";
+    let url = `${constants.docsUrl}/configuration/aws-iam-role-federated/`;
     if (this.provider === SessionType.awsIamRoleChained) {
-      url = "https://docs.leapp.cloud/latest/configuring-session/configure-aws-iam-role-chained/";
+      url = `${constants.docsUrl}/configuration/aws-iam-role-chained/`;
     } else if (this.provider === SessionType.awsIamUser) {
-      url = "https://docs.leapp.cloud/latest/configuring-session/configure-aws-iam-user/";
+      url = `${constants.docsUrl}/configuration/aws-iam-user/`;
     }
     this.windowService.openExternalUrl(url);
   }

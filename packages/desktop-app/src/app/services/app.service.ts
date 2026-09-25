@@ -1,3 +1,4 @@
+import { constants } from "@noovolari/leapp-core/models/constants";
 import { EventEmitter, Injectable } from "@angular/core";
 import { FormControl, FormGroup } from "@angular/forms";
 import { AppNativeService } from "./app-native.service";
@@ -272,7 +273,7 @@ export class AppService {
         this.awsCliVersion = await this.appProviderService.executeService.execute("aws --version");
       } catch (_) {
         throw new LeappLinkError(
-          "https://docs.leapp.cloud/latest/troubleshooting/faq/",
+          `${constants.docsUrl}/troubleshooting/faq/`,
           this,
           "An error occurred getting AWS CLI version. Please check if it is installed and <span class='link'>add a symlink</span> following the documentation."
         );
@@ -287,7 +288,7 @@ export class AppService {
         this.awsSsmPluginVersion = sessionManagerPluginVersion.replace(/(\r\n|\n|\r)/gm, "");
       } catch (error) {
         throw new LeappLinkError(
-          "https://docs.leapp.cloud/latest/built-in-features/aws-ec2-connect/",
+          `${constants.docsUrl}/features/ec2-ssm/`,
           this,
           "An error occurred getting AWS Session Manager Plugin version. <span class='link'>Click here to follow the instructions on the docs</span> and solve the issue."
         );

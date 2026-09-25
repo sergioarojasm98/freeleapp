@@ -294,7 +294,7 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   }
 
   goToGettingStarted(): void {
-    this.windowService.openExternalUrl("https://docs.leapp.cloud/");
+    this.windowService.openExternalUrl(`${constants.docsUrl}/getting-started/overview/`);
   }
 
   openAnIssue(): void {

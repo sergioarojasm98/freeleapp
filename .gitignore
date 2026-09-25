@@ -96,3 +96,6 @@ nightly-version
 packages/desktop-app/projects
 
 packages/desktop-app/.sentry-token
+
+# Icon generator local outputs
+design/icon/preview/

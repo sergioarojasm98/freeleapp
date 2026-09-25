@@ -17,6 +17,7 @@
     "rebuild-keytar": "electron-rebuild -f -w keytar",
     "release": "standard-version",
     "ng": "ng",
+    "pretest": "node -e \"const fs=require('fs');const t='src/app/services/team-service.ts';if(!fs.existsSync(t))fs.copyFileSync('src/app/services/team-service-stub.ts',t)\"",
     "test": "ng test",
     "build-dev": "gushio gushio/target-build.js aot",
     "build-prod": "gushio gushio/target-build.js 'configuration production'",

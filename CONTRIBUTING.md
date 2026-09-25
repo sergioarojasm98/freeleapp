@@ -20,7 +20,7 @@ Use the bug report template and include:
 3. Keep commits in [Conventional Commits](https://www.conventionalcommits.org/) format (`fix:`, `feat:`, `chore:`...).
 4. Run the tests before opening the pull request:
    - `packages/core`: `npx jest`
-   - `packages/desktop-app`: `npx ng test --watch=false --browsers=ChromeHeadless`
+   - `packages/desktop-app`: `npm test -- --watch=false --browsers=ChromeHeadless`
 5. Open the pull request against `master`; CI builds the macOS app on every push.
 
 Fixes that also apply to upstream Leapp can be sent to [Noovolari/leapp](https://github.com/Noovolari/leapp) as well.

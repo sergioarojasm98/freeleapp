@@ -60,7 +60,7 @@ npx gushio gushio/target-build.js 'configuration production'
 npx electron-builder build --mac dir --arm64 --publish never
 ```
 
-Tests: `npx jest` in `packages/core`, and `npx ng test --watch=false --browsers=ChromeHeadless` in `packages/desktop-app`.
+Tests: `npx jest` in `packages/core`, and `npm test -- --watch=false --browsers=ChromeHeadless` in `packages/desktop-app`.
 
 ## License
 

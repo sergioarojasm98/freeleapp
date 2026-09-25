@@ -40,7 +40,7 @@ jobs:
 
       - name: Test desktop app
         working-directory: packages/desktop-app
-        run: npx ng test --watch=false --browsers=ChromeHeadlessCI
+        run: npm test -- --watch=false --browsers=ChromeHeadlessCI
 
   build-macos-arm64:
     runs-on: macos-latest

@@ -32,7 +32,7 @@ If applicable, add screenshots to help explain your problem.
  - Session type [e.g. IAM Identity Center, IAM User]
 
 **Logs**
-Relevant lines from `~/Library/Logs/Leapp/log.electronService.log` (remove account IDs, ARNs and tokens).
+Relevant lines from `~/Library/Logs/Freeleapp/log.electronService.log` (remove account IDs, ARNs and tokens).
 
 **Additional context**
 Add any other context about the problem here.

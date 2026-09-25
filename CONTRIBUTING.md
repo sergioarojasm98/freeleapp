@@ -11,7 +11,7 @@ Use the bug report template and include:
 - Freeleapp version (Freeleapp menu → About) and operating system version.
 - Session type involved (IAM User, IAM Role Federated/Chained, IAM Identity Center, Azure).
 - Steps to reproduce, expected and actual behavior.
-- Relevant lines from the log file (`~/Library/Logs/Leapp/log.electronService.log` on macOS). Remove account IDs, ARNs and tokens first.
+- Relevant lines from the log file (`~/Library/Logs/Freeleapp/log.electronService.log` on macOS). Remove account IDs, ARNs and tokens first.
 
 ## Code contributions
 

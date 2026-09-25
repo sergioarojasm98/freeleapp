@@ -1,6 +1,6 @@
 # Freeleapp
 
-A maintained community fork of [Leapp](https://github.com/Noovolari/leapp), the desktop app that manages temporary cloud credentials for AWS and Azure.
+Temporary AWS and Azure credentials on your Mac, one click away. A maintained, free and open-source continuation of the [Leapp](https://github.com/Noovolari/leapp) desktop app.
 
 ## About
 
@@ -8,12 +8,13 @@ Leapp has had no release since v0.26.1 (June 2024), after Noovolari shut down. F
 
 Differences from upstream Leapp:
 
-- No telemetry: the PostHog analytics client is removed.
-- No Leapp Pro or Team: the sign-in, plans and workspace sync screens are removed; everything runs on the local workspace.
+- One edition with every feature: no Pro or Team tier, no sign-in.
+- No telemetry: the usage analytics client is removed.
+- Updated for current macOS: new UI and icon, resizable window, AWS console multi-session instead of a browser extension.
 - Update checks and release notes come from this repository's GitHub Releases.
-- Data stays compatible: sessions live in `~/.Leapp` and the system keychain under the same keys as Leapp, so an existing setup carries over, and the IPC channel `leapp-cli` uses is unchanged.
+- Your Leapp setup moves over automatically: on first launch Freeleapp copies `~/.Leapp` to `~/.freeleapp` (the original stays as a backup) and moves keychain items to the `Freeleapp` service as they are used.
 
-Documentation will be published at [freeleapp.com](https://freeleapp.com).
+Documentation: [freeleapp.com](https://freeleapp.com).
 
 Freeleapp is not affiliated with Noovolari or beSharp. "Leapp" is a trademark of its respective owners.
 
@@ -21,15 +22,14 @@ Freeleapp is not affiliated with Noovolari or beSharp. "Leapp" is a trademark of
 
 ```mermaid
 flowchart LR
-    UI[Desktop app<br/>Electron + Angular] --> Core[leapp-core]
-    CLI[leapp-cli] --> Core
-    Core --> Vault[(System keychain)]
-    Core --> Cfg[(~/.Leapp)]
+    UI[Desktop app<br/>Electron + Angular] --> Core[Core library]
+    Core --> Vault[(macOS Keychain)]
+    Core --> Cfg[(~/.freeleapp)]
     Core --> Creds[~/.aws/credentials<br/>~/.azure]
     Core --> Cloud[AWS STS / IAM Identity Center<br/>Microsoft Entra ID]
 ```
 
-`leapp-core` holds the session logic; the desktop app and the CLI are clients on top of it. Temporary credentials are written to the standard AWS and Azure CLI files, so any tool that reads them works unchanged.
+The core library (`packages/core`) holds the session logic and the desktop app is built on top of it. Temporary credentials are written to the standard AWS and Azure CLI files, so any tool that reads them works unchanged. Long-term secrets stay in the macOS Keychain; the configuration file is encrypted.
 
 ## Stack
 
@@ -38,7 +38,7 @@ flowchart LR
 | Desktop shell | Electron |
 | UI | Angular, Angular Material |
 | Core library | TypeScript, AWS SDK v3, MSAL |
-| Secrets | macOS Keychain / Windows Credential Manager / libsecret (keytar) |
+| Secrets | macOS Keychain (keytar) |
 | Packaging | electron-builder, GitHub Actions (macOS arm64) |
 
 ## Install

@@ -22,11 +22,13 @@ First Freeleapp release, a maintained fork of Leapp for current macOS versions.
 - Double-clicking the top bar follows the macOS title bar setting (zoom, minimize or nothing).
 - Documentation, updates, release notes and issue links point to Freeleapp.
 - *What's new* shows the release notes of the installed version.
+- Freeleapp keeps its data under its own names: `~/.freeleapp`, the `Freeleapp` keychain service, `~/Library/Logs/Freeleapp` and the `freeleapp://` scheme. A Leapp setup is copied over automatically on first launch; `~/.Leapp` is left as a backup.
 
 ### Bug fixes
 
 - Refreshing sessions from `leapp-cli` now reloads the app; it never did because the request went through the disabled Team service.
 - The SSM dialog stays inside the window and scrolls its instance list.
+- Saved filters apply on the first click.
 - Logging out of federated sessions finds the login data again after the app rename.
 
 ### Removed

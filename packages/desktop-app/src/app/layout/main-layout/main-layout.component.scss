@@ -71,7 +71,6 @@
   left: 0;
   z-index: 20;
   background: $overlay-backdrop;
-  backdrop-filter: blur($overlay-backdrop-blur);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;

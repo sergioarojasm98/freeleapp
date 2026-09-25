@@ -10,8 +10,8 @@ assignees: ''
 **Describe the bug**
 A clear and concise description of what the bug is.
 
-**Leapp Version**
-Add the version of your Leapp (you can find it under taskbar -> about or Leapp -> about on MacOS X)
+**Freeleapp Version**
+Add the version of Freeleapp (Freeleapp menu -> About)
 
 **To Reproduce**
 Steps to reproduce the behavior:
@@ -27,9 +27,12 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - OS Version [e.g. 22]
- - Leapp Version [e.g. 0.2.5]
+ - macOS version [e.g. 26.1]
+ - Freeleapp version [e.g. 1.0.0]
+ - Session type [e.g. IAM Identity Center, IAM User]
+
+**Logs**
+Relevant lines from `~/Library/Logs/Leapp/log.electronService.log` (remove account IDs, ARNs and tokens).
 
 **Additional context**
 Add any other context about the problem here.

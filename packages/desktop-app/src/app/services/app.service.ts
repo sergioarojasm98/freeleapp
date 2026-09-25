@@ -301,7 +301,7 @@ export class AppService {
 
 
 ### Details:
-| Leapp Version | ${this.appNativeService.app.getVersion()} |
+| Freeleapp Version | ${this.appNativeService.app.getVersion()} |
 | --- | --- |
 | SsmPluginVersion | ${this.awsSsmPluginVersion} |
 | Platform | ${process.platform} |
@@ -312,7 +312,7 @@ export class AppService {
 
 
 ### Details:
-| Leapp Version | ${this.appNativeService.app.getVersion()} |
+| Freeleapp Version | ${this.appNativeService.app.getVersion()} |
 | --- | --- |
 | SsmPluginVersion | ${this.awsSsmPluginVersion} |
 | Platform | ${process.platform} |

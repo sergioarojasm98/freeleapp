@@ -248,6 +248,11 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
     CommandBarComponent.changeSessionsTableHeight();
   }
 
+  clearSearch(): void {
+    // valueChanges re-applies the filters, so clearing the field restores the full session list
+    this.filterForm.get("searchFilter").setValue("");
+  }
+
   toggleDateFilter(): void {
     this.filterForm.get("dateFilter").setValue(!this.filterForm.get("dateFilter").value);
   }

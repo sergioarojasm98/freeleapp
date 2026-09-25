@@ -26,7 +26,8 @@
               matTooltip="Filter the Session list"><i class="moon-Filter"></i></button>
 
       <div class="form-control-input-icon">
-        <input spellcheck="false" formControlName="searchFilter" type="text" class="form-control search-bar" placeholder="Search session"/>
+        <input spellcheck="false" formControlName="searchFilter" type="text" class="form-control search-bar" placeholder="Search session"
+               (keydown.escape)="clearSearch()"/>
         <i class="moon-Search"></i>
       </div>
 

@@ -7,6 +7,7 @@ import { AzureCoreService } from "@noovolari/leapp-core/services/azure-core-serv
 import { Session } from "@noovolari/leapp-core/models/session";
 import { RegionsService } from "@noovolari/leapp-core/services/regions-service";
 import { MessageToasterService, ToastLevel } from "../../../services/message-toaster.service";
+import { withRecentRegions } from "../../../services/region-options";
 
 @Component({
   selector: "app-change-region-dialog",
@@ -33,7 +34,7 @@ export class ChangeRegionDialogComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const awsRegions = this.awsCoreService.getRegions();
+    const awsRegions = withRecentRegions(this.awsCoreService.getRegions(), this.appProviderService.repository.getSessions());
     const azureLocations = this.azureCoreService.getLocations();
     // Array and labels for regions and locations
     this.regionOrLocations = this.session.type !== SessionType.azure ? awsRegions : azureLocations;

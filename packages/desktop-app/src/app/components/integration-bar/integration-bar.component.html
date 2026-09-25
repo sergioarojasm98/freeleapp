@@ -112,7 +112,7 @@
 </ng-template>
 
 <mat-list>
-  <div mat-subheader class="panel-header"><span>Integrations</span><i class="moon-Add" [ngClass]="isTeamWorkspace ? 'disabled' : ''"
+  <div mat-subheader class="panel-header"><span>Integrations</span><i class="moon-Add"
                                                                       (click)="$event.preventDefault(); $event.stopPropagation(); gotoForm(1, selectedConfiguration);"></i>
   </div>
 
@@ -142,7 +142,7 @@
          [style.left.px]="menuX" [style.top.px]="menuY"></div>
   </mat-list-item>
 
-  <mat-list-item *ngIf="!isTeamWorkspace" (click)="$event.preventDefault(); $event.stopPropagation(); gotoForm(1, selectedConfiguration);">
+  <mat-list-item (click)="$event.preventDefault(); $event.stopPropagation(); gotoForm(1, selectedConfiguration);">
     <div mat-line class="gray-line">
       <i class="moon-Add"></i><span>Add Integration</span>
     </div>

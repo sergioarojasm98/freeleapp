@@ -1,10 +1,12 @@
-<div class="command-bar {{compactMode ? 'compact' : ''}}" (click)="clearOptionBarIds();">
+<div class="command-bar" (click)="clearOptionBarIds();" (dblclick)="onTitleBarDoubleClick($event);">
   <app-command-bar></app-command-bar>
 </div>
-<div class="side-bar {{compactMode ? 'compact' : ''}}" (click)="clearOptionBarIds();">
+<div class="side-bar {{sidebarVisible ? '' : 'collapsed'}} {{sidebarOverlay ? 'overlay' : ''}}" (click)="clearOptionBarIds();"
+     (mouseenter)="cancelSidebarOverlayClose();" (mouseleave)="scheduleSidebarOverlayClose();">
   <app-side-bar></app-side-bar>
 </div>
-<div class="sessions {{compactMode ? 'compact' : ''}}">
+<div class="sidebar-backdrop {{sidebarOverlay ? 'visible' : ''}}" (click)="closeSidebarOverlay();"></div>
+<div class="sessions {{sidebarVisible ? '' : 'full-width'}} {{compactMode ? 'compact' : ''}}">
   <app-session></app-session>
 </div>
 <div class="clear"></div>

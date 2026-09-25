@@ -23,6 +23,7 @@ import { AzureSessionService } from "@noovolari/leapp-core/services/session/azur
 import { OptionsService } from "../../../services/options.service";
 import { LocalstackSessionRequest } from "@noovolari/leapp-core/services/session/localstack/localstack-session-request";
 import { LocalstackSessionService } from "@noovolari/leapp-core/services/session/localstack/localstack-session-service";
+import { withRecentRegions } from "../../../services/region-options";
 
 @Component({
   selector: "app-create-dialog",
@@ -160,7 +161,7 @@ export class CreateDialogComponent implements OnInit {
       }
 
       // Get all regions and locations from app service lists
-      this.regions = this.leappCoreService.awsCoreService.getRegions();
+      this.regions = withRecentRegions(this.leappCoreService.awsCoreService.getRegions(), this.leappCoreService.repository.getSessions());
       this.locations = this.leappCoreService.azureCoreService.getLocations();
 
       // Select default values
@@ -293,11 +294,11 @@ export class CreateDialogComponent implements OnInit {
    *
    */
   openAccessStrategyDocumentation(): void {
-    let url = "https://docs.leapp.cloud/latest/configuring-session/configure-aws-iam-role-federated/";
+    let url = `${constants.docsUrl}/configuration/aws-iam-role-federated/`;
     if (this.provider === SessionType.awsIamRoleChained) {
-      url = "https://docs.leapp.cloud/latest/configuring-session/configure-aws-iam-role-chained/";
+      url = `${constants.docsUrl}/configuration/aws-iam-role-chained/`;
     } else if (this.provider === SessionType.awsIamUser) {
-      url = "https://docs.leapp.cloud/latest/configuring-session/configure-aws-iam-user/";
+      url = `${constants.docsUrl}/configuration/aws-iam-user/`;
     }
     this.windowService.openExternalUrl(url);
   }
@@ -427,13 +428,6 @@ export class CreateDialogComponent implements OnInit {
           };
           this.azureSessionService.create(azureSessionRequest);
           break;*/
-      }
-
-      try {
-        await this.leappCoreService.teamService.pushToRemote();
-      } catch (error) {
-        this.leappCoreService.teamService.setSyncState("failed");
-        throw error;
       }
 
       this.messageToasterService.toast(`Session: ${this.form.value.name}, created.`, ToastLevel.success, "");

@@ -1,0 +1,79 @@
+name: Release
+
+# Push a tag like v1.2.3 on master to publish a GitHub Release with the macOS build.
+# The tag must match packages/desktop-app/package.json and have a "## 1.2.3" entry in CHANGELOG.md.
+on:
+  push:
+    tags: ["v*.*.*"]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check tag, app version and changelog agree
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          APP_VERSION=$(node -p "require('./packages/desktop-app/package.json').version")
+          if [ "$APP_VERSION" != "$VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the app version $APP_VERSION"
+            exit 1
+          fi
+          if ! grep -q "^## $VERSION " CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no '## $VERSION' entry"
+            exit 1
+          fi
+
+  build:
+    needs: verify
+    uses: ./.github/workflows/build-macos.yml
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-files
+          path: dist
+
+      - name: Write release notes from the changelog
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v v="$VERSION" '
+            $0 ~ "^## " v " " { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          cat >> notes.md <<EOF
+
+          ### Install
+
+          Download \`Freeleapp-$VERSION-arm64.dmg\` (Apple Silicon), drag Freeleapp to Applications, then clear the quarantine flag once, since builds are not notarized yet:
+
+          \`\`\`bash
+          xattr -dr com.apple.quarantine /Applications/Freeleapp.app
+          \`\`\`
+
+          Full documentation: https://freeleapp.com
+          EOF
+          cat notes.md
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --verify-tag \
+            --title "Freeleapp $VERSION" \
+            --notes-file notes.md

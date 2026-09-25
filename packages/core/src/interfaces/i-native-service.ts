@@ -26,5 +26,4 @@ export interface INativeService {
   crypto: any;
   tar: any;
   fetch: any;
-  systemPreferences: any;
 }

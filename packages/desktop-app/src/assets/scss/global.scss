@@ -832,7 +832,7 @@ button, a, input, i {
 }
 
 .modal + .modal {
-  background: rgba(41, 32, 68, 0.5);
+  background: $overlay-backdrop;
 
   &:after {
     content: '';
@@ -841,7 +841,7 @@ button, a, input, i {
     right: 0;
     position: fixed;
     height: 50px;
-    background: rgba(41, 32, 68, 0.5);
+    background: $overlay-backdrop;
   }
 }
 
@@ -885,15 +885,3 @@ tr:hover .moon-hover-session {
   color: $text-color;
 }
 
-.enable-option {
-  .mat-slide-toggle-label {
-    gap: 10px;
-    left: -148px !important;
-    position: relative;
-  }
-
-  .mat-slide-toggle-content {
-    font-weight: bold;
-    font-size: 17px !important;
-  }
-}

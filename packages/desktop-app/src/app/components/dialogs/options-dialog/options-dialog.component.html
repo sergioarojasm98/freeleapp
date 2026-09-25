@@ -10,42 +10,13 @@
 
       <div class="panel">
 
-        <ng-container *ngIf="appService.detectOs() === eOperatingSystem.mac">
-          <h2>Security</h2>
-
-          <div class="form-container">
-            <div class="form-group">
-              <div class="form-field">
-                <label>Unlock with Touch ID</label>
-                <mat-checkbox class="touch-id-enable-checkbox" formControlName="touchIdEnableSelect" [(ngModel)]="selectedTouchIdEnabled"></mat-checkbox>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-container">
-            <div class="form-group">
-              <div class="form-field">
-                <label>Require password</label>
-                <ng-select formControlName="requirePasswordSelect" bindLabel="key" bindValue="value" [clearable]="false"
-                           [items]="[
-                             eConstants.requirePasswordEveryWeek,
-                             eConstants.requirePasswordEveryTwoWeeks,
-                             eConstants.requirePasswordEveryMonth,
-                             eConstants.requirePasswordNever
-                           ]"
-                           [(ngModel)]="selectedRequirePassword" [appendTo]="'body'"></ng-select>
-              </div>
-            </div>
-          </div>
-        </ng-container>
-
         <h2>Default Regions</h2>
 
         <div class="form-container">
           <div class="form-group">
             <div class="form-field">
               <label>AWS Region</label>
-              <ng-select formControlName="regionsSelect" bindLabel="region" bindValue="region" [clearable]="false" [items]="regions"
+              <ng-select formControlName="regionsSelect" bindLabel="region" bindValue="region" groupBy="group" [clearable]="false" [items]="regions"
                          [(ngModel)]="selectedRegion" [appendTo]="'body'"></ng-select>
             </div>
           </div>
@@ -332,50 +303,6 @@
           </div>
         </div>
 
-      </div>
-    </mat-tab>
-
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <i class="mat-tab-icon moon-Open-Web-Console"></i>
-        <span class="mat-tab-label-text">Multi-Console</span>
-      </ng-template>
-      <div class="no-padding no-margin panel">
-        <div class="hero-unit hero-unit-extension">
-          <img src="assets/images/in-browser.png" alt="">
-          <p class="extension-info">
-            <strong>Multi-Console Browser Extension</strong>
-            <span class="description-container">Navigate multiple AWS consoles on different tabs at once. <a
-              (click)="openBrowser('https://docs.leapp.cloud/latest/built-in-features/multi-console/#install-the-extension')">Read the docs for more info.</a></span>
-            <br>
-            <span class="button-container">
-              <button type="button" class="install-firefox-button"
-                      (click)="openBrowser('https://addons.mozilla.org/en-US/firefox/addon/leapp-multi-console-extension/')">Get for Firefox</button>
-              <button type="button" class="install-chrome-button"
-                      (click)="openBrowser('https://d3o59asa8udcq9.cloudfront.net/extension/leapp-extension-chromium-latest.zip')">Get for Chrome/Others</button>
-            </span>
-          </p>
-        </div>
-        <!--        <div class="open-method-container">-->
-        <!--          <h2>Open Web Console - Method</h2>-->
-
-        <!--          <div class="form-container">-->
-        <!--            <div class="form-group">-->
-        <!--              <div class="form-field">-->
-        <!--                <label>Method</label>-->
-        <!--                <ng-select formControlName="terminalSelect" bindLabel="terminal" bindValue="terminal" [clearable]="false"-->
-        <!--                           [items]="[{terminal: eConstants.macOsTerminal}, {terminal: eConstants.macOsIterm2}]" [(ngModel)]="selectedTerminal"-->
-        <!--                           [appendTo]="'body'"></ng-select>-->
-        <!--              </div>-->
-        <!--            </div>-->
-        <!--          </div>-->
-        <!--        </div>-->
-        <div class="enable-option">
-          <mat-slide-toggle class="enable-extension-toggle" (toggleChange)="toggleExtension()" [checked]="extensionEnabled">Enable Multi-Console
-            Extension
-          </mat-slide-toggle>
-          <span class="extension-description">Use the Extension as default. Fallback to the Single-Console method if the browser is closed or any error occurs.</span>
-        </div>
       </div>
     </mat-tab>
 

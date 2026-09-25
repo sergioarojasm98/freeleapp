@@ -1,10 +1,10 @@
 {
   "name": "Leapp",
-  "version": "0.26.1",
+  "version": "1.0.0",
   "private": true,
   "author": {
-    "name": "Noovolari",
-    "email": "info@noovolari.com"
+    "name": "Sergio Rojas",
+    "email": "sergioarojasm98@users.noreply.github.com"
   },
   "description": "Freeleapp is a community fork of Leapp, a cross-platform cloud access app built on top of Electron.",
   "main": "electron/dist/electron/main.js",
@@ -17,7 +17,6 @@
     "rebuild-keytar": "electron-rebuild -f -w keytar",
     "release": "standard-version",
     "ng": "ng",
-    "pretest": "node -e \"const fs=require('fs');const t='src/app/services/team-service.ts';if(!fs.existsSync(t))fs.copyFileSync('src/app/services/team-service-stub.ts',t)\"",
     "test": "ng test",
     "build-dev": "gushio gushio/target-build.js aot",
     "build-prod": "gushio gushio/target-build.js 'configuration production'",
@@ -51,6 +50,7 @@
       }
     ],
     "productName": "Freeleapp",
+    "copyright": "Copyright © 2026 Sergio Rojas. Based on Leapp © 2022 Noovolari.",
     "icon": "src/assets/icons/icon.icns",
     "files": [
       "dist/assets/images/Leapp.icns",
@@ -225,7 +225,6 @@
     "uuid": "~8.3.2",
     "v8-compile-cache": "~2.3.0",
     "wait-on": "8.0.3",
-    "ws": "^8.9.0",
     "zone.js": "~0.11.4"
   },
   "devDependencies": {

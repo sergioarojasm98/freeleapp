@@ -10,7 +10,6 @@ packages/desktop-app/electron/dist
 # Only exists if Bazel was run
 packages/desktop-app/bazel-out
 packages/desktop-app/.angular
-**/team-service.ts
 **/leapp-team-core
 
 # dependencies
@@ -96,3 +95,10 @@ nightly-version
 packages/desktop-app/projects
 
 packages/desktop-app/.sentry-token
+
+# Icon generator local outputs
+design/icon/preview/
+
+# Icon generator caches and actool output
+design/icon/__pycache__/
+packages/desktop-app/build/icon-assets/

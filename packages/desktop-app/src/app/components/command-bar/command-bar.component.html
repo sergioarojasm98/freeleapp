@@ -11,7 +11,7 @@
     </mat-menu>
   </div>
 
-  <button class="icon-button line-end" (click)="toggleCompactMode();"><i class="moon-Sidebar"></i></button>
+  <button class="icon-button line-end" (click)="toggleSidebar();" matTooltip="Show or hide the sidebar"><i class="moon-Sidebar"></i></button>
 </div>
 <div class="right {{filterExtended ? 'extended' : ''}}">
   <form [formGroup]="filterForm">
@@ -19,14 +19,14 @@
     <div class="main-bar">
       <button class="icon-button show-in-taskbar-only" (click)="false;" matTooltip="Sync all Integrations"><i class="moon-Refresh"></i></button>
 
-      <button class="icon-button line-start hide-in-taskbar" (click)="showCreateDialog();" matTooltip="Add a new Session"
-              [disabled]="isLeappTeamWorkspace" [ngClass]="isLeappTeamWorkspace ? 'disabled-add-session':'' "><i class="moon-Add"></i></button>
+      <button class="icon-button line-start hide-in-taskbar" (click)="showCreateDialog();" matTooltip="Add a new Session"><i class="moon-Add"></i></button>
 
       <button class="icon-button hide-in-taskbar filtering {{filterExtended ? 'toggled-filter' : ''}}" (click)="toggleFilters();"
               matTooltip="Filter the Session list"><i class="moon-Filter"></i></button>
 
       <div class="form-control-input-icon">
-        <input spellcheck="false" formControlName="searchFilter" type="text" class="form-control search-bar" placeholder="Search session"/>
+        <input spellcheck="false" formControlName="searchFilter" type="text" class="form-control search-bar" placeholder="Search Sessions..."
+               (keydown.escape)="clearSearch()"/>
         <i class="moon-Search"></i>
       </div>
 
@@ -92,7 +92,7 @@
         <span class="minimize" (click)="appNativeService.currentWindow.minimize()"><img
           src="assets/images/windows_minimize{{optionsService.colorTheme === eConstants.darkTheme || (optionsService.colorTheme === eConstants.systemDefaultTheme && appService.isDarkMode()) ? '_dark' : ''}}.png"
           alt="" title=""></span>
-        <span class="maximize {{compactMode ? 'disabled' : ''}}" (click)="windowMaximizeAction();"><img
+        <span class="maximize" (click)="windowMaximizeAction();"><img
           src="assets/images/windows_maximize{{windowButtonDetectTheme()}}.png" alt="" title=""></span>
         <span class="quit" (click)="appNativeService.currentWindow.hide()"><img
           src="assets/images/windows_close{{optionsService.colorTheme === eConstants.darkTheme || (optionsService.colorTheme === eConstants.systemDefaultTheme && appService.isDarkMode()) ? '_dark' : ''}}.png"
@@ -122,7 +122,8 @@
         </div>
       </div>
 
-      <a class="save-segments" (click)="openSaveSegmentDialog();" *ngIf="checkFormIsDirty();">Save{{compactMode ? '' : ' Segments'}}</a>
+      <button type="button" class="save-filter-button" (click)="openSaveSegmentDialog();" *ngIf="checkFormIsDirty();"
+              matTooltip="Save the current filters in the sidebar"><i class="moon-Tag"></i><span>Save{{compactMode ? '' : ' Filter'}}</span></button>
     </div>
 
   </form>

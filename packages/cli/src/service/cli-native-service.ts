@@ -26,7 +26,6 @@ export class CliNativeService implements INativeService {
   crypto: any;
   tar: any;
   fetch: any;
-  systemPreferences: any;
 
   constructor() {
     this.fs = require("fs-extra");
@@ -52,7 +51,6 @@ export class CliNativeService implements INativeService {
     this.crypto = require("crypto");
     this.tar = require("tar");
     this.fetch = require("node-fetch");
-    this.systemPreferences = null as any;
     this.msalEncryptionService = null as any;
   }
 }

@@ -12,6 +12,8 @@ concurrency:
 
 jobs:
   test:
+    # Branches of this repository are already built on push; only pull requests from forks run here
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -43,72 +45,6 @@ jobs:
         run: npm test -- --watch=false --browsers=ChromeHeadlessCI
 
   build-macos-arm64:
-    runs-on: macos-latest
-    timeout-minutes: 45
-    env:
-      # Unsigned build until an Apple Developer ID is available
-      CSC_IDENTITY_AUTO_DISCOVERY: "false"
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-
-      # node-gyp bundled with npm 8 still needs distutils (removed in Python 3.12)
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.11"
-
-      - name: Install root dependencies
-        run: npm install
-
-      - name: Build core
-        working-directory: packages/core
-        run: |
-          npm install
-          npm run build
-
-      - name: Install desktop app dependencies
-        working-directory: packages/desktop-app
-        run: npm install
-
-      - name: Build desktop app
-        working-directory: packages/desktop-app
-        run: npx gushio gushio/target-build.js 'configuration production'
-
-      # Apple Silicon refuses to launch unsigned bundles, so the app gets an
-      # ad-hoc signature before it is wrapped in the dmg
-      - name: Package app bundle
-        working-directory: packages/desktop-app
-        run: >
-          npx electron-builder build --mac dir --arm64 --publish never
-          -c.mac.identity=null
-          -c.mac.forceCodeSigning=false
-          -c.mac.notarize=false
-          -c.mac.hardenedRuntime=false
-
-      - name: Ad-hoc sign app bundle
-        working-directory: packages/desktop-app/release/mac-arm64
-        run: |
-          codesign --force --deep --sign - Freeleapp.app
-          codesign --verify --deep --strict --verbose=2 Freeleapp.app
-          codesign --display --verbose=2 Freeleapp.app
-
-      - name: Package dmg
-        working-directory: packages/desktop-app
-        run: >
-          npx electron-builder build --mac dmg --arm64 --publish never
-          --prepackaged release/mac-arm64/Freeleapp.app
-          -c.mac.identity=null
-          -c.mac.forceCodeSigning=false
-          -c.mac.notarize=false
-          -c.mac.hardenedRuntime=false
-
-      # Upload the dmg as-is (no zip); the artifact takes the file's name
-      - uses: actions/upload-artifact@v7
-        with:
-          archive: false
-          path: packages/desktop-app/release/*.dmg
-          if-no-files-found: error
-          retention-days: 14
+    # Branches of this repository are already built on push; only pull requests from forks run here
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    uses: ./.github/workflows/build-macos.yml

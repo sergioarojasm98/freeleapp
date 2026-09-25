@@ -90,7 +90,7 @@ export class SelectedSessionActionsService {
     this.behaviouralSubjectService.unselectSessions();
     this.modalService.show(SsmModalDialogComponent, {
       animated: false,
-      class: "edit-modal",
+      class: "edit-modal ssm-instances-modal",
       initialState: { session },
     });
   }
@@ -114,13 +114,6 @@ export class SelectedSessionActionsService {
           if (status === constants.confirmed) {
             this.logSessionData(session, "Session Deleted");
             await this.getSelectedSessionService(session).delete(session.sessionId);
-
-            try {
-              await this.appProviderService.teamService.pushToRemote();
-            } catch (error) {
-              this.appProviderService.teamService.setSyncState("failed");
-              throw error;
-            }
 
             this.messageToasterService.toast(`Session: ${session.sessionName}, deleted.`, ToastLevel.success, "");
           }

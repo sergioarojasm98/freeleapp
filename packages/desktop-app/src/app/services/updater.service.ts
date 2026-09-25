@@ -95,6 +95,17 @@ export class UpdaterService {
     this.electronService.fs.writeFileSync(this.electronService.os.homedir() + "/.Leapp/.latest.json", version);
   }
 
+  /**
+   * Release notes bundled with the installed app (What's new). Falls back to the published changelog.
+   */
+  async getInstalledReleaseNote(): Promise<string> {
+    try {
+      return this.markdown.render(this.electronService.fs.readFileSync(`${__dirname}/CHANGELOG.md`).toString());
+    } catch (_) {
+      return this.getReleaseNote();
+    }
+  }
+
   async getReleaseNote(): Promise<string> {
     return new Promise((resolve) => {
       this.httpClient.get("https://raw.githubusercontent.com/sergioarojasm98/freeleapp/master/CHANGELOG.md", { responseType: "text" }).subscribe(

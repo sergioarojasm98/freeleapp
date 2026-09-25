@@ -170,14 +170,10 @@ tr {
     opacity: 1 !important;
   }
 
-  tr:hover {
-    .status-item {
-      display: none;
-    }
-
-    .hover-item {
-      display: inline-block !important;
-    }
+  // The status dot stays visible; the actions button appears next to it
+  tr:hover .hover-item,
+  td.selected .hover-item {
+    visibility: visible;
   }
 }
 

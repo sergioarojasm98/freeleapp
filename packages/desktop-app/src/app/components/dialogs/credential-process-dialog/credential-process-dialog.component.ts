@@ -41,6 +41,6 @@ export class CredentialProcessDialogComponent implements OnInit {
   }
 
   openDoc(): void {
-    this.windowService.openExternalUrl("https://docs.leapp.cloud/latest/cli/");
+    this.windowService.openExternalUrl(`${constants.docsUrl}/features/settings/`);
   }
 }

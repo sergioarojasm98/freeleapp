@@ -42,11 +42,8 @@ describe("AppComponent", () => {
 
     // check for deep link at app start
     (app as any).fileService = {};
-    (app as any).fileService.readFileSync = jasmine
-      .createSpy()
-      .and.returnValue("leapp://01255ef8-open-leapp?email=test&firstName=n&lastName=g&teamName=t");
+    (app as any).fileService.readFileSync = jasmine.createSpy().and.returnValue("leapp://some-plugin");
     (app as any).fileService.existsSync = jasmine.createSpy().and.returnValue(true);
-    (app as any).isOpenLeappDeepLink = jasmine.createSpy().and.returnValue(true);
     (app as any).awsSsoRoleService = { setAwsIntegrationDelegate: () => {} };
     (app as any).windowService = { blockDevToolInProductionMode: () => {} };
     (app as any).updaterService = { createFoldersIfMissing: () => {} };
@@ -55,14 +52,8 @@ describe("AppComponent", () => {
     (app as any).manageAutoUpdate = () => {};
     (app as any).timerService = { start: () => {} };
     (app as any).loggingService = { log: () => {} };
-    (app as any).teamService = {
-      syncingWorkspaceState: { subscribe: () => {} },
-      setCurrentWorkspace: () => {},
-      signedInUserState: { getValue: () => {} },
-    };
     (app as any).behaviouralSubjectService = { fetchingIntegrationState$: { subscribe: () => {} } };
     (app as any).behaviouralSubjectService.sessions = [];
-    (app as any).extensionWebsocketService = { bootstrap: () => {} };
     (app as any).remoteProceduresServer = { startServer: () => {} };
     (app as any).router = { navigate: jasmine.createSpy().and.returnValue(true) };
 
@@ -80,14 +71,7 @@ describe("AppComponent", () => {
 
     await app.ngOnInit();
     expect((app as any).fileService.existsSync).toHaveBeenCalled();
-    expect((app as any).router.navigate).toHaveBeenCalledWith(["/lock"], {
-      queryParams: {
-        teamMemberEmail: "test",
-        teamMemberFirstName: "n",
-        teamMemberLastName: "g",
-        teamMemberTeamName: "t",
-      },
-    });
+    expect((app as any).router.navigate).toHaveBeenCalledWith(["/dashboard"]);
   });
 
   it("Should listen for deep links", () => {
@@ -103,8 +87,6 @@ describe("AppComponent", () => {
 
     app = fixture.debugElement.componentInstance;
     (app as any).behaviouralSubjectService = { sessions: [] };
-    (app as any).isOpenLeappDeepLink = jasmine.createSpy().and.returnValue(true);
-    (app as any).router.navigate = jasmine.createSpy().and.callFake(() => {});
     (app as any).pluginManagerService = { installPlugin: jasmine.createSpy().and.returnValue("") };
 
     (app as any).appProviderService = {};
@@ -131,17 +113,7 @@ describe("AppComponent", () => {
       }
     };
     const mockedCallback2 = (url) => {
-      if ((app as any).isOpenLeappDeepLink(url)) {
-        const afterQuestionMark = url.split("?")[1];
-        const splitByAmpersand = afterQuestionMark?.split("&");
-        const teamMemberEmail = splitByAmpersand[0]?.split("=")[1];
-        const teamMemberFirstName = splitByAmpersand[1]?.split("=")[1];
-        const teamMemberLastName = splitByAmpersand[2]?.split("=")[1];
-        const teamMemberTeamName = splitByAmpersand[3]?.split("=")[1];
-        if (teamMemberEmail) {
-          (app as any).router.navigate(["/lock"], { queryParams: { teamMemberEmail, teamMemberFirstName, teamMemberLastName, teamMemberTeamName } });
-        }
-      } else if (!constants.disablePluginSystem) {
+      if (!constants.disablePluginSystem) {
         (app as any).pluginManagerService.installPlugin(url);
       }
     };
@@ -151,7 +123,7 @@ describe("AppComponent", () => {
         if (_string === "UPDATE_AVAILABLE") {
           mockedCallback1();
         } else {
-          mockedCallback2("https://fake-url?email=a");
+          mockedCallback2("leapp://some-plugin");
         }
       },
     };
@@ -167,19 +139,9 @@ describe("AppComponent", () => {
     expect((app as any).updaterService.updateDialog).toHaveBeenCalled();
     expect((app as any).appProviderService.sessionManagementService.updateSessions).toHaveBeenCalled();
 
+    constants.disablePluginSystem = false;
     ipcRenderer.on("PLUGIN_URL", null);
-    expect((app as any).isOpenLeappDeepLink).toHaveBeenCalled();
-    expect((app as any).router.navigate).toHaveBeenCalled();
-  });
-
-  it("isopendeeplink", () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.debugElement.componentInstance;
-
-    let result = (app as any).isOpenLeappDeepLink("https://01255ef8-open-leapp?email=test@gmail.com");
-    expect(result).toBeTruthy();
-    result = (app as any).isOpenLeappDeepLink("https://open-plugin-name");
-    expect(result).toBeFalsy();
+    expect((app as any).pluginManagerService.installPlugin).toHaveBeenCalledWith("leapp://some-plugin");
   });
 
   it("beforeCloseInstructions", async () => {
@@ -192,7 +154,6 @@ describe("AppComponent", () => {
         stopAllSessions: jasmine.createSpy().and.callFake(() => {}),
       },
     };
-    (app as any).teamService = { signOut: jasmine.createSpy().and.callFake(() => {}) };
     (app as any).appService = { quit: jasmine.createSpy().and.callFake(() => {}) };
 
     await (app as any).beforeCloseInstructions();
@@ -200,7 +161,6 @@ describe("AppComponent", () => {
     expect((app as any).loggingService.log).toHaveBeenCalledWith(new LoggedEntry("Closing app with cleaning process...", this, LogLevel.info));
     expect((app as any).remoteProceduresServer.stopServer).toHaveBeenCalledTimes(1);
     expect((app as any).appProviderService.sessionManagementService.stopAllSessions).toHaveBeenCalledTimes(1);
-    expect((app as any).teamService.signOut).toHaveBeenCalledTimes(1);
     expect((app as any).appService.quit).toHaveBeenCalledTimes(1);
   });
 });

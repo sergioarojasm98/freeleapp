@@ -22,8 +22,8 @@ describe("CommandBarComponent", () => {
       getNotifications: () => [],
     });
     const spyNotificationsService = jasmine.createSpyObj("NotificationService", {
-      setNotifications: () => {},
-      getNotifications: () => [],
+      setNotifications: undefined,
+      getNotifications: [],
       getNotificationByUuid: () => {},
     });
     const spyLeappCoreService = jasmine.createSpyObj("LeappCoreService", [], {
@@ -31,11 +31,6 @@ describe("CommandBarComponent", () => {
       repository: spyRepositoryService,
       awsCoreService: { getRegions: () => [] },
       namedProfileService: { getNamedProfiles: () => [] },
-      teamService: {
-        signedInUserState: { subscribe: () => {} },
-        workspacesState: { subscribe: () => {} },
-        getKeychainCurrentWorkspace: async () => Promise.resolve("remoteWorkspace"),
-      },
       notificationService: spyNotificationsService,
     });
 
@@ -88,5 +83,14 @@ describe("CommandBarComponent", () => {
     spy.and.returnValue([]);
 
     fixture.detectChanges();
+  });
+
+  it("clears the search filter when Escape is pressed in the search bar", () => {
+    component.filterForm.get("searchFilter").setValue("prod");
+    const input: HTMLInputElement = fixture.nativeElement.querySelector("input.search-bar");
+
+    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+
+    expect(component.filterForm.get("searchFilter").value).toBe("");
   });
 });

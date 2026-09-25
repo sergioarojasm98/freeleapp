@@ -13,6 +13,8 @@ Differences from upstream Leapp:
 - Update checks and release notes come from this repository's GitHub Releases.
 - Data stays compatible: sessions live in `~/.Leapp` and the system keychain under the same keys as Leapp, so an existing setup carries over, and the IPC channel `leapp-cli` uses is unchanged.
 
+Documentation will be published at [freeleapp.com](https://freeleapp.com).
+
 Freeleapp is not affiliated with Noovolari or beSharp. "Leapp" is a trademark of its respective owners.
 
 ## How It Works

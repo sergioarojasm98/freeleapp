@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewChild } from "@angular/core";
+import { Component, OnDestroy, OnInit } from "@angular/core";
 import {
   globalFilteredSessions,
   globalFilterGroup,
@@ -15,11 +15,6 @@ import { BehaviouralSubjectService } from "@noovolari/leapp-core/services/behavi
 import { AppProviderService } from "../../services/app-provider.service";
 import { constants } from "@noovolari/leapp-core/models/constants";
 import { integrationHighlight } from "../integration-bar/integration-bar.component";
-import { MatMenuTrigger } from "@angular/material/menu";
-import { AppService } from "../../services/app.service";
-import { OptionsDialogComponent } from "../dialogs/options-dialog/options-dialog.component";
-import { WorkspaceState } from "../../services/team-service";
-import { Router } from "@angular/router";
 
 export interface SelectedSegment {
   name: string;
@@ -41,37 +36,20 @@ export const sidebarHighlight = new BehaviorSubject<HighlightSettings>({ showAll
   styleUrls: ["./side-bar.component.scss"],
 })
 export class SideBarComponent implements OnInit, OnDestroy {
-  @ViewChild("workspaceSelectionTrigger")
-  workspaceSelectionTrigger: MatMenuTrigger;
-
   folders: Folder[];
   segments: Segment[];
   selectedS: SelectedSegment[];
   showAll: boolean;
   showPinned: boolean;
   modalRef: BsModalRef;
-  workspacesState: WorkspaceState[];
 
   private unsubscribe: () => void;
   private behaviouralSubjectService: BehaviouralSubjectService;
 
-  constructor(
-    private router: Router,
-    private bsModalService: BsModalService,
-    private appProviderService: AppProviderService,
-    private appService: AppService
-  ) {
+  constructor(private bsModalService: BsModalService, private appProviderService: AppProviderService) {
     this.behaviouralSubjectService = appProviderService.behaviouralSubjectService;
     this.showAll = true;
     this.showPinned = false;
-  }
-
-  get isLocalWorkspaceSelected(): boolean {
-    return !!this.workspacesState.find((state) => state.type === "local" && state.selected);
-  }
-
-  get selectedWorkspace(): WorkspaceState {
-    return this.workspacesState.find((state) => state.selected);
   }
 
   ngOnInit(): void {
@@ -86,13 +64,9 @@ export class SideBarComponent implements OnInit, OnDestroy {
     });
     sidebarHighlight.next({ showAll: true, showPinned: false, selectedSegment: -1 });
 
-    const workspaceStateSubscription = this.appProviderService.teamService.workspacesState.subscribe((workspacesState: WorkspaceState[]) => {
-      this.workspacesState = workspacesState;
-    });
     this.unsubscribe = () => {
       segmentFilterSubscription.unsubscribe();
       sidebarHighlightSubscription.unsubscribe();
-      workspaceStateSubscription.unsubscribe();
     };
   }
 
@@ -143,7 +117,7 @@ export class SideBarComponent implements OnInit, OnDestroy {
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   showConfirmationDialog(segment: Segment, event: any): void {
-    const message = `Are you sure you want to delete the segment "${segment.name}"?`;
+    const message = `Are you sure you want to delete the saved filter "${segment.name}"?`;
     const confirmText = "Delete";
     const callback = (answerString: string) => {
       if (answerString === constants.confirmed.toString()) {
@@ -168,37 +142,5 @@ export class SideBarComponent implements OnInit, OnDestroy {
       this.selectedS[selectedSegmentIndex].selected = true;
     }
     integrationHighlight.next(-1);
-  }
-
-  setTrigger(event: any): void {
-    event.preventDefault();
-    event.stopPropagation();
-    setTimeout(() => {
-      this.workspaceSelectionTrigger.openMenu();
-      this.appService.setMenuTrigger(this.workspaceSelectionTrigger);
-    }, 100);
-  }
-
-  showOptionDialog(): void {
-    this.bsModalService.show(OptionsDialogComponent, { animated: false, class: "option-modal" });
-  }
-
-  async switchToWorkspace(workspace: WorkspaceState): Promise<void> {
-    if (workspace.type === "local") {
-      if (this.isLocalWorkspaceSelected) return;
-      await this.appProviderService.teamService.switchToLocalWorkspace();
-      this.resetFilters();
-    } else if (workspace.locked) {
-      await this.router.navigate(["/lock"]);
-    } else {
-      if (!this.isLocalWorkspaceSelected) return;
-      await this.appProviderService.sessionManagementService.stopAllSessions();
-      await this.appProviderService.teamService.pullFromRemote();
-      this.resetFilters();
-    }
-  }
-
-  openWorkspaceDocumentation(): void {
-    this.appProviderService.windowService.openExternalUrl("https://docs.leapp.cloud/latest/workspaces/");
   }
 }

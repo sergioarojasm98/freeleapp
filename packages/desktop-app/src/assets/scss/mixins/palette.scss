@@ -1,4 +1,4 @@
-$dark-sky-blue: #4a90e2;
+$dark-sky-blue: #3d8ddb;
 $silver-dark: #A7A7A7;
 $silver: #cfd2d3;
 $silver-two: #dfe1e2;
@@ -11,8 +11,8 @@ $black: #252525;
 $medium-dark: #666666;
 $light-grey: #ededed;
 $white-two: #f9f9f9;
-$primary-color: #9046ff;
-$hover-color: #134580;
+$primary-color: #5ea9ee;
+$hover-color: #2c6fb3;
 $primary-text-color: #fafafa;
 $secondary-text-color: #eceff1;
 $success-color: rgba(87, 181, 92, 0.8);
@@ -22,48 +22,51 @@ $charcoal-grey: #343e48;
 $danger-color: #b53234;
 $region-tag-color: #999999;
 $region-tag-active-color: #171717;
-$selected-card: rgb(49, 124, 246);
-$selected-card-hover: rgb(49, 124, 246, 0.4);
-$active-card: #e1f7f3;
-$success-session: #64D1B9;
+$selected-card: rgb(61, 141, 219);
+$selected-card-hover: rgb(61, 141, 219, 0.4);
+$active-card: #e6f1fc;
+$success-session: #34c759; // active session dot: macOS system green, clearer than the blue accent
 $text-black: #0c0c0c;
 $table-text: #999999;
 $small-color: #4c4c4c;
 $search-icon-color: #919191;
 $changelog-date-color: #6c6c6c;
-$update-green: #23D4B8;
+$update-green: #5ea9ee;
 
-/* Leapp color palette */
-$main-color: #080B38;
-$main-color-light: #21D4B8;
+/* Freeleapp color palette (from the app icon: blue #5ea9ee / #a9d4ff, grey #8b929c, graphite #15171b-#30343c) */
+$main-color: #1d2025;
+$main-color-light: #5ea9ee;
 $text-color: #171717;
 $white-text-color: #ffffff;
 $focused-element: rgba($main-color-light, 0.13);
 $background: #ffffff;
 $light-color: #ffffff;
 $bright-red: #FF3B30;
-$local-workspace-blu: #29A9E1;
-$remote-workspace-purple: #A656EB;
+$local-workspace-blu: #5ea9ee;
+$remote-workspace-purple: #8b929c;
 
-/* Leapp Dark-Mode color palette */
-$dark-main-text-color: #DEDCDD;
-$dark-main-background: #363336;
-$dark-table-background: #1F1D1E;
-$dark-region-label-color: #5E5C5D;
-$dark-button-color: #52A8DC;
-$dark-tooltip-color: #4990BA;
-$dark-selected-sidebar: #50466C;
-$dark-hover-sidebar: #554c77;
+/* Dim layer behind anything shown on top of the main window: modals and the overlay sidebar, both themes */
+$overlay-backdrop: rgba(0, 0, 0, 0.5);
+
+/* Freeleapp dark-mode palette: cool graphite surfaces, blue accents */
+$dark-main-text-color: #dce1e7;
+$dark-main-background: #23272d;
+$dark-table-background: #1a1d22;
+$dark-region-label-color: #5b616b;
+$dark-button-color: #5ea9ee;
+$dark-tooltip-color: #3d8ddb;
+$dark-selected-sidebar: #2c3b4d;
+$dark-hover-sidebar: #33455a;
 $dark-tablehead-border: #404040;
 $dark-session-card-border: #404040;
-$dark-region-label-color-active: #9375EF;
-$dark-modal-background: #292426;
-$dark-active-session: #3C3353;
-$dark-selected-session: #9375EF;
-$dark-hover-session: #302334;
-$dark-start-button: #52A8DC;
+$dark-region-label-color-active: #5ea9ee;
+$dark-modal-background: #1e2126;
+$dark-active-session: #22344a;
+$dark-selected-session: #5ea9ee;
+$dark-hover-session: #262c35;
+$dark-start-button: #5ea9ee;
 $dark-offline-session: #797878;
-$dark-select-component: #383537;
+$dark-select-component: #2a2e35;
 $dark-component-value: #A2A2A2;
 $dark-input-form-border: #787878;
 $dark-mat-menu: #6D6D6D;

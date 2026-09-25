@@ -20,25 +20,6 @@ describe("SideBarComponent", () => {
       repository: spyRepositoryService,
       segmentService: { list: () => [] },
       awsCoreService: { getRegions: () => [] },
-      teamService: {
-        getKeychainCurrentWorkspace: async () => Promise.resolve("remoteWorkspace"),
-        workspacesState: {
-          subscribe: () => {
-            component.workspacesState = [
-              {
-                name: "fake-name",
-                description: "fake-description",
-                type: "local",
-                selected: true,
-                locked: false,
-                id: "fake-id",
-                syncState: "disabled",
-              },
-            ];
-            return { unsubscribe: () => {} };
-          },
-        },
-      },
     });
 
     await TestBed.configureTestingModule({

@@ -18,6 +18,7 @@ import { OperatingSystem } from "@noovolari/leapp-core/models/operating-system";
 import { AppNativeService } from "../../../services/app-native.service";
 import { PluginContainer } from "@noovolari/leapp-core/plugin-sdk/plugin-manager-service";
 import { colorThemeSubject } from "../../check-icon-svg/check-icon-svg.component";
+import { withRecentRegions } from "../../../services/region-options";
 
 @Component({
   selector: "app-options-dialog",
@@ -51,8 +52,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
   regions: { region: string }[];
   selectedLocation: string;
   selectedRegion: string;
-  selectedRequirePassword: number;
-  selectedTouchIdEnabled: boolean;
   selectedBrowserOpening = constants.inApp.toString();
   selectedTerminal;
 
@@ -82,14 +81,10 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
     sessionDuration: new FormControl(""),
     pluginDeepLink: new FormControl(""),
     ssmRegionBehaviourSelect: new FormControl(""),
-    requirePasswordSelect: new FormControl(""),
-    touchIdEnableSelect: new FormControl(""),
   });
 
   selectedCredentialMethod: string;
   webConsoleSessionDuration: number;
-
-  extensionEnabled: boolean;
 
   /* Simple profile page: shows the Idp Url and the workspace json */
   private sessionService: SessionService;
@@ -112,12 +107,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
     this.selectedCredentialMethod = this.optionsService.credentialMethod || constants.credentialFile;
 
     this.selectedSsmRegionBehaviour = this.optionsService.ssmRegionBehaviour || constants.ssmRegionNo;
-
-    this.selectedRequirePassword = this.optionsService.requirePassword || constants.requirePasswordEveryTwoWeeks.value;
-
-    this.selectedTouchIdEnabled = this.optionsService.touchIdEnabled ?? constants.touchIdEnabled;
-
-    this.extensionEnabled = this.optionsService.extensionEnabled || false;
   }
 
   async ngOnInit(): Promise<void> {
@@ -145,7 +134,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
       this.showProxyAuthentication = true;
     }
 
-    this.regions = this.appProviderService.awsCoreService.getRegions();
+    this.regions = withRecentRegions(this.appProviderService.awsCoreService.getRegions(), this.appProviderService.repository.getSessions());
     this.locations = this.appProviderService.azureCoreService.getLocations();
     this.selectedRegion = this.optionsService.defaultRegion || constants.defaultRegion;
     this.selectedLocation = this.optionsService.defaultLocation || constants.defaultLocation;
@@ -196,23 +185,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
       this.optionsService.defaultLocation = this.selectedLocation;
       this.optionsService.macOsTerminal = this.selectedTerminal;
       this.optionsService.samlRoleSessionDuration = parseInt(this.form.controls["sessionDuration"].value, 10);
-
-      const previousRequirePassword = this.optionsService.requirePassword;
-      if (previousRequirePassword !== this.selectedRequirePassword) {
-        const keychainItem = await this.appProviderService.keychainService.getSecret(constants.appName, constants.touchIdKeychainItemName);
-        if (keychainItem) {
-          const updatedRequirePassword = JSON.parse(keychainItem);
-          updatedRequirePassword.nextExpiration = new Date().setDate(new Date().getDate() + this.selectedRequirePassword);
-          await this.appProviderService.keychainService.saveSecret(
-            constants.appName,
-            constants.touchIdKeychainItemName,
-            JSON.stringify(updatedRequirePassword)
-          );
-        }
-      }
-
-      this.optionsService.requirePassword = this.selectedRequirePassword;
-      this.optionsService.touchIdEnabled = (this.form.controls["touchIdEnableSelect"].value as any) === true;
 
       this.optionsService.ssmRegionBehaviour = this.selectedSsmRegionBehaviour;
 
@@ -531,10 +503,5 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
   openPluginFolder(): void {
     this.appProviderService.pluginManagerService.verifyAndGeneratePluginFolderIfMissing();
     this.appNativeService.shell.showItemInFolder(this.appNativeService.path.join(this.appNativeService.os.homedir(), ".Leapp", "plugins"));
-  }
-
-  toggleExtension(): void {
-    this.extensionEnabled = !this.extensionEnabled;
-    this.optionsService.extensionEnabled = this.extensionEnabled;
   }
 }

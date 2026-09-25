@@ -4,7 +4,7 @@ import { OptionsDialogComponent } from "../dialogs/options-dialog/options-dialog
 import { CreateDialogComponent } from "../dialogs/create-dialog/create-dialog.component";
 import { SegmentDialogComponent } from "../dialogs/segment-dialog/segment-dialog.component";
 import { FormControl, FormGroup } from "@angular/forms";
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, Subject } from "rxjs";
 import { globalOrderingFilter } from "../sessions/sessions.component";
 import { Session } from "@noovolari/leapp-core/models/session";
 import Segment, { GlobalFilters } from "@noovolari/leapp-core/models/segment";
@@ -19,13 +19,17 @@ import { constants } from "@noovolari/leapp-core/models/constants";
 import { WindowService } from "../../services/window.service";
 import { OptionsService } from "../../services/options.service";
 import { AzureSession } from "@noovolari/leapp-core/models/azure/azure-session";
-import { OperatingSystem } from "@noovolari/leapp-core/models/operating-system";
 import { UpdaterService } from "../../services/updater.service";
 import { LeappNotification } from "@noovolari/leapp-core/models/notification";
 import { InfoDialogComponent } from "../dialogs/info-dialog/info-dialog.component";
 import { NotificationService } from "@noovolari/leapp-core/services/notification-service";
 
+// Narrow layout (fewer columns, shorter labels): derived from the window width by MainLayoutComponent
 export const compactMode = new BehaviorSubject<boolean>(false);
+// Sidebar toggled by the user; it never resizes the window
+export const sidebarCollapsed = new BehaviorSubject<boolean>(false);
+// Clicks on the sidebar button; MainLayoutComponent decides between collapsing and showing it as an overlay
+export const sidebarToggleRequests = new Subject<void>();
 export const globalFilteredSessions = new BehaviorSubject<Session[]>([]);
 export const globalFilterGroup = new BehaviorSubject<GlobalFilters>(null);
 export const globalHasFilter = new BehaviorSubject<boolean>(false);
@@ -68,12 +72,12 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
 
   filterExtended: boolean;
   compactMode: boolean;
-  isLeappTeamWorkspace: boolean;
 
   eConstants = constants;
 
   notificationService: NotificationService;
 
+  private compactModeSubscription;
   private subscription0;
   private subscription1;
   private subscription2;
@@ -81,7 +85,6 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   private subscription4;
   private subscription5;
   private subscription6;
-  private workspaceStateSubscription;
 
   private behaviouralSubjectService: BehaviouralSubjectService;
 
@@ -136,6 +139,8 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   }
 
   ngOnInit(): void {
+    this.compactModeSubscription = compactMode.subscribe((value) => (this.compactMode = value));
+
     this.subscription0 = globalFilterGroup.subscribe((values: GlobalFilters) => {
       this.applyFiltersToSessions(values, this.behaviouralSubjectService.sessions);
     });
@@ -192,13 +197,10 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
     this.subscription6 = globalOrderingFilter.subscribe((sessions: Session[]) => {
       globalFilteredSessions.next(sessions);
     });
-
-    this.workspaceStateSubscription = this.appProviderService.teamService.workspacesState.subscribe((workspacesState) => {
-      this.isLeappTeamWorkspace = !!workspacesState.find((workspace) => workspace.type === "team" && workspace.selected);
-    });
   }
 
   ngOnDestroy(): void {
+    this.compactModeSubscription?.unsubscribe();
     this.subscription0?.unsubscribe();
     this.subscription1?.unsubscribe();
     this.subscription2?.unsubscribe();
@@ -206,7 +208,6 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
     this.subscription4?.unsubscribe();
     this.subscription5?.unsubscribe();
     this.subscription6?.unsubscribe();
-    this.workspaceStateSubscription?.unsubscribe();
   }
 
   ngAfterContentChecked(): void {
@@ -225,27 +226,19 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
     this.bsModalService.show(CreateDialogComponent, { animated: false, class: "create-modal", backdrop: "static", keyboard: false });
   }
 
-  toggleCompactMode(): void {
-    this.compactMode = !this.compactMode;
-    this.filterExtended = false;
-
-    this.windowService.getCurrentWindow().unmaximize();
-    this.windowService.getCurrentWindow().restore();
-
-    if (this.appService.detectOs() === OperatingSystem.mac && this.windowService.getCurrentWindow().isFullScreen()) {
-      this.windowService.getCurrentWindow().setFullScreen(false);
-      this.windowService.getCurrentWindow().setMaximizable(false);
-    }
-
-    compactMode.next(this.compactMode);
-    globalHasFilter.next(this.filterExtended);
-    document.querySelector(".sessions").classList.remove("filtered");
+  toggleSidebar(): void {
+    sidebarToggleRequests.next();
   }
 
   toggleFilters(): void {
     this.filterExtended = !this.filterExtended;
     globalHasFilter.next(this.filterExtended);
     CommandBarComponent.changeSessionsTableHeight();
+  }
+
+  clearSearch(): void {
+    // valueChanges re-applies the filters, so clearing the field restores the full session list
+    this.filterForm.get("searchFilter").setValue("");
   }
 
   toggleDateFilter(): void {
@@ -282,18 +275,16 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   }
 
   windowMaximizeAction(): void {
-    if (!this.compactMode) {
-      if (this.windowService.getCurrentWindow().isMaximized()) {
-        this.windowService.getCurrentWindow().restore();
-      } else {
-        this.windowService.getCurrentWindow().maximize();
-      }
+    if (this.windowService.getCurrentWindow().isMaximized()) {
+      this.windowService.getCurrentWindow().restore();
+    } else {
+      this.windowService.getCurrentWindow().maximize();
     }
   }
 
   async goToWhatsNew(): Promise<void> {
     const title = "What's new";
-    const releaseNotes = await this.updaterService.getReleaseNote();
+    const releaseNotes = await this.updaterService.getInstalledReleaseNote();
 
     this.bsModalService.show(InfoDialogComponent, {
       animated: false,
@@ -305,7 +296,7 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   }
 
   goToGettingStarted(): void {
-    this.windowService.openExternalUrl("https://docs.leapp.cloud/");
+    this.windowService.openExternalUrl(`${constants.docsUrl}/getting-started/overview/`);
   }
 
   openAnIssue(): void {

@@ -47,7 +47,6 @@ import { IKeychainService } from "@noovolari/leapp-core/interfaces/i-keychain-se
 import { WorkspaceConsistencyService } from "@noovolari/leapp-core/services/workspace-consistency-service";
 import { RegionsService } from "@noovolari/leapp-core/services/regions-service";
 import { NotificationService } from "@noovolari/leapp-core/services/notification-service";
-import { TeamService } from "./team-service";
 import { LocalstackSessionService } from "@noovolari/leapp-core/services/session/localstack/localstack-session-service";
 import { FetchHttpHandler } from "@smithy/fetch-http-handler";
 
@@ -98,7 +97,6 @@ export class AppProviderService {
   private integrationIsOnlineStateRefreshServiceInstance: IntegrationIsOnlineStateRefreshService;
   private pluginManagerServiceInstance: PluginManagerService;
   private integrationFactoryInstance: IntegrationFactory;
-  private teamServiceInstance: TeamService;
   private notificationServiceInstance: NotificationService;
 
   constructor(
@@ -463,7 +461,6 @@ export class AppProviderService {
         this.mfaCodePrompter,
         this.repository,
         this.behaviouralSubjectService,
-        this.teamService,
         this.workspaceService,
         (uiSafeBlock) => this.ngZone.run(() => uiSafeBlock())
       );
@@ -480,27 +477,5 @@ export class AppProviderService {
       );
     }
     return this.integrationIsOnlineStateRefreshServiceInstance;
-  }
-
-  public get teamService(): TeamService {
-    if (!this.teamServiceInstance) {
-      this.teamServiceInstance = new TeamService(
-        this.sessionFactory,
-        this.namedProfileService,
-        this.sessionManagementService,
-        this.awsSsoIntegrationService,
-        this.azureIntegrationService,
-        this.idpUrlService,
-        this.keychainService,
-        this.appNativeService,
-        this.fileService,
-        window.crypto,
-        this.workspaceService,
-        this.integrationFactory,
-        this.logService,
-        this.behaviouralSubjectService
-      );
-    }
-    return this.teamServiceInstance;
   }
 }

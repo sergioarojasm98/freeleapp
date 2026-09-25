@@ -13,6 +13,7 @@
             bindLabel="{{session.type === eSessionType.azure ? 'location' : 'region'}}"
             bindValue="{{session.type === eSessionType.azure ? 'location' : 'region'}}"
             [items]="regionOrLocations"
+            groupBy="{{session.type === eSessionType.azure ? '' : 'group'}}"
             [addTag]="false"
             [(ngModel)]="selectedRegion" placeholder="{{placeholder}}"></ng-select>
         </div>

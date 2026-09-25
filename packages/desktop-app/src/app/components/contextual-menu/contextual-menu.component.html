@@ -46,7 +46,7 @@
 
     <ng-container
       *ngIf="selectedSession.type === eSessionType.awsSsoRole || selectedSession.type === eSessionType.awsIamRoleFederated || selectedSession.type === eSessionType.awsIamRoleChained">
-      <button [disabled]="this.optionsService.extensionEnabled && isWebConsoleFetching ? true : null" [class.disabled]="isWebConsoleFetching" mat-menu-item (click)="openAwsWebConsole();">
+      <button mat-menu-item (click)="openAwsWebConsole();">
         <i class="moon-Open-Web-Console"></i>
         <span>&nbsp;&nbsp;Open Web Console</span>
       </button>
@@ -64,7 +64,7 @@
     </ng-container>
 
     <button mat-menu-item (click)="editSession();"
-            *ngIf="selectedSession.type !== eSessionType.awsSsoRole && selectedSession.type !== eSessionType.azure && !isLeappTeamUser">
+            *ngIf="selectedSession.type !== eSessionType.awsSsoRole && selectedSession.type !== eSessionType.azure">
       <i class="moon-Edit"></i>&nbsp;
       <span>Edit Session</span>
     </button>

@@ -1,8 +1,5 @@
 <div class="mat-tab-labels updater-header">
   <div class="modal-title">
-    <div class="modal-title-icon">
-      <i class="moon-Clock"></i>
-    </div>
     <div class="modal-title-message">
       <span>{{title}}</span>
     </div>
@@ -20,8 +17,9 @@
   <div class="html-content" [innerHTML]="description" (click)="$event.preventDefault();manageLinkEvents($event)"></div>
   <br>
 
-  <div class="button-equalizer">
-    <button type="button" (click)="closeAndOpenLink();" class="enabled">{{buttonName ?? 'Ok'}}</button>
+  <!-- Only notifications with a link need an action; the X and Esc already close the dialog -->
+  <div class="button-equalizer" *ngIf="link">
+    <button type="button" (click)="closeAndOpenLink();" class="enabled">{{buttonName ?? 'Open'}}</button>
   </div>
 
 </div>

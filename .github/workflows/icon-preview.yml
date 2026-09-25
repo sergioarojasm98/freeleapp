@@ -1,0 +1,55 @@
+name: Icon Preview
+
+on:
+  push:
+    paths:
+      - "design/icon/**"
+      - ".github/workflows/icon-preview.yml"
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Show Icon Composer version
+        run: |
+          ICTOOL="$(dirname "$(xcode-select -p)")/Applications/Icon Composer.app/Contents/Executables/ictool"
+          echo "ICTOOL=$ICTOOL" >> "$GITHUB_ENV"
+          xcodebuild -version
+          "$ICTOOL" --version
+
+      # ictool validates the package as a side effect of rendering
+      - name: Render Liquid Glass renditions
+        working-directory: design/icon
+        run: |
+          mkdir -p preview
+          for icon in *.icon; do
+            name="${icon%.icon}"
+            for rendition in Default Dark ClearLight ClearDark TintedDark; do
+              "$ICTOOL" "$icon" --export-image --output-file "preview/$name-$rendition.png" \
+                --platform macOS --rendition "$rendition" --width 512 --height 512 --scale 1
+            done
+          done
+          ls -la preview
+
+      - name: Compile with actool
+        working-directory: design/icon
+        run: |
+          for icon in *.icon; do
+            out="actool-${icon%.icon}"
+            mkdir -p "$out"
+            xcrun actool "$icon" --compile "$out" --platform macosx --minimum-deployment-target 11.0 \
+              --app-icon "${icon%.icon}" --output-partial-info-plist "$out/partial.plist" \
+              --output-format human-readable-text --notices --warnings --errors
+            ls -la "$out"
+          done
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: icon-preview
+          path: design/icon/preview/*.png
+          if-no-files-found: error
+          retention-days: 14

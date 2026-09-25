@@ -1,0 +1,42 @@
+{
+  "fill": {
+    "linear-gradient": [
+      "extended-srgb:0.18824,0.20392,0.23529,1.00000",
+      "extended-srgb:0.08235,0.09020,0.10588,1.00000"
+    ]
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "glass": true,
+          "image-name": "cloud-blue.svg",
+          "name": "cloud-blue"
+        },
+        {
+          "glass": true,
+          "image-name": "cloud-grey.svg",
+          "name": "cloud-grey"
+        },
+        {
+          "glass": true,
+          "image-name": "cloud-white.svg",
+          "name": "cloud-white"
+        }
+      ],
+      "lighting": "individual",
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "specular": true,
+      "translucency": {
+        "enabled": true,
+        "value": 0.4
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}

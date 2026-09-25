@@ -11,7 +11,6 @@ export interface GlobalSettings {
   pinned: string[];
   segments: Segment[];
   colorTheme: string;
-  extensionEnabled: boolean;
   credentialMethod: string;
   samlRoleSessionDuration: number;
   ssmRegionBehaviour: string;

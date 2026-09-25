@@ -76,14 +76,6 @@ const mustInjected = (): any[] => {
     workspaceService: {
       extractGlobalSettings: () => ({ colorTheme: "" }),
     },
-    teamService: {
-      signedInUserState: { getValue: () => ({}) },
-      workspacesState: {
-        subscribe: () => ({
-          unsubscribe: () => ({}),
-        }),
-      },
-    },
   });
 
   return [

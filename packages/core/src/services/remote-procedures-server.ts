@@ -9,7 +9,6 @@ import { IMfaCodePrompter } from "../interfaces/i-mfa-code-prompter";
 import { IntegrationFactory } from "./integration-factory";
 import { IKeychainService } from "../interfaces/i-keychain-service";
 import { WorkspaceService } from "./workspace-service";
-import { ITeamService } from "../interfaces/i-team-service";
 
 export const uInt8ArrayToArray = (uint8array: Uint8Array): Array<number> => {
   if (uint8array === null || uint8array === undefined) return null;
@@ -46,7 +45,6 @@ export class RemoteProceduresServer {
     private mfaCodePrompter: IMfaCodePrompter,
     private repository: Repository,
     private behaviouralSubjectService: BehaviouralSubjectService,
-    private teamService: ITeamService,
     private workspaceService: WorkspaceService,
     private uiSafeFn: (uiSafeBlock: () => void) => void,
     private serverId = constants.ipcServerId
@@ -214,7 +212,7 @@ export class RemoteProceduresServer {
   private async refreshWorkspaceState(emitFunction: EmitFunction, socket: Socket, _data: RpcRequest): Promise<void> {
     try {
       this.uiSafeFn(async () => {
-        await this.teamService.refreshWorkspaceState(async () => this.workspaceService.reloadWorkspace());
+        await this.workspaceService.reloadWorkspace();
       });
       emitFunction(socket, "message", {});
     } catch (error) {

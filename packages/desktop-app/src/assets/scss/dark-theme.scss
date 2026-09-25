@@ -205,10 +205,6 @@ body.dark-theme {
       top: -2px;
       margin-bottom: -3px!important;
     }
-    .save-segments {
-      position: absolute;
-      top: 7px;
-    }
     .tag-filters {
       padding: 12px 20px;
     }
@@ -238,12 +234,6 @@ body.dark-theme {
   .form-control:focus {
     color: $dark-main-text-color;
     border: 1px solid $dark-session-card-border;
-  }
-
-  ///* Modals *///
-  .modal-backdrop.show, .modal-backdrop::after, .modal-backdrop {
-    background-color: #292426!important;
-    opacity: 0.7;
   }
 
   small.text-error {
@@ -286,7 +276,7 @@ body.dark-theme {
       a {
         color: $dark-button-color;
         &:hover {
-          color: #00d9ff;
+          color: #a9d4ff;
         }
       }
     }
@@ -370,17 +360,17 @@ body.dark-theme {
     }
     
     .mat-slide-toggle.mat-checked .mat-slide-toggle-bar {
-      background-color: rgba(82, 168, 220, 0.45)!important;
+      background-color: rgba(94, 169, 238, 0.45)!important;
     }
     .mat-slide-toggle.mat-checked .mat-slide-toggle-thumb {
-      background-color: #52A8DC!important;
+      background-color: #5ea9ee!important;
     }
   }
   .mat-slide-toggle.mat-checked .mat-slide-toggle-bar {
-    background-color: rgba(82, 168, 220, 0.45)!important;
+    background-color: rgba(94, 169, 238, 0.45)!important;
   }
   .mat-slide-toggle.mat-checked .mat-slide-toggle-thumb {
-    background-color: #52A8DC!important;
+    background-color: #5ea9ee!important;
   }
 
   .toggled-filter {
@@ -399,13 +389,6 @@ body.dark-theme {
 
   .search-bar{
     border-bottom: 1px solid $dark-input-form-border!important;
-  }
-
-  .hero-unit {
-    border: none;
-    img {
-      border-radius: 10px;
-    }
   }
 
   .ng-select > .ng-select-container .ng-arrow, .ng-select.ng-select-opened > .ng-select-container .ng-arrow {
@@ -576,62 +559,20 @@ body.dark-theme {
   }
 
   i.fa-apple, i.fa-windows, i.fa-linux {
-    color: #52A8DC!important;
-  }
-
-  .enable-option {
-    border-color: #404040!important;
+    color: #5ea9ee!important;
   }
 
   .selected i.fa-circle.active {
-    color: #64D1B9 !important;
+    color: $success-session !important;
   }
 
   .workspace-menu-icon {
     filter: invert(1);
   }
 
-  .plan {
-    border: 1px solid $dark-tablehead-border;
-    &.selected {
-      border: 2px solid #00aaff;
-      box-sizing: border-box;
-    }
-    .plan-header {
-      border-bottom: 1px solid $dark-tablehead-border;
-    }
-    .plan-body {
-      background-color: $dark-select-component;
-    }
-    .price-description {
-      color: #DEDCDD;
-    }
-    .cta-button.clickable {
-      background: $dark-button-color;
-      color: $white-text-color;
-      outline: none;
-      border: none;
-    }
-  }
-
-  .right-side h2, .left-side h2, .plan-summary .black {
-    color: #DEDCDD!important;
-  }
-
-  .right-side {
-    border-left-color: #424242!important;
-  }
-
-  .sync {
-    color: $white-text-color;
-    img {
-      filter: invert(1);
-    }
-  }
-
   .full-container {
     background-color: $dark-modal-background!important;
-    color: #DEDCDD!important;
+    color: #dce1e7!important;
     .logo-column {
       border-right-color: #404040!important;
       img {
@@ -643,7 +584,7 @@ body.dark-theme {
         background-color: $dark-main-background!important;
         border-color: $dark-input-form-border!important;
         span {
-          color: #DEDCDD!important;
+          color: #dce1e7!important;
         }
       }
       .name {
@@ -656,20 +597,20 @@ body.dark-theme {
       }
     }
     .fa-eye-slash, .fa-eye {
-      color: #DEDCDD!important;
+      color: #dce1e7!important;
     }
   }
 
   .touch-id {
     border-color: #787878;
-    background-color: #363336;
+    background-color: #23272d;
     img {
     filter: invert(1);
     }
   }
 
   .personal-data .team-name {
-    color: #DEDCDD!important;
+    color: #dce1e7!important;
   }
 
   .sidebar-flex div button {
@@ -678,7 +619,7 @@ body.dark-theme {
     left: 8px;
     background: none;
     border: none;
-    color: #DEDCDD!important;
+    color: #dce1e7!important;
     font-size: 14px !important;
     font-weight: 500 !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !important;
@@ -686,7 +627,7 @@ body.dark-theme {
       opacity: 0.7;
     }
     i {
-      color: #DEDCDD!important;
+      color: #dce1e7!important;
     }
   }
 }

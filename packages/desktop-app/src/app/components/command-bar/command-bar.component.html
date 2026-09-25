@@ -122,7 +122,8 @@
         </div>
       </div>
 
-      <a class="save-segments" (click)="openSaveSegmentDialog();" *ngIf="checkFormIsDirty();">Save{{compactMode ? '' : ' Segments'}}</a>
+      <button type="button" class="save-filter-button" (click)="openSaveSegmentDialog();" *ngIf="checkFormIsDirty();"
+              matTooltip="Save the current filters in the sidebar"><i class="moon-Tag"></i><span>Save{{compactMode ? '' : ' Filter'}}</span></button>
     </div>
 
   </form>

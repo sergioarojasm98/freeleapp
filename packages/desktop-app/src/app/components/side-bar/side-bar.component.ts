@@ -117,7 +117,7 @@ export class SideBarComponent implements OnInit, OnDestroy {
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   showConfirmationDialog(segment: Segment, event: any): void {
-    const message = `Are you sure you want to delete the segment "${segment.name}"?`;
+    const message = `Are you sure you want to delete the saved filter "${segment.name}"?`;
     const confirmText = "Delete";
     const callback = (answerString: string) => {
       if (answerString === constants.confirmed.toString()) {

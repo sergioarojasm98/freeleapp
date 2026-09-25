@@ -189,8 +189,9 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
     this.subscription5 = globalSegmentFilter.subscribe((segment: Segment) => {
       if (segment) {
         const values = segment.filterGroup;
-        globalFilterGroup.next(values);
+        // Update the form and chip lists first: filtering reads both, so emitting before would use stale chips
         this.updateFilterForm(values);
+        globalFilterGroup.next(values);
       }
     });
 
@@ -440,13 +441,6 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   }
 
   private updateFilterForm(values: GlobalFilters) {
-    this.filterForm.get("searchFilter").setValue(values.searchFilter);
-    this.filterForm.get("dateFilter").setValue(values.dateFilter);
-    this.filterForm.get("providerFilter").setValue(values.providerFilter);
-    this.filterForm.get("profileFilter").setValue(values.profileFilter);
-    this.filterForm.get("regionFilter").setValue(values.regionFilter);
-    this.filterForm.get("typeFilter").setValue(values.typeFilter);
-
     if (values.providerFilter.length > 0) {
       this.providers = values.providerFilter;
       this.providers.forEach((provider) => {
@@ -471,6 +465,19 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
         type.show = true;
       });
     }
+
+    // Set every field without emitting, so the list is filtered once with the complete saved filter
+    this.filterForm.patchValue(
+      {
+        searchFilter: values.searchFilter,
+        dateFilter: values.dateFilter,
+        providerFilter: values.providerFilter,
+        profileFilter: values.profileFilter,
+        regionFilter: values.regionFilter,
+        typeFilter: values.typeFilter,
+      },
+      { emitEvent: false }
+    );
   }
 
   private setInitialArrayFilters() {

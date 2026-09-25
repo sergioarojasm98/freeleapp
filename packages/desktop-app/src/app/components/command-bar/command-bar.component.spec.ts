@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { CommandBarComponent } from "./command-bar.component";
+import { CommandBarComponent, globalSegmentFilter } from "./command-bar.component";
 import { mustInjected } from "../../../base-injectables";
 import { AppProviderService } from "../../services/app-provider.service";
 import { constants } from "@noovolari/leapp-core/models/constants";
@@ -92,5 +92,31 @@ describe("CommandBarComponent", () => {
     input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
 
     expect(component.filterForm.get("searchFilter").value).toBe("");
+  });
+
+  it("filters once, with the saved chips already in place, when a saved filter is applied", () => {
+    const regionFilter = [{ show: true, name: "us-east-1", value: true }];
+    const segment = {
+      name: "US East",
+      filterGroup: {
+        searchFilter: "prod",
+        dateFilter: true,
+        pinnedFilter: false,
+        integrationFilter: [],
+        providerFilter: [],
+        profileFilter: [],
+        regionFilter,
+        typeFilter: [],
+      },
+    } as any;
+    const chipsSeenByFilter = [];
+    spyOn(component as any, "applyFiltersToSessions").and.callFake(() => chipsSeenByFilter.push((component as any).regions));
+
+    globalSegmentFilter.next(segment);
+
+    expect(chipsSeenByFilter).toEqual([regionFilter]);
+    expect(component.filterForm.get("searchFilter").value).toBe("prod");
+    expect(component.filterForm.get("regionFilter").value).toBe(regionFilter);
+    globalSegmentFilter.next(null);
   });
 });

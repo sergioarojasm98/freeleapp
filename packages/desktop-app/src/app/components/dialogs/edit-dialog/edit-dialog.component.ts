@@ -21,6 +21,7 @@ import { AppMfaCodePromptService } from "../../../services/app-mfa-code-prompt.s
 import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
 import { OptionsService } from "../../../services/options.service";
 import { IKeychainService } from "@noovolari/leapp-core/interfaces/i-keychain-service";
+import { withRecentRegions } from "../../../services/region-options";
 
 @Component({
   selector: "app-edit-dialog",
@@ -137,7 +138,7 @@ export class EditDialogComponent implements OnInit, AfterViewInit {
     }));
 
     // Get the region
-    this.regions = this.leappCoreService.awsCoreService.getRegions();
+    this.regions = withRecentRegions(this.leappCoreService.awsCoreService.getRegions(), this.leappCoreService.repository.getSessions());
     this.locations = this.leappCoreService.azureCoreService.getLocations();
 
     this.selectedRegion = this.regions.find((r) => r.region === this.selectedSession?.region)?.region;

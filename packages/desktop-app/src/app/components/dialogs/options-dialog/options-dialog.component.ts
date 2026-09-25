@@ -18,6 +18,7 @@ import { OperatingSystem } from "@noovolari/leapp-core/models/operating-system";
 import { AppNativeService } from "../../../services/app-native.service";
 import { PluginContainer } from "@noovolari/leapp-core/plugin-sdk/plugin-manager-service";
 import { colorThemeSubject } from "../../check-icon-svg/check-icon-svg.component";
+import { withRecentRegions } from "../../../services/region-options";
 
 @Component({
   selector: "app-options-dialog",
@@ -133,7 +134,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
       this.showProxyAuthentication = true;
     }
 
-    this.regions = this.appProviderService.awsCoreService.getRegions();
+    this.regions = withRecentRegions(this.appProviderService.awsCoreService.getRegions(), this.appProviderService.repository.getSessions());
     this.locations = this.appProviderService.azureCoreService.getLocations();
     this.selectedRegion = this.optionsService.defaultRegion || constants.defaultRegion;
     this.selectedLocation = this.optionsService.defaultLocation || constants.defaultLocation;

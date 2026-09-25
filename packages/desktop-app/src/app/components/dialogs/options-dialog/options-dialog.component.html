@@ -16,7 +16,7 @@
           <div class="form-group">
             <div class="form-field">
               <label>AWS Region</label>
-              <ng-select formControlName="regionsSelect" bindLabel="region" bindValue="region" [clearable]="false" [items]="regions"
+              <ng-select formControlName="regionsSelect" bindLabel="region" bindValue="region" groupBy="group" [clearable]="false" [items]="regions"
                          [(ngModel)]="selectedRegion" [appendTo]="'body'"></ng-select>
             </div>
           </div>

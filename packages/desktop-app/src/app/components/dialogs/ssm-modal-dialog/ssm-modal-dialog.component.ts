@@ -8,6 +8,7 @@ import { SsmService } from "@noovolari/leapp-core/services/ssm-service";
 import { LeappBaseError } from "@noovolari/leapp-core/errors/leapp-base-error";
 import { LogLevel } from "@noovolari/leapp-core/services/log-service";
 import { constants } from "@noovolari/leapp-core/models/constants";
+import { withRecentRegions } from "../../../services/region-options";
 
 @Component({
   selector: "app-ssm-modal-dialog",
@@ -38,7 +39,7 @@ export class SsmModalDialogComponent implements OnInit {
     this.ssmLoading = false;
     this.askingSsmRegion = true;
     this.selectedSsmRegion = null;
-    this.awsRegions = this.appProviderService.awsCoreService.getRegions();
+    this.awsRegions = withRecentRegions(this.appProviderService.awsCoreService.getRegions(), this.appProviderService.repository.getSessions());
     this.sessionFactory = this.appProviderService.sessionFactory;
     this.ssmService = this.appProviderService.ssmService;
 

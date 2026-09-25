@@ -141,3 +141,19 @@ body.dark-theme .form-field .ng-select .ng-dropdown-panel.ng-select-top {
       background-color: $dark-select-component !important;
     }
 }
+
+// Group headers, e.g. "Recently used" / "All regions" in region dropdowns
+.ng-dropdown-panel .ng-dropdown-panel-items .ng-optgroup {
+  padding: 8px 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: $silver-dark;
+  cursor: default;
+}
+
+body.dark-theme .ng-dropdown-panel .ng-dropdown-panel-items .ng-optgroup {
+  background-color: $dark-select-component;
+  color: $dark-component-value;
+}

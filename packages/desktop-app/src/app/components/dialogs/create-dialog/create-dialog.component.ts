@@ -23,6 +23,7 @@ import { AzureSessionService } from "@noovolari/leapp-core/services/session/azur
 import { OptionsService } from "../../../services/options.service";
 import { LocalstackSessionRequest } from "@noovolari/leapp-core/services/session/localstack/localstack-session-request";
 import { LocalstackSessionService } from "@noovolari/leapp-core/services/session/localstack/localstack-session-service";
+import { withRecentRegions } from "../../../services/region-options";
 
 @Component({
   selector: "app-create-dialog",
@@ -160,7 +161,7 @@ export class CreateDialogComponent implements OnInit {
       }
 
       // Get all regions and locations from app service lists
-      this.regions = this.leappCoreService.awsCoreService.getRegions();
+      this.regions = withRecentRegions(this.leappCoreService.awsCoreService.getRegions(), this.leappCoreService.repository.getSessions());
       this.locations = this.leappCoreService.azureCoreService.getLocations();
 
       // Select default values

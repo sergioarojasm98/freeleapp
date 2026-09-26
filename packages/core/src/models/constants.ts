@@ -10,7 +10,7 @@ export const constants = {
   lockFileBackupPath: ".freeleapp/freeleapp-lock.backup.bin",
   latestUrl: "https://github.com/sergioarojasm98/freeleapp/releases/latest",
   docsUrl: "https://freeleapp.com",
-  workspaceLastVersion: 7,
+  workspaceLastVersion: 8,
   localWorkspaceName: "Local workspace",
   localWorkspaceDescription: "Community Edition",
   localWorkspaceKeychainValue: "local",
@@ -54,9 +54,10 @@ export const constants = {
   ipcServerId: "leapp_da",
 
   roleSessionName: "assumed-from-leapp",
-  // Credential Process
+  // Credential method: Freeleapp always writes ~/.aws/credentials. The credential-process method needed the Leapp CLI,
+  // which Freeleapp does not ship; workspace migration 8 moves Leapp setups that used it back to the file.
   credentialFile: "credential-file-method",
-  credentialProcess: "credential-process-method",
+  legacyCredentialProcess: "credential-process-method",
 
   // SSM region behavior
   ssmRegionNo: "No",

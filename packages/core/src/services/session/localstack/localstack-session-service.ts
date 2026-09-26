@@ -6,7 +6,6 @@ import { SessionType } from "../../../models/session-type";
 import { LogLevel } from "../../log-service";
 import { Repository } from "../../repository";
 import { SessionService } from "../session-service";
-import { constants } from "../../../models/constants";
 import { AwsCoreService } from "../../aws-core-service";
 import { FileService } from "../../file-service";
 import { LocalstackSession } from "../../../models/localstack/localstack-session";
@@ -53,12 +52,8 @@ export class LocalstackSessionService extends SessionService {
       }
       await this.stopAllWithSameNameProfile(sessionId);
       this.sessionLoading(sessionId);
-      if (this.repository.getWorkspace().credentialMethod === constants.credentialFile) {
-        const credentialsInfo = await this.generateCredentials();
-        await this.applyCredentials(sessionId, credentialsInfo);
-      } else {
-        await this.generateProcessCredentials(undefined);
-      }
+      const credentialsInfo = await this.generateCredentials();
+      await this.applyCredentials(sessionId, credentialsInfo);
       this.sessionActivated(sessionId);
     } catch (error) {
       this.sessionError(sessionId, error);
@@ -74,11 +69,7 @@ export class LocalstackSessionService extends SessionService {
       return;
     }
     try {
-      if (this.repository.getWorkspace().credentialMethod === constants.credentialFile) {
-        await this.deApplyCredentials(sessionId);
-      } else {
-        await this.deApplyConfigProfileCommand(sessionId);
-      }
+      await this.deApplyCredentials(sessionId);
       this.sessionDeactivated(sessionId);
     } catch (error) {
       this.sessionError(sessionId, error);
@@ -95,15 +86,6 @@ export class LocalstackSessionService extends SessionService {
     } catch (error) {
       this.sessionError(sessionId, error);
     }
-  }
-
-  async deApplyConfigProfileCommand(sessionId: string): Promise<void> {
-    const session = this.repository.getSessionById(sessionId);
-    const profileName = this.repository.getProfileName((session as any).profileId);
-    const profile = `profile ${profileName}`;
-    const credentialProcess = await this.fileService.iniParseSync(this.awsCoreService.awsConfigPath());
-    delete credentialProcess[profile];
-    await this.fileService.replaceWriteSync(this.awsCoreService.awsConfigPath(), credentialProcess);
   }
 
   generateCredentials = (): Promise<CredentialsInfo> => {

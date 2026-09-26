@@ -40,7 +40,6 @@ import { ColumnDialogComponent } from "./dialogs/column-dialog/column-dialog.com
 import { LeappSelectComponent } from "./leapp-select/leapp-select.component";
 import { IntegrationBarComponent } from "./integration-bar/integration-bar.component";
 import { MatTooltipModule } from "@angular/material/tooltip";
-import { CredentialProcessDialogComponent } from "./dialogs/credential-process-dialog/credential-process-dialog.component";
 import { ChangeRegionDialogComponent } from "./dialogs/change-region-dialog/change-region-dialog.component";
 import { ChangeNamedProfileDialogComponent } from "./dialogs/change-named-profile-dialog/change-named-profile-dialog.component";
 import { SsmModalDialogComponent } from "./dialogs/ssm-modal-dialog/ssm-modal-dialog.component";
@@ -83,7 +82,6 @@ import { AuthorizationDialogComponent } from "./dialogs/authorization-dialog/aut
     ColumnDialogComponent,
     LeappSelectComponent,
     IntegrationBarComponent,
-    CredentialProcessDialogComponent,
     ChangeRegionDialogComponent,
     ChangeNamedProfileDialogComponent,
     SsmModalDialogComponent,

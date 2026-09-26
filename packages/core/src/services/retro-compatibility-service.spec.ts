@@ -1,4 +1,4 @@
-import { describe, jest, expect, test } from "@jest/globals";
+import { beforeEach, describe, jest, expect, test } from "@jest/globals";
 import { RetroCompatibilityService } from "./retro-compatibility-service";
 import { SessionType } from "../models/session-type";
 import { IntegrationType } from "../models/integration-type";
@@ -55,6 +55,7 @@ describe("RetroCompatibilityService", () => {
       (service as any).migration5 = jest.fn();
       (service as any).migration6 = jest.fn();
       (service as any).migration7 = jest.fn();
+      (service as any).migration8 = jest.fn();
 
       await service.applyWorkspaceMigrations();
 
@@ -67,6 +68,7 @@ describe("RetroCompatibilityService", () => {
       expect((service as any).migration5).toHaveBeenCalled();
       expect((service as any).migration6).toHaveBeenCalled();
       expect((service as any).migration7).toHaveBeenCalled();
+      expect((service as any).migration8).toHaveBeenCalled();
     });
 
     test("should try migrations, retropatch not necessary", async () => {
@@ -87,6 +89,7 @@ describe("RetroCompatibilityService", () => {
       (service as any).migration5 = jest.fn();
       (service as any).migration6 = jest.fn();
       (service as any).migration7 = jest.fn();
+      (service as any).migration8 = jest.fn();
 
       await service.applyWorkspaceMigrations();
 
@@ -99,6 +102,7 @@ describe("RetroCompatibilityService", () => {
       expect((service as any).migration5).toHaveBeenCalled();
       expect((service as any).migration6).toHaveBeenCalled();
       expect((service as any).migration7).toHaveBeenCalled();
+      expect((service as any).migration8).toHaveBeenCalled();
     });
 
     test("should try migrations, integrationpatch not necessary", async () => {
@@ -119,6 +123,7 @@ describe("RetroCompatibilityService", () => {
       (service as any).migration5 = jest.fn();
       (service as any).migration6 = jest.fn();
       (service as any).migration7 = jest.fn();
+      (service as any).migration8 = jest.fn();
 
       await service.applyWorkspaceMigrations();
 
@@ -131,6 +136,7 @@ describe("RetroCompatibilityService", () => {
       expect((service as any).migration5).toHaveBeenCalled();
       expect((service as any).migration6).toHaveBeenCalled();
       expect((service as any).migration7).toHaveBeenCalled();
+      expect((service as any).migration8).toHaveBeenCalled();
     });
   });
 
@@ -560,6 +566,63 @@ describe("RetroCompatibilityService", () => {
     expect((service as any).persists).toHaveBeenCalledWith(workspace);
     expect((workspace as any).remoteWorkspacesSettingsMap).toEqual({});
     expect(repository.reloadWorkspace).toHaveBeenCalled();
+  });
+
+  describe("migration8", () => {
+    const leappProfile = { ["credential_process"]: "leapp session generate session-1", region: "eu-west-1" };
+    const ownProfile = { ["credential_process"]: "/usr/local/bin/my-helper", region: "us-east-1" };
+    let config: any;
+    let fileService: any;
+    let repository: any;
+
+    beforeEach(() => {
+      config = { "profile leapp": { ...leappProfile }, "profile mine": { ...ownProfile }, default: { region: "us-east-1" } };
+      fileService = {
+        homeDir: () => "/home",
+        existsSync: jest.fn(() => true),
+        iniParseSync: jest.fn(() => config),
+        replaceWriteSync: jest.fn(),
+      };
+      repository = { reloadWorkspace: jest.fn() };
+      service = new RetroCompatibilityService(fileService, null, repository, null);
+      (service as any).persists = jest.fn();
+    });
+
+    test("not needed", () => {
+      (service as any).getWorkspace = jest.fn(() => ({ _workspaceVersion: 8 }));
+
+      (service as any).migration8();
+
+      expect((service as any).persists).not.toHaveBeenCalled();
+    });
+
+    test("moves a credential-process workspace to the credential file and drops only Leapp's config profiles", () => {
+      const workspace = { _workspaceVersion: 7, _credentialMethod: constants.legacyCredentialProcess };
+      (service as any).getWorkspace = jest.fn(() => workspace);
+
+      (service as any).migration8();
+
+      expect(workspace).toEqual({ _workspaceVersion: 8, _credentialMethod: constants.credentialFile });
+      expect(fileService.iniParseSync).toHaveBeenCalledWith("/home/.aws/config");
+      expect(fileService.replaceWriteSync).toHaveBeenCalledWith("/home/.aws/config", {
+        "profile mine": ownProfile,
+        default: { region: "us-east-1" },
+      });
+      expect((service as any).persists).toHaveBeenCalledWith(workspace);
+      expect(repository.reloadWorkspace).toHaveBeenCalled();
+    });
+
+    test("leaves the config file alone for credential-file workspaces", () => {
+      const workspace = { _workspaceVersion: 7, _credentialMethod: constants.credentialFile };
+      (service as any).getWorkspace = jest.fn(() => workspace);
+
+      (service as any).migration8();
+
+      expect(workspace._workspaceVersion).toBe(8);
+      expect(fileService.iniParseSync).not.toHaveBeenCalled();
+      expect(fileService.replaceWriteSync).not.toHaveBeenCalled();
+      expect((service as any).persists).toHaveBeenCalledWith(workspace);
+    });
   });
 
   test("adaptIntegrations", async () => {

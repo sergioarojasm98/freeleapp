@@ -88,17 +88,6 @@ export class OptionsService {
     this.workspaceService.persistWorkspace(workspace);
   }
 
-  get credentialMethod(): string {
-    const workspace = this.workspaceService.getWorkspace();
-    return workspace.credentialMethod;
-  }
-
-  set credentialMethod(credentialMethod: string) {
-    const workspace = this.workspaceService.getWorkspace();
-    workspace.credentialMethod = credentialMethod;
-    this.workspaceService.persistWorkspace(workspace);
-  }
-
   pinSession(session: Session): void {
     const workspace = this.workspaceService.getWorkspace();
     if (workspace.pinned.indexOf(session.sessionId) === -1) {

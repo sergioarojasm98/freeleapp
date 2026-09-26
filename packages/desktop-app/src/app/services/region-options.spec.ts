@@ -35,7 +35,7 @@ describe("withRecentRegions", () => {
     expect(options.length).toBe(regions.length);
   });
 
-  it("lists every region under All regions when there are no sessions", () => {
+  it("lists every region under All Regions when there are no sessions", () => {
     const options = withRecentRegions(regions, []);
 
     expect(options.every((o) => o.group === allRegionsGroup)).toBeTrue();

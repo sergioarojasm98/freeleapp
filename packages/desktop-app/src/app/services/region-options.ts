@@ -1,8 +1,8 @@
 import { Session } from "@noovolari/leapp-core/models/session";
 import { SessionType } from "@noovolari/leapp-core/models/session-type";
 
-export const recentRegionsGroup = "Recently used";
-export const allRegionsGroup = "All regions";
+export const recentRegionsGroup = "Recently Used";
+export const allRegionsGroup = "All Regions";
 export const recentRegionsLimit = 4;
 
 export interface RegionOption {

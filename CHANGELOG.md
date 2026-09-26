@@ -4,7 +4,7 @@ All notable changes to Freeleapp are documented here. Versions follow [Semantic 
 
 Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the [Leapp changelog](https://github.com/Noovolari/leapp/blob/v0.26.1/CHANGELOG.md).
 
-## Unreleased
+## 1.0.1 (2026-09-26)
 
 ### Features
 

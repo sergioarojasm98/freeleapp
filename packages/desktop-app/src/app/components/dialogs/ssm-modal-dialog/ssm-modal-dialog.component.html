@@ -10,7 +10,7 @@
         <div class="form-group">
           <label>Select a Region</label>
           <ng-select bindLabel="region" bindValue="region" groupBy="group" [items]="awsRegions" [(ngModel)]="selectedSsmRegion"
-                     placeholder="Select a Region for finding instances" (change)="changeSsmRegion();"
+                     placeholder="Select a Region for Finding Instances" (change)="changeSsmRegion();"
                      [appendTo]="'body'"></ng-select>
         </div>
       </div>
@@ -24,7 +24,7 @@
           <div class="form-field">
             <div class="form-group">
               <label>Select an Instance</label>
-              <input spellcheck="false" class="form-control" type="text" placeholder="Search Instance..." (keyup)="searchSSMInstance($event)"/>
+              <input spellcheck="false" class="form-control" type="text" placeholder="Search Instances..." (keyup)="searchSSMInstance($event)"/>
             </div>
           </div>
         </div>

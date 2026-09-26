@@ -260,7 +260,7 @@ export class EditDialogComponent implements OnInit, AfterViewInit {
           await this.sessionService.start(this.selectedSession.sessionId);
         }
 
-        this.messageToasterService.toast(`Session: ${this.form.value.name}, edited.`, ToastLevel.success, "");
+        this.messageToasterService.toast(`Session Edited: ${this.form.value.name}`, ToastLevel.success, "");
       } else {
         this.messageToasterService.toast(`One or more parameters are invalid, check your choices.`, ToastLevel.warn, "");
       }

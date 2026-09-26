@@ -25,7 +25,7 @@
           class="moon-Region"></i></a>
         <a class="icon-button" *ngIf="selectedSession.type !== eSessionType.azure" (click)="changeProfileModalOpen();"
            matTooltip="Change Named Profile"><i class="moon-User"></i></a>
-        <a class="icon-button" (click)="ssmModalOpen();" *ngIf="selectedSession.type !== eSessionType.azure" matTooltip="View SSM sessions"><i
+        <a class="icon-button" (click)="ssmModalOpen();" *ngIf="selectedSession.type !== eSessionType.azure" matTooltip="View SSM Sessions"><i
           class="moon-Server"></i></a>
         <a class="icon-button"
            *ngIf="(selectedSession.type === eSessionType.awsIamUser || selectedSession.type === eSessionType.awsIamRoleFederated || selectedSession.type === eSessionType.awsIamRoleChained)"

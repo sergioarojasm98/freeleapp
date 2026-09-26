@@ -141,7 +141,7 @@ export class IntegrationBarComponent implements OnInit, OnDestroy {
           const integration = this.azureConfigurations[i];
           await this.forceSync(integration.id);
         }
-        this.messageToasterService.toast("Integrations synchronized.", ToastLevel.info, "");
+        this.messageToasterService.toast("Integrations Synced", ToastLevel.info, "");
       }
     });
 
@@ -364,11 +364,11 @@ export class IntegrationBarComponent implements OnInit, OnDestroy {
         if (this.modifying === 1) {
           await this.appProviderService.integrationFactory.create(this.selectedIntegration as any, integrationParams);
 
-          this.messageToasterService.toast(`Integration: ${integrationParams.alias}, created.`, ToastLevel.success, "");
+          this.messageToasterService.toast(`Integration Created: ${integrationParams.alias}`, ToastLevel.success, "");
         } else if (this.modifying === 2) {
           await this.appProviderService.integrationFactory.update(this.selectedConfiguration.id, integrationParams);
 
-          this.messageToasterService.toast(`Integration: ${integrationParams.alias}, edited.`, ToastLevel.success, "");
+          this.messageToasterService.toast(`Integration Edited: ${integrationParams.alias}`, ToastLevel.success, "");
         }
 
         this.ngZone.run(() => {
@@ -399,7 +399,7 @@ export class IntegrationBarComponent implements OnInit, OnDestroy {
             await this.logout(integration.id);
             await this.appProviderService.integrationFactory.delete(integration.id);
 
-            this.messageToasterService.toast(`Integration: ${integration.alias}, deleted.`, ToastLevel.success, "");
+            this.messageToasterService.toast(`Integration Deleted: ${integration.alias}`, ToastLevel.success, "");
             this.setValues();
             this.behaviouralSubjectService.setIntegrations(this.appProviderService.integrationFactory.getIntegrations());
           }

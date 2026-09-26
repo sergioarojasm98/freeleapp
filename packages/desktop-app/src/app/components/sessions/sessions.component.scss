@@ -171,9 +171,13 @@ tr {
   }
 
   // The status dot stays visible; the actions button appears next to it
-  tr:hover .hover-item,
-  td.selected .hover-item {
+  tr:hover i.moon-More.hover-item,
+  td.selected i.moon-More.hover-item {
     visibility: visible;
+  }
+
+  tr:hover .moon-hover-session {
+    display: inline-block;
   }
 }
 

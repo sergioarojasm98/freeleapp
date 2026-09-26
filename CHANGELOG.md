@@ -6,6 +6,10 @@ Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the
 
 ## Unreleased
 
+### Features
+
+- Settings has a **Cancel** link next to **Done**. Cancel, Esc or a click outside the dialog close it without saving the General and SSM fields, and a color theme you were previewing goes back to the previous one. Adding, editing or deleting IdP URLs, profiles and plugins, and changing the AWS credential method, still apply right away.
+
 ### Bug Fixes
 
 - Macs without the AWS Session Manager plugin no longer get an error at startup. Freeleapp checks the AWS CLI and the plugin when you open **View SSM Sessions** and links to the install steps if one is missing.

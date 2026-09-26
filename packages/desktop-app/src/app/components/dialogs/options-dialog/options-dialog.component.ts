@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, Input, OnInit, ViewChild, ViewEncapsulation } from "@angular/core";
+import { AfterViewInit, Component, Input, OnDestroy, OnInit, ViewChild, ViewEncapsulation } from "@angular/core";
 import { FormControl, FormGroup } from "@angular/forms";
 import { AppService } from "../../../services/app.service";
 import { Router } from "@angular/router";
@@ -26,7 +26,7 @@ import { withRecentRegions } from "../../../services/region-options";
   styleUrls: ["./options-dialog.component.scss"],
   encapsulation: ViewEncapsulation.None,
 })
-export class OptionsDialogComponent implements OnInit, AfterViewInit {
+export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input()
   selectedIndex;
 
@@ -89,6 +89,10 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
   /* Simple profile page: shows the Idp Url and the workspace json */
   private sessionService: SessionService;
 
+  // The theme is previewed as soon as it is picked, so closing without Done has to put the original one back
+  private initialColorTheme: string;
+  private saved = false;
+
   constructor(
     public appProviderService: AppProviderService,
     public appService: AppService,
@@ -103,6 +107,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
 
     this.colorTheme = this.optionsService.colorTheme || constants.colorTheme;
     this.selectedColorTheme = this.colorTheme;
+    this.initialColorTheme = this.colorTheme;
 
     this.selectedCredentialMethod = this.optionsService.credentialMethod || constants.credentialFile;
 
@@ -152,6 +157,21 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
     }
   }
 
+  /**
+   * Cancel, Esc and a click outside all close the dialog without saving: the fields applied by Done are dropped and a
+   * previewed color theme is reverted. List actions (IdP URLs, profiles, plugins) and the credential method keep
+   * applying immediately, each with its own confirmation.
+   */
+  ngOnDestroy(): void {
+    if (!this.saved && this.colorTheme !== this.initialColorTheme) {
+      this.setColorTheme(this.initialColorTheme);
+    }
+  }
+
+  cancel(): void {
+    this.appService.closeModal();
+  }
+
   setColorTheme(theme: string): void {
     this.optionsService.colorTheme = theme;
     this.colorTheme = this.optionsService.colorTheme;
@@ -173,6 +193,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit {
    */
   async saveOptions(): Promise<void> {
     if (this.form.valid) {
+      this.saved = true;
       this.optionsService.updateProxyConfiguration({
         proxyUrl: this.form.controls["proxyUrl"].value,
         proxyProtocol: this.form.controls["proxyProtocol"].value,

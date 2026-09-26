@@ -2,6 +2,8 @@ name: Icon Preview
 
 on:
   push:
+    # Tag pushes ignore path filters, so limit this to branches or every release tag would run it
+    branches: ["**"]
     paths:
       - "design/icon/**"
       - ".github/workflows/icon-preview.yml"

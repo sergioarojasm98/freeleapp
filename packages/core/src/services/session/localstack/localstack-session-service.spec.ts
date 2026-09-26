@@ -304,42 +304,6 @@ describe("LocalstackSessionService", () => {
     expect(sessionToCheck.status).toBe(SessionStatus.inactive);
   });
 
-  test("deApplyConfigProfileCommand - success", async () => {
-    const repository = {
-      getSessionById: () => ({ profileId: "fake-profile-id" }),
-      getProfileName: () => "fake",
-    } as any;
-    const credentialProcess = { ["profile fake"]: "fake-value" };
-    const fileService = {
-      iniParseSync: jest.fn(async () => credentialProcess),
-      replaceWriteSync: jest.fn(),
-    } as any;
-    const fakeConfigPath = "fake-config-path";
-    const awsCoreService = {
-      awsConfigPath: () => fakeConfigPath,
-    } as any;
-    const localstackSessionService: any = new (LocalstackSessionService as any)(null, repository, awsCoreService, fileService);
-    await localstackSessionService.deApplyConfigProfileCommand("fake-session-id");
-    expect(fileService.iniParseSync).toHaveBeenCalledWith(fakeConfigPath);
-    expect(fileService.replaceWriteSync).toHaveBeenCalledWith(fakeConfigPath, credentialProcess);
-    expect(credentialProcess["profile fake"]).toBeUndefined();
-  });
-
-  test("start - credentials process not supported", async () => {
-    const repository = {
-      getWorkspace: () => ({ credentialMethod: constants.credentialProcess }),
-    } as any;
-    const localstackSessionService = new (LocalstackSessionService as any)(null, repository);
-    (localstackSessionService as any).isThereAnotherPendingSessionWithSameNamedProfile = () => false;
-    (localstackSessionService as any).stopAllWithSameNameProfile = async () => {};
-    (localstackSessionService as any).sessionLoading = () => {};
-    (localstackSessionService as any).generateProcessCredentials = jest.fn(() => {});
-    (localstackSessionService as any).sessionActivated = () => {};
-
-    await localstackSessionService.start("mocked-session-id");
-    expect(localstackSessionService.generateProcessCredentials).toHaveBeenCalled();
-  });
-
   test("start - fails if another session is in pending with the same name profile", async () => {
     const repository = {
       listIamRoleChained: jest.fn(() => ["session1", "session2"]),
@@ -444,19 +408,6 @@ describe("LocalstackSessionService", () => {
     (localstackSessionService as any).isInactive = isInactive;
     await localstackSessionService.stop("sessionId");
     expect(isInactive).toHaveBeenCalledWith("sessionId");
-  });
-
-  test("stop - credential process method", async () => {
-    const repository = {
-      getWorkspace: jest.fn(() => ({ credentialMethod: constants.credentialProcess })),
-    } as any;
-    const localstackSessionService: any = new (LocalstackSessionService as any)(null, repository);
-    localstackSessionService.deApplyConfigProfileCommand = jest.fn();
-    localstackSessionService.sessionDeactivated = jest.fn();
-    localstackSessionService.isInactive = () => false;
-    await localstackSessionService.stop("fake-session-id");
-    expect(localstackSessionService.deApplyConfigProfileCommand).toHaveBeenCalledWith("fake-session-id");
-    expect(localstackSessionService.sessionDeactivated).toHaveBeenCalledWith("fake-session-id");
   });
 
   test("stop - throw and catch error", async () => {

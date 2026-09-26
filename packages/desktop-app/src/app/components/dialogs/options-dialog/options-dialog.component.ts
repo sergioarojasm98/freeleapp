@@ -9,7 +9,6 @@ import { MessageToasterService, ToastLevel } from "../../../services/message-toa
 import { WindowService } from "../../../services/window.service";
 import { AppProviderService } from "../../../services/app-provider.service";
 import { BsModalRef, BsModalService } from "ngx-bootstrap/modal";
-import { CredentialProcessDialogComponent } from "../credential-process-dialog/credential-process-dialog.component";
 import { ConfirmationDialogComponent } from "../confirmation-dialog/confirmation-dialog.component";
 import { OptionsService } from "../../../services/options.service";
 import { AwsIamRoleFederatedSession } from "@noovolari/leapp-core/models/aws/aws-iam-role-federated-session";
@@ -78,13 +77,11 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     defaultBrowserOpening: new FormControl(""),
     terminalSelect: new FormControl(""),
     colorThemeSelect: new FormControl(""),
-    credentialMethodSelect: new FormControl(""),
     sessionDuration: new FormControl(""),
     pluginDeepLink: new FormControl(""),
     ssmRegionBehaviourSelect: new FormControl(""),
   });
 
-  selectedCredentialMethod: string;
   webConsoleSessionDuration: number;
 
   /* Simple profile page: shows the Idp Url and the workspace json */
@@ -114,8 +111,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     this.colorTheme = this.optionsService.colorTheme || constants.colorTheme;
     this.selectedColorTheme = this.colorTheme;
     this.initialColorTheme = this.colorTheme;
-
-    this.selectedCredentialMethod = this.optionsService.credentialMethod || constants.credentialFile;
 
     this.selectedSsmRegionBehaviour = this.optionsService.ssmRegionBehaviour || constants.ssmRegionNo;
   }
@@ -463,71 +458,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  async showWarningModalForCredentialProcess() {
-    const workspace = this.appProviderService.workspaceService.getWorkspace();
-    if (this.selectedCredentialMethod === constants.credentialProcess) {
-      const confirmText = "I acknowledge it";
-      const callback = async (answerString: string) => {
-        if (answerString === constants.confirmed.toString()) {
-          workspace.credentialMethod = this.selectedCredentialMethod;
-          this.appProviderService.workspaceService.persistWorkspace(workspace);
-          // Create Config file if missing
-          if (!this.appProviderService.fileService.existsSync(this.appProviderService.awsCoreService.awsConfigPath())) {
-            this.appProviderService.fileService.writeFileSync(this.appProviderService.awsCoreService.awsConfigPath(), "");
-          }
-          // When selecting this one we need to clean the credential file and create a backup
-          if (this.appProviderService.fileService.existsSync(this.appProviderService.awsCoreService.awsCredentialPath())) {
-            this.appProviderService.fileService.writeFileSync(
-              this.appProviderService.awsCoreService.awsBkpCredentialPath(),
-              this.appProviderService.fileService.readFileSync(this.appProviderService.awsCoreService.awsCredentialPath())
-            );
-          }
-          this.appProviderService.fileService.writeFileSync(this.appProviderService.awsCoreService.awsCredentialPath(), "");
-        } else {
-          this.selectedCredentialMethod = constants.credentialFile;
-        }
-
-        workspace.credentialMethod = this.selectedCredentialMethod;
-        this.appProviderService.workspaceService.persistWorkspace(workspace);
-
-        // Now we need to check for started sessions and restart them
-        const activeSessions = this.appProviderService.sessionManagementService.getActiveSessions();
-        for (let i = 0; i < activeSessions.length; i++) {
-          const sessionService = this.appProviderService.sessionFactory.getSessionService(activeSessions[i].type);
-          await sessionService.stop(activeSessions[i].sessionId);
-          await sessionService.start(activeSessions[i].sessionId);
-        }
-      };
-
-      this.modalService.show(CredentialProcessDialogComponent, {
-        animated: false,
-        initialState: {
-          callback,
-          confirmText,
-        },
-      });
-    } else {
-      workspace.credentialMethod = this.selectedCredentialMethod;
-      this.appProviderService.workspaceService.persistWorkspace(workspace);
-      // backup config file and delete normal one
-      if (this.appProviderService.fileService.existsSync(this.appProviderService.awsCoreService.awsConfigPath())) {
-        this.appProviderService.fileService.writeFileSync(
-          this.appProviderService.awsCoreService.awsBkpConfigPath(),
-          this.appProviderService.fileService.readFileSync(this.appProviderService.awsCoreService.awsConfigPath())
-        );
-        this.appProviderService.fileService.writeFileSync(this.appProviderService.awsCoreService.awsConfigPath(), "");
-      }
-
-      // Now we need to check for started sessions and restart them
-      const activeSessions = this.appProviderService.sessionManagementService.getActiveSessions();
-      for (let i = 0; i < activeSessions.length; i++) {
-        const sessionService = this.appProviderService.sessionFactory.getSessionService(activeSessions[i].type);
-        await sessionService.stop(activeSessions[i].sessionId);
-        await sessionService.start(activeSessions[i].sessionId);
-      }
-    }
-  }
-
   async installPlugin(): Promise<void> {
     this.fetchingPlugins = true;
     if (this.form.controls.pluginDeepLink.value) {

@@ -62,29 +62,6 @@
           </div>
         </div>
 
-        <ng-container>
-          <div class="form-container">
-            <div class="form-group">
-              <div class="form-field">
-                <label><i class="moon-Help fix-top"
-                          matTooltip="Note: when switching method a backup of your credentials and config files will be created and the original files cleaned."></i>&nbsp;AWS
-                  Credential Method</label>
-                <ng-select formControlName="credentialMethodSelect"
-                           bindLabel="credentialMethod"
-                           bindValue="credentialMethod"
-                           [clearable]="false"
-                           [searchable]="false"
-                           [items]="[{credentialMethod: eConstants.credentialFile}, {credentialMethod: eConstants.credentialProcess}]"
-                           [(ngModel)]="selectedCredentialMethod"
-                           (change)="showWarningModalForCredentialProcess()"
-                           [appendTo]="'body'">
-                </ng-select>
-
-              </div>
-            </div>
-          </div>
-        </ng-container>
-
         <h2>Default Web Console Duration</h2>
         <div class="form-container">
           <div class="form-group">

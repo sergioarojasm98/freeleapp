@@ -103,20 +103,6 @@ describe("AwsSessionService", () => {
     expect(applyCredentials).toHaveBeenCalledWith("sessionId", credentialsInfo);
   });
 
-  test("start - using credentialProcess", async () => {
-    const repository = {
-      getWorkspace: () => ({ credentialMethod: constants.credentialProcess }),
-    } as any;
-    const awsSessionService: any = new (AwsSessionService as any)(null, repository);
-    awsSessionService.isThereAnotherPendingSessionWithSameNamedProfile = () => false;
-    awsSessionService.stopAllWithSameNameProfile = async () => {};
-    awsSessionService.sessionLoading = () => {};
-    awsSessionService.sessionActivated = () => {};
-    awsSessionService.applyConfigProfileCommand = jest.fn(async () => {});
-    await awsSessionService.start("fake-session-id");
-    expect(await awsSessionService.applyConfigProfileCommand).toHaveBeenCalledWith("fake-session-id");
-  });
-
   test("rotate - apply rotation by generating a new set of credentials", async () => {
     const repository = {
       listIamRoleChained: jest.fn(() => ["session1", "session2"]),
@@ -141,20 +127,6 @@ describe("AwsSessionService", () => {
     expect(sessionActivated).toHaveBeenCalledWith("sessionId");
     expect(generateCredentials).toHaveBeenCalledWith("sessionId");
     expect(applyCredentials).toHaveBeenCalledWith("sessionId", credentialsInfo);
-  });
-
-  test("rotate - in credential process mode, rotation is not used", async () => {
-    const repository = {
-      getWorkspace: jest.fn(() => ({ credentialMethod: constants.credentialProcess })),
-    } as any;
-    const awsSessionService: any = new (AwsSessionService as any)(null, repository);
-    awsSessionService.sessionLoading = jest.fn();
-    awsSessionService.applyCredentials = jest.fn();
-    awsSessionService.sessionActivated = jest.fn();
-    await awsSessionService.rotate("fake-session-id");
-    expect(awsSessionService.sessionLoading).not.toHaveBeenCalled();
-    expect(awsSessionService.applyCredentials).not.toHaveBeenCalled();
-    expect(awsSessionService.sessionActivated).not.toHaveBeenCalled();
   });
 
   test("rotate - throw and catch error", async () => {
@@ -200,19 +172,6 @@ describe("AwsSessionService", () => {
     (awsSessionService as any).isInactive = isInactive;
     await awsSessionService.stop("sessionId");
     expect(isInactive).toHaveBeenCalledWith("sessionId");
-  });
-
-  test("stop - credential process method", async () => {
-    const repository = {
-      getWorkspace: jest.fn(() => ({ credentialMethod: constants.credentialProcess })),
-    } as any;
-    const awsSessionService: any = new (AwsSessionService as any)(null, repository);
-    awsSessionService.deApplyConfigProfileCommand = jest.fn();
-    awsSessionService.sessionDeactivated = jest.fn();
-    awsSessionService.isInactive = () => false;
-    await awsSessionService.stop("fake-session-id");
-    expect(awsSessionService.deApplyConfigProfileCommand).toHaveBeenCalledWith("fake-session-id");
-    expect(awsSessionService.sessionDeactivated).toHaveBeenCalledWith("fake-session-id");
   });
 
   test("stop - throw and catch error", async () => {
@@ -337,65 +296,6 @@ describe("AwsSessionService", () => {
     awsSessionService.repository = repository;
 
     await expect(awsSessionService.generateProcessCredentials("sessionId")).rejects.toThrow(new Error("only AWS sessions are supported"));
-  });
-
-  test("applyConfigProfileCommand - success", async () => {
-    const repository = {
-      getSessionById: () => ({ profileId: "fake-profile-id", region: "fake-region" }),
-      getProfileName: () => "fake",
-    } as any;
-    const credentialProcess = { ["profile fake"]: { ["credential_process"]: "leapp session generate fake-session-id", region: "fake-region" } };
-    const fileService = {
-      iniWriteSync: jest.fn(async () => {}),
-    } as any;
-    const fakeConfigPath = "fake-config-path";
-    const awsCoreService = {
-      awsConfigPath: () => fakeConfigPath,
-    } as any;
-    const awsSessionService: any = new (AwsSessionService as any)(null, repository, awsCoreService, fileService);
-    await awsSessionService.applyConfigProfileCommand("fake-session-id");
-    expect(fileService.iniWriteSync).toHaveBeenCalledWith(fakeConfigPath, credentialProcess);
-  });
-
-  test("applyConfigProfileCommand - throw and catch error", async () => {
-    const expectedError = new Error("Error");
-    const repository = {
-      getSessionById: () => ({ profileId: "fake-profile-id" }),
-      getProfileName: () => {},
-    } as any;
-    const fileService = {
-      iniWriteSync: () => {
-        throw expectedError;
-      },
-    } as any;
-    const awsCoreService = {
-      awsConfigPath: () => {},
-    } as any;
-    const awsSessionService: any = new (AwsSessionService as any)(null, repository, awsCoreService, fileService);
-    awsSessionService.sessionError = jest.fn();
-    await awsSessionService.applyConfigProfileCommand("fake-session-id");
-    expect(awsSessionService.sessionError).toHaveBeenCalledWith("fake-session-id", expectedError);
-  });
-
-  test("deApplyConfigProfileCommand - success", async () => {
-    const repository = {
-      getSessionById: () => ({ profileId: "fake-profile-id" }),
-      getProfileName: () => "fake",
-    } as any;
-    const credentialProcess = { ["profile fake"]: "fake-value" };
-    const fileService = {
-      iniParseSync: jest.fn(async () => credentialProcess),
-      replaceWriteSync: jest.fn(),
-    } as any;
-    const fakeConfigPath = "fake-config-path";
-    const awsCoreService = {
-      awsConfigPath: () => fakeConfigPath,
-    } as any;
-    const awsSessionService: any = new (AwsSessionService as any)(null, repository, awsCoreService, fileService);
-    await awsSessionService.deApplyConfigProfileCommand("fake-session-id");
-    expect(fileService.iniParseSync).toHaveBeenCalledWith(fakeConfigPath);
-    expect(fileService.replaceWriteSync).toHaveBeenCalledWith(fakeConfigPath, credentialProcess);
-    expect(credentialProcess["profile fake"]).toBeUndefined();
   });
 
   test("isThereAnotherPendingSessionWithSameNamedProfile - true if another session with the same name profile is pending", () => {

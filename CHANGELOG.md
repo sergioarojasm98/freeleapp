@@ -9,7 +9,11 @@ Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the
 ### Features
 
 - Labels, buttons, tabs, tooltips, placeholders and short notifications use Title Case consistently (for example *Options Saved*, *Add a New Named Profile*, *Installed Plugins*), and names such as URL, ID, MFA and macOS are spelled the same everywhere. Full-sentence messages keep sentence case.
-- Settings has a **Cancel** link next to **Done**. Cancel, Esc or a click outside the dialog close it without saving; if you changed something, Freeleapp first asks whether to discard the changes. A color theme you were previewing goes back to the previous one. Adding, editing or deleting IdP URLs, profiles and plugins, and changing the AWS credential method, still apply right away.
+- Settings has a **Cancel** link next to **Done**. Cancel, Esc or a click outside the dialog close it without saving; if you changed something, Freeleapp first asks whether to discard the changes. A color theme you were previewing goes back to the previous one. Adding, editing or deleting IdP URLs, profiles and plugins still apply right away.
+
+### Removed
+
+- The **AWS Credential Method** setting and its *credential-process* option. It relied on the Leapp CLI, which Freeleapp does not ship, so sessions using it could not get credentials. Freeleapp always writes temporary credentials to `~/.aws/credentials`. A Leapp setup that used credential-process is switched over on first launch, and only the `credential_process = leapp session generate …` profiles Leapp added to `~/.aws/config` are removed.
 
 ### Bug Fixes
 

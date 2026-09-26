@@ -38,6 +38,7 @@ export class RetroCompatibilityService {
       this.migration5();
       this.migration6();
       this.migration7();
+      this.migration8();
       // When adding new migrations remember to increase constants.workspaceLastVersion
     }
   }
@@ -287,6 +288,37 @@ export class RetroCompatibilityService {
     workspace.remoteWorkspacesSettingsMap = {};
     this.persists(workspace);
     this.repository.reloadWorkspace();
+  }
+
+  // Freeleapp dropped the credential-process method (it needed the Leapp CLI). Workspaces that used it go back to the
+  // credential file, and the config profiles Leapp wrote for it are removed so the AWS CLI does not call a missing binary.
+  private migration8(): void {
+    const workspace = this.getWorkspace();
+    if (!this.checkMigration(workspace, 7, 8)) {
+      return;
+    }
+
+    if (workspace._credentialMethod === constants.legacyCredentialProcess) {
+      workspace._credentialMethod = constants.credentialFile;
+      this.removeLeappCredentialProcessProfiles();
+    }
+    this.persists(workspace);
+    this.repository.reloadWorkspace();
+  }
+
+  private removeLeappCredentialProcessProfiles(): void {
+    const configPath = this.fileService.homeDir() + "/.aws/config";
+    if (!this.fileService.existsSync(configPath)) {
+      return;
+    }
+    const config = this.fileService.iniParseSync(configPath);
+    const leappProfiles = Object.keys(config).filter((section) =>
+      `${config[section]?.credential_process ?? ""}`.startsWith("leapp session generate")
+    );
+    if (leappProfiles.length > 0) {
+      leappProfiles.forEach((section) => delete config[section]);
+      this.fileService.replaceWriteSync(configPath, config);
+    }
   }
 
   private getWorkspace(): any {

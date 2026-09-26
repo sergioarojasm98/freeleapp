@@ -12,6 +12,7 @@ Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the
 - **Open Issue** and **Request Feature** stay available when the AWS CLI or the Session Manager plugin is not installed.
 - A selected session no longer shows a small start/stop button squeezed next to the provider icon. The button replaces the icon only while the pointer is over the row, as before.
 - The region list in the SSM dialog is no longer cut off by the dialog's edge.
+- The IdP URL, Named Profiles and Plugins lists in Settings use the full height of the window instead of a fixed 230 px box.
 
 ## 1.0.0 (2026-09-25)
 

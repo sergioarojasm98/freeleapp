@@ -151,10 +151,10 @@
         <span class="mat-tab-label-text">IdP Url</span>
       </ng-template>
 
-      <div class="no-padding no-margin panel">
+      <div class="no-padding no-margin panel fill-height">
         <h2>IdP URL</h2>
 
-        <div class="form-container">
+        <div class="form-container fill-column">
 
           <div class="form-group">
             <div class="form-field form-control-input-button max-width">
@@ -166,7 +166,7 @@
             </div>
           </div>
 
-          <div class="form-group scrollable max-height-230">
+          <div class="form-group scrollable fill-list">
             <table class="table option-table">
               <tbody>
               <ng-container *ngFor="let idpUrl of appProviderService.idpUrlService.getIdpUrls()">
@@ -191,7 +191,7 @@
         <i class="mat-tab-icon moon-Team"></i>
         <span class="mat-tab-label-text">Profiles</span>
       </ng-template>
-      <div class="no-padding no-margin panel">
+      <div class="no-padding no-margin panel fill-height">
         <h2>Named Profiles</h2>
 
         <div class="form-group">
@@ -204,7 +204,7 @@
           </div>
         </div>
 
-        <div class="form-group scrollable max-height-230">
+        <div class="form-group scrollable fill-list">
           <table class="table option-table">
             <tbody>
             <ng-container *ngFor="let profile of appProviderService.namedProfileService.getNamedProfiles()">
@@ -258,10 +258,10 @@
         <i class="mat-tab-icon moon-Puzzle"></i>
         <span class="mat-tab-label-text">Plugins</span>
       </ng-template>
-      <div class="no-padding no-margin panel">
+      <div class="no-padding no-margin panel fill-height">
         <h2>Download Plugin manually</h2>
 
-        <div class="form-group">
+        <div class="form-group fill-column">
           <div class="form-field form-control-input-button max-width">
             <input spellcheck="false" formControlName="pluginDeepLink" type="text" class="form-control max-width"
                    placeholder="Insert an npm package name"
@@ -277,7 +277,7 @@
               class="fa fa-refresh blackery" matTooltip="Refresh plugin list"></i></button>
           </h4>
 
-          <div class="form-group scrollable max-height-320 tableFixHead">
+          <div class="form-group scrollable fill-list tableFixHead">
             <table class="table plugin-table">
               <thead>
               <th><span class="centered-column">Name</span></th>

@@ -128,7 +128,7 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   }
 
   get isIssueButtonEnabled(): boolean {
-    return !!this.appService.awsSsmPluginVersion && !!this.appService.awsCliVersion && !!this.appService.issueBody;
+    return !!this.appService.issueBody;
   }
 
   get isNotificationPending(): boolean {

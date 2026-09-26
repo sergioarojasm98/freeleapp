@@ -108,7 +108,7 @@ export class TrayMenuComponent implements OnInit, OnDestroy {
       {
         label: "Open Issue",
         type: "normal",
-        enabled: this.appService.awsSsmPluginVersion && this.appService.awsCliVersion && this.appService.issueBody,
+        enabled: !!this.appService.issueBody,
         click: () => {
           this.windowService.openExternalUrl(
             `https://github.com/sergioarojasm98/freeleapp/issues/new?labels=bug&body=${encodeURIComponent(this.appService.issueBody)}`

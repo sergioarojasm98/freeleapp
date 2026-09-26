@@ -88,6 +88,9 @@ export class SelectedSessionActionsService {
 
   async ssmModalOpen(session: Session): Promise<void> {
     this.behaviouralSubjectService.unselectSessions();
+    if (!(await this.appService.checkSsmRequirements())) {
+      return;
+    }
     this.modalService.show(SsmModalDialogComponent, {
       animated: false,
       class: "edit-modal ssm-instances-modal",

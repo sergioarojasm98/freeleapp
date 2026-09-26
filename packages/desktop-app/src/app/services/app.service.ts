@@ -240,31 +240,34 @@ export class AppService {
     this.triggers = [];
   }
 
-  getMetadata() {
-    const printError = (error) => {
-      this.appProviderService.logService.log(new LoggedException(error.toString(), this, LogLevel.error, false, error.stack));
-      if ((error as LeappBaseError).severity === LogLevel.error) {
-        if ((error as LeappLinkError).link === undefined || (error as LeappLinkError).link === null) {
-          this.messageToasterService.toast(error.toString(), ToastLevel.error, "");
-        } else {
-          this.messageToasterService.toast(error.toString(), ToastLevel.error, "", (error as LeappLinkError).link);
-        }
-      }
+  /**
+   * Read the AWS CLI and Session Manager plugin versions for the issue template. Both are optional: only SSM sessions
+   * need them, so a missing tool is recorded quietly here and reported when the user opens the SSM dialog.
+   */
+  getMetadata(): void {
+    const recordMissing = (error: LeappBaseError) => {
+      this.appProviderService.logService.log(new LoggedException(error.toString(), this, LogLevel.info, false, error.stack));
     };
+    Promise.all([this.getAwsCliVersion().catch(recordMissing), this.getSessionManagerPluginVersion().catch(recordMissing)]).then(() =>
+      this.setIssueBody()
+    );
+  }
 
-    this.getAwsCliVersion()
-      .then(() => {
-        this.getSessionManagerPluginVersion()
-          .then(() => {
-            this.setIssueBody();
-          })
-          .catch((error) => {
-            printError(error);
-          });
-      })
-      .catch((error) => {
-        printError(error);
-      });
+  /**
+   * Check the tools an SSM session needs, showing a toast that links to the docs when one is missing.
+   * Versions are cached only once found, so installing a tool works without restarting the app.
+   */
+  async checkSsmRequirements(): Promise<boolean> {
+    try {
+      await this.getAwsCliVersion();
+      await this.getSessionManagerPluginVersion();
+      this.setIssueBody();
+      return true;
+    } catch (error) {
+      this.appProviderService.logService.log(new LoggedException(error.toString(), this, LogLevel.error, false, error.stack));
+      this.messageToasterService.toast(error.toString(), ToastLevel.error, "", (error as LeappLinkError).link);
+      return false;
+    }
   }
 
   private async getAwsCliVersion(): Promise<void> {
@@ -273,9 +276,9 @@ export class AppService {
         this.awsCliVersion = await this.appProviderService.executeService.execute("aws --version");
       } catch (_) {
         throw new LeappLinkError(
-          `${constants.docsUrl}/troubleshooting/faq/`,
+          `${constants.docsUrl}/getting-started/requirements/#aws-systems-manager-optional`,
           this,
-          "An error occurred getting AWS CLI version. Please check if it is installed and <span class='link'>add a symlink</span> following the documentation."
+          "SSM sessions need the AWS CLI, and Freeleapp could not find it. <span class='link'>See how to install it</span>."
         );
       }
     }
@@ -288,9 +291,9 @@ export class AppService {
         this.awsSsmPluginVersion = sessionManagerPluginVersion.replace(/(\r\n|\n|\r)/gm, "");
       } catch (error) {
         throw new LeappLinkError(
-          `${constants.docsUrl}/features/ec2-ssm/`,
+          `${constants.docsUrl}/getting-started/requirements/#aws-systems-manager-optional`,
           this,
-          "An error occurred getting AWS Session Manager Plugin version. <span class='link'>Click here to follow the instructions on the docs</span> and solve the issue."
+          "SSM sessions need the AWS Session Manager plugin, and Freeleapp could not find it. <span class='link'>See how to install it</span>."
         );
       }
     }
@@ -304,9 +307,9 @@ export class AppService {
 ### Details:
 | Freeleapp Version | ${this.appNativeService.app.getVersion()} |
 | --- | --- |
-| SsmPluginVersion | ${this.awsSsmPluginVersion} |
+| SsmPluginVersion | ${this.awsSsmPluginVersion ?? "not installed"} |
 | Platform | ${process.platform} |
-| Awscli | ${this.awsCliVersion}
+| Awscli | ${this.awsCliVersion ?? "not installed"}
 `;
     this.featureBody = `### Description:
 > Please include a detailed description of the feature you'd like to propose (and an image or screen recording, if applicable)
@@ -315,9 +318,9 @@ export class AppService {
 ### Details:
 | Freeleapp Version | ${this.appNativeService.app.getVersion()} |
 | --- | --- |
-| SsmPluginVersion | ${this.awsSsmPluginVersion} |
+| SsmPluginVersion | ${this.awsSsmPluginVersion ?? "not installed"} |
 | Platform | ${process.platform} |
-| Awscli | ${this.awsCliVersion}
+| Awscli | ${this.awsCliVersion ?? "not installed"}
 `;
   }
 }

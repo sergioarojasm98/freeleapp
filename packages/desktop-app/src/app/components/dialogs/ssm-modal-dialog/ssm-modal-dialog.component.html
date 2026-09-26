@@ -10,7 +10,8 @@
         <div class="form-group">
           <label>Select a Region</label>
           <ng-select bindLabel="region" bindValue="region" groupBy="group" [items]="awsRegions" [(ngModel)]="selectedSsmRegion"
-                     placeholder="Select a Region for finding instances" (change)="changeSsmRegion();"></ng-select>
+                     placeholder="Select a Region for finding instances" (change)="changeSsmRegion();"
+                     [appendTo]="'body'"></ng-select>
         </div>
       </div>
     </div>

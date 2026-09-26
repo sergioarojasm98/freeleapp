@@ -28,6 +28,7 @@
 
 // Keep the dialog inside the window like the settings dialog: the modal never grows past the viewport
 // (50px top offset + Bootstrap's 1.75rem margins) and only the instance list scrolls.
+// The region dropdown is appended to <body> (see the template) so this overflow does not clip it.
 ::ng-deep .ssm-instances-modal .modal-content {
   display: flex;
   flex-direction: column;

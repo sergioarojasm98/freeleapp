@@ -7,11 +7,19 @@
 }
 
 .hover-item {
-  // Always takes its space so the status dot never shifts; shown on row hover or selection (sessions.component.scss)
+  cursor: pointer;
+}
+
+// The actions button always takes its space so the status dot never shifts; shown on row hover or selection (sessions.component.scss)
+.moon-More.hover-item {
   display: inline-block;
   visibility: hidden;
   margin-left: 12px;
-  cursor: pointer;
+}
+
+// Start/stop replaces the provider icon only while the pointer is over the row (global.scss)
+.moon-hover-session {
+  display: none;
 }
 
 td.table-column-6 {

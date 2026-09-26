@@ -430,7 +430,7 @@ export class CreateDialogComponent implements OnInit {
           break;*/
       }
 
-      this.messageToasterService.toast(`Session: ${this.form.value.name}, created.`, ToastLevel.success, "");
+      this.messageToasterService.toast(`Session Created: ${this.form.value.name}`, ToastLevel.success, "");
       this.closeModal();
     } else {
       // eslint-disable-next-line max-len

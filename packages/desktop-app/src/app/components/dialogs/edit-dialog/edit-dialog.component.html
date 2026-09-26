@@ -22,7 +22,7 @@
   <ng-container *ngIf="accountType.toString().indexOf('aws') > -1">
     <div class="form-group">
       <div class="form-field">
-        <label>Named profile</label>
+        <label>Named Profile</label>
         <app-leapp-select #namedProfileSelect
                           [controlName]="'awsProfile'"
                           [form]="form"
@@ -41,7 +41,7 @@
 
     <div class="form-group">
       <div class="form-field">
-        <label>Aws Region</label>
+        <label>AWS Region</label>
         <ng-select formControlName="awsRegion" bindLabel="region" bindValue="region" groupBy="group" [items]="regions" [(ngModel)]="selectedRegion"></ng-select>
       </div>
     </div>
@@ -65,21 +65,21 @@
       <!-- ================================================================== -->
       <div class="form-group">
         <div class="form-field">
-          <label>SAML 2.0 Url</label>
+          <label>SAML 2.0 URL</label>
           <app-leapp-select #idpUrlSelect
                             [controlName]="'federationUrl'"
                             [form]="form"
-                            [placeholder]="'SAML 2.0 Url*'"
+                            [placeholder]="'SAML 2.0 URL*'"
                             [items]="idpUrls"
                             [dropdownPosition]="'up'"
-                            [whatToAddName]="'SAML 2.0 Url'"
+                            [whatToAddName]="'SAML 2.0 URL'"
                             [defaultNewValue]="addNewUUID"
                             [bindLabel]="'label'"
                             [bindValue]="'value'"
                             [uppercased]="false"
                             (selected)="selectedIdpUrlEvent($event);"></app-leapp-select>
 
-          <small class="text-error" *ngIf="(form.controls['federationUrl'].dirty || form.controls['federationUrl'].touched) && form.get('federationUrl')?.value === undefined">Insert the SAML 2.0 Url</small>
+          <small class="text-error" *ngIf="(form.controls['federationUrl'].dirty || form.controls['federationUrl'].touched) && form.get('federationUrl')?.value === undefined">Insert the SAML 2.0 URL</small>
         </div>
 
         <div class="form-field">
@@ -94,8 +94,8 @@
 
       <div class="form-group">
         <div class="form-field">
-        <label>Mfa Device</label>
-        <input spellcheck="false" formControlName="mfaDevice" type="text" class="form-control" placeholder="MFA arn or SN (optional)" />
+        <label>MFA Device</label>
+        <input spellcheck="false" formControlName="mfaDevice" type="text" class="form-control" placeholder="MFA ARN or SN (Optional)" />
         </div>
       </div>
 
@@ -140,15 +140,15 @@
   <ng-container *ngIf="accountType === eSessionType.azure">
     <div class="form-group">
       <div class="form-field">
-        <label>Subscription Id</label>
-        <input formControlName="subscriptionId" type="text" class="form-control" placeholder="Subscription Id *">
-        <small class="text-error" *ngIf="(form.controls['subscriptionId'].dirty || form.controls['subscriptionId'].touched) && form.controls['subscriptionId'].errors">Insert the Subscription Id</small>
+        <label>Subscription ID</label>
+        <input formControlName="subscriptionId" type="text" class="form-control" placeholder="Subscription ID *">
+        <small class="text-error" *ngIf="(form.controls['subscriptionId'].dirty || form.controls['subscriptionId'].touched) && form.controls['subscriptionId'].errors">Insert the Subscription ID</small>
       </div>
 
       <div class="form-field">
-        <label>Tenant Id</label>
-        <input formControlName="tenantId" type="text" class="form-control" placeholder="Tenant Id *">
-        <small class="text-error" *ngIf="(form.controls['tenantId'].dirty || form.controls['tenantId'].touched) && form.controls['tenantId'].errors">Insert the Tenant Id</small>
+        <label>Tenant ID</label>
+        <input formControlName="tenantId" type="text" class="form-control" placeholder="Tenant ID *">
+        <small class="text-error" *ngIf="(form.controls['tenantId'].dirty || form.controls['tenantId'].touched) && form.controls['tenantId'].errors">Insert the Tenant ID</small>
       </div>
 
       <div class="form-field">
@@ -160,10 +160,10 @@
   -->
   <div class="form-group">
     <div class="form-field text-right">
-      <a (click)="tryProperties();" class="check-validity btn-link" *ngIf="accountType">Test credential generation</a>
+      <a (click)="tryProperties();" class="check-validity btn-link" *ngIf="accountType">Test Credential Generation</a>
     </div>
   </div>
   <br>
-  <button type="button" (click)="saveAccount();" [disabled]="!formValid() || submitting" [ngClass]="!formValid() ? 'mat-button-disabled': ''" *ngIf="accountType">Edit session <i *ngIf="submitting" class="fa fa-spinner fa-spin"></i></button>
+  <button type="button" (click)="saveAccount();" [disabled]="!formValid() || submitting" [ngClass]="!formValid() ? 'mat-button-disabled': ''" *ngIf="accountType">Edit Session <i *ngIf="submitting" class="fa fa-spinner fa-spin"></i></button>
   <a (click)="closeModal()" class="cancel">Cancel</a>
 </form>

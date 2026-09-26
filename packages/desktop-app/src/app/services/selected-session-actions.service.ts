@@ -118,7 +118,7 @@ export class SelectedSessionActionsService {
             this.logSessionData(session, "Session Deleted");
             await this.getSelectedSessionService(session).delete(session.sessionId);
 
-            this.messageToasterService.toast(`Session: ${session.sessionName}, deleted.`, ToastLevel.success, "");
+            this.messageToasterService.toast(`Session Deleted: ${session.sessionName}`, ToastLevel.success, "");
           }
         } catch (error) {
           this.messageToasterService.toast(error.message, ToastLevel.error);
@@ -146,7 +146,7 @@ export class SelectedSessionActionsService {
   copyProfile(profileName: string): void {
     this.behaviouralSubjectService.unselectSessions();
     this.appService.copyToClipboard(profileName);
-    this.messageToasterService.toast("Profile name copied!", ToastLevel.success, "Information copied!");
+    this.messageToasterService.toast("Profile Name Copied", ToastLevel.success, "Information copied!");
   }
 
   logoutFromFederatedSession(session: Session): void {
@@ -204,7 +204,7 @@ export class SelectedSessionActionsService {
         }
 
         this.appService.copyToClipboard(text);
-        this.messageToasterService.toast("Your information has been successfully copied!", ToastLevel.success, "Information copied!");
+        this.messageToasterService.toast("Copied to Clipboard", ToastLevel.success, "Information copied!");
       }
     } catch (err) {
       this.messageToasterService.toast(err, ToastLevel.warn);
@@ -222,7 +222,7 @@ export class SelectedSessionActionsService {
       const loginURL = await this.appProviderService.webConsoleService.getWebConsoleUrl(credentials, sessionRegion, sessionDuration);
 
       this.appService.copyToClipboard(loginURL);
-      this.messageToasterService.toast("Your information has been successfully copied!", ToastLevel.success, "Information copied!");
+      this.messageToasterService.toast("Copied to Clipboard", ToastLevel.success, "Information copied!");
     } catch (err) {
       this.messageToasterService.toast(err, ToastLevel.warn);
       this.appProviderService.logService.log(new LoggedException(err, this, LogLevel.error, true, err.stack));

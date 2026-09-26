@@ -35,7 +35,7 @@
           <div class="form-container">
             <div class="form-group">
               <div class="form-field">
-                <label>MacOS Terminal</label>
+                <label>macOS Terminal</label>
                 <ng-select formControlName="terminalSelect" bindLabel="terminal" bindValue="terminal" [clearable]="false" [searchable]="false"
                            [items]="[{terminal: eConstants.macOsTerminal}, {terminal: eConstants.macOsIterm2}, {terminal: eConstants.macOsWarp}]" [(ngModel)]="selectedTerminal"
                            [appendTo]="'body'"></ng-select>
@@ -85,7 +85,7 @@
           </div>
         </ng-container>
 
-        <h2>Default Webconsole Duration</h2>
+        <h2>Default Web Console Duration</h2>
         <div class="form-container">
           <div class="form-group">
             <div class="form-field">
@@ -100,7 +100,7 @@
 
         <hr class="proxy-settings-section">
 
-        <h2 class="proxy-settings-section">Proxy settings</h2>
+        <h2 class="proxy-settings-section">Proxy Settings</h2>
 
         <div class="form-container proxy-settings-section">
 
@@ -111,7 +111,7 @@
 
               <span class="proxy-length-2">://</span>
 
-              <input spellcheck="false" formControlName="proxyUrl" type="text" class="form-control proxy-length-3" placeholder="Enter Proxy Url"
+              <input spellcheck="false" formControlName="proxyUrl" type="text" class="form-control proxy-length-3" placeholder="Enter Proxy URL"
                      [value]="proxyUrl">
 
               <span class="proxy-length-4">:</span>
@@ -124,7 +124,7 @@
           <div class="form-group">
             <div class="form-field">
               <mat-checkbox formControlName="showAuthCheckbox" [(ngModel)]="showProxyAuthentication"></mat-checkbox>
-              Use authentication
+              Use Authentication
             </div>
           </div>
 
@@ -148,7 +148,7 @@
     <mat-tab>
       <ng-template mat-tab-label>
         <i class="mat-tab-icon moon-Terminal"></i>
-        <span class="mat-tab-label-text">IdP Url</span>
+        <span class="mat-tab-label-text">IdP URL</span>
       </ng-template>
 
       <div class="no-padding no-margin panel fill-height">
@@ -196,7 +196,7 @@
 
         <div class="form-group">
           <div class="form-field form-control-input-button max-width">
-            <input spellcheck="false" formControlName="awsProfile" type="text" class="form-control max-width" placeholder="Add a new Named Profile"
+            <input spellcheck="false" formControlName="awsProfile" type="text" class="form-control max-width" placeholder="Add a New Named Profile"
                    (keydown.enter)="$event.preventDefault(); manageAwsProfile(awsProfileValue ? awsProfileValue.id: -1);"
                    [value]="awsProfileValue ? awsProfileValue.name : ''">
             <button class="button" type="button" (click)="manageAwsProfile(awsProfileValue ? awsProfileValue.id: -1);"><i
@@ -232,7 +232,7 @@
       </ng-template>
 
       <ng-container>
-        <h2>AWS SSM dialog behaviour</h2>
+        <h2>AWS SSM Dialog Behaviour</h2>
         <div class="form-container">
           <div class="form-group">
             <div class="form-field">
@@ -259,22 +259,22 @@
         <span class="mat-tab-label-text">Plugins</span>
       </ng-template>
       <div class="no-padding no-margin panel fill-height">
-        <h2>Download Plugin manually</h2>
+        <h2>Download Plugin Manually</h2>
 
         <div class="form-group fill-column">
           <div class="form-field form-control-input-button max-width">
             <input spellcheck="false" formControlName="pluginDeepLink" type="text" class="form-control max-width"
-                   placeholder="Insert an npm package name"
+                   placeholder="Insert an npm Package Name"
                    (keydown.enter)="$event.preventDefault(); installPlugin();">
             <button [disabled]="fetchingPlugins" class="button" type="button" (click)="installPlugin();"><i class="moon-Add"></i></button>
           </div>
 
-          <h4> Installed plugins
+          <h4> Installed Plugins
             <button class="borderless-button pull-right" (click)="$event.preventDefault(); openPluginFolder()"><i class="fas fa-folder-open blackery"
-                                                                                                                  matTooltip="Open plugin folder"></i>
+                                                                                                                  matTooltip="Open Plugin Folder"></i>
             </button>
             <button [disabled]="fetchingPlugins" class="borderless-button pull-right" (click)="$event.preventDefault(); refreshPluginList(true)"><i
-              class="fa fa-refresh blackery" matTooltip="Refresh plugin list"></i></button>
+              class="fa fa-refresh blackery" matTooltip="Refresh Plugin List"></i></button>
           </h4>
 
           <div class="form-group scrollable fill-list tableFixHead">

@@ -6,7 +6,7 @@
   <!-- == CASES FOR MANAGING PROVIDER AND ACCOUNT SELECTION STRATEGIES == -->
   <!-- ================================================================== -->
   <ng-container *ngIf="!providerSelected">
-    <h4>Choose your Cloud Provider</h4>
+    <h4>Choose Your Cloud Provider</h4>
 
     <div class="strategy-list">
       <button type="button" class="providers" (click)="setProvider(eSessionType.awsIamRoleFederated);"><img src="./assets/images/aws{{optionsService.colorTheme === eConstants.darkTheme || (optionsService.colorTheme === eConstants.systemDefaultTheme && appService.isDarkMode()) ? '-dark' : ''}}.png" width="36" alt=""> Amazon AWS</button>
@@ -15,7 +15,7 @@
       <button type="button" class="providers" (click)="setProvider(eSessionType.localstack);"><img src="./assets/images/localstack.png" width="36" alt=""> LocalStack</button>
       <button type="button" class="providers disabled" (click)="false; //setProvider(eSessionType.alibaba);"><img src="./assets/images/alibaba.png" width="36" alt=""> Alibaba Cloud</button>
     </div>
-    <p>Do you want to add an Integration? <a class="btn-link" (click)="goToAwsSso()">View Integration settings</a></p>
+    <p>Do you want to add an integration? <a class="btn-link" (click)="goToAwsSso()">View Integration Settings</a></p>
   </ng-container>
 
   <!-- ================================================================== -->
@@ -30,7 +30,7 @@
       <div class="form-container">
         <div class="form-group">
           <div class="form-field">
-            <label>Access method</label>
+            <label>Access Method</label>
             <ng-select formControlName="selectAccessStrategy"
                        [(ngModel)]="provider"
                        [bindLabel]="'label'"
@@ -42,7 +42,7 @@
                        [addTag]="false"
             ></ng-select>
           </div>
-          <p class="smaller">Not sure what your method is? <a class="btn-link" (click)="openAccessStrategyDocumentation();">Discover more</a></p>
+          <p class="smaller">Not sure what your method is? <a class="btn-link" (click)="openAccessStrategyDocumentation();">Discover More</a></p>
         </div>
       </div>
     </ng-container>
@@ -54,7 +54,7 @@
       <ng-container *ngIf="sessionType.toString().indexOf('aws') > -1">
         <div class="form-group">
           <div class="form-field">
-            <label>Named profile</label>
+            <label>Named Profile</label>
             <app-leapp-select [controlName]="'awsProfile'"
                               [form]="form"
                               [placeholder]="'add a new named profile'"
@@ -107,20 +107,20 @@
           <!-- ==             SAML & IDP ARN FOR IAM ROLE FEDERATED            == -->
           <!-- ================================================================== -->
           <div class="form-field">
-            <label>SAML 2.0 Url</label>
+            <label>SAML 2.0 URL</label>
             <app-leapp-select [controlName]="'federationUrl'"
                               [form]="form"
-                              [placeholder]="'SAML 2.0 Url*'"
+                              [placeholder]="'SAML 2.0 URL*'"
                               [items]="idpUrls"
                               [dropdownPosition]="'up'"
-                              [whatToAddName]="'SAML 2.0 Url'"
+                              [whatToAddName]="'SAML 2.0 URL'"
                               [defaultNewValue]="addNewUUID"
                               [bindLabel]="'label'"
                               [bindValue]="'value'"
                               [uppercased]="false"
                               (selected)="selectedIdpUrlEvent($event);"></app-leapp-select>
 
-            <small class="text-error" *ngIf="(form.controls['federationUrl'].dirty || form.controls['federationUrl'].touched) && form.get('federationUrl')?.value === undefined">Insert the SAML 2.0 Url</small>
+            <small class="text-error" *ngIf="(form.controls['federationUrl'].dirty || form.controls['federationUrl'].touched) && form.get('federationUrl')?.value === undefined">Insert the SAML 2.0 URL</small>
           </div>
 
           <div class="form-field">
@@ -134,8 +134,8 @@
         <!-- ==                         MFA DEVICE ARN                       == -->
         <!-- ================================================================== -->
         <div class="form-field" *ngIf="sessionType === eSessionType.awsIamUser">
-          <label>Mfa Device</label>
-          <input spellcheck="false" formControlName="mfaDevice" type="text" class="form-control" placeholder="MFA ARN or SN (optional)" />
+          <label>MFA Device</label>
+          <input spellcheck="false" formControlName="mfaDevice" type="text" class="form-control" placeholder="MFA ARN or SN (Optional)" />
         </div>
 
         <!-- ================================================================== -->
@@ -175,15 +175,15 @@
       <!-- ================================================================= -->
       <ng-container *ngIf="sessionType === eSessionType.azure">
         <div class="form-field">
-          <label>Subscription Id</label>
-          <input formControlName="subscriptionId" type="password" class="form-control" placeholder="Subscription Id *">
-          <small class="text-error" *ngIf="(form.controls['subscriptionId'].dirty || form.controls['subscriptionId'].touched) && form.controls['subscriptionId'].errors">Insert the Subscription Id</small>
+          <label>Subscription ID</label>
+          <input formControlName="subscriptionId" type="password" class="form-control" placeholder="Subscription ID *">
+          <small class="text-error" *ngIf="(form.controls['subscriptionId'].dirty || form.controls['subscriptionId'].touched) && form.controls['subscriptionId'].errors">Insert the Subscription ID</small>
         </div>
 
         <div class="form-field">
-          <label>Tenant Id</label>
-          <input formControlName="tenantId" type="password" class="form-control" placeholder="Tenant Id *">
-          <small class="text-error" *ngIf="(form.controls['tenantId'].dirty || form.controls['tenantId'].touched) && form.controls['tenantId'].errors">Insert the Tenant Id</small>
+          <label>Tenant ID</label>
+          <input formControlName="tenantId" type="password" class="form-control" placeholder="Tenant ID *">
+          <small class="text-error" *ngIf="(form.controls['tenantId'].dirty || form.controls['tenantId'].touched) && form.controls['tenantId'].errors">Insert the Tenant ID</small>
         </div>
 
         <div class="form-field">

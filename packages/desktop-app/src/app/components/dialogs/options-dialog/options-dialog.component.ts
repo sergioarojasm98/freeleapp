@@ -230,7 +230,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
         this.appProviderService.logService.log(
           new LoggedEntry("Option saved.", this, LogLevel.info, false, JSON.stringify(this.form.getRawValue(), null, 3))
         );
-        this.toasterService.toast("Option saved.", ToastLevel.info, "Options");
+        this.toasterService.toast("Options Saved", ToastLevel.info, "Options");
       }
     }
   }
@@ -495,7 +495,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     await this.appProviderService.pluginManagerService.loadFromPluginDir();
     this.pluginList = this.appProviderService.pluginManagerService.pluginContainers;
     if (isRefreshingFromAction) {
-      this.appProviderService.logService.log(new LoggedEntry("Plugins refreshed", this, LogLevel.info, true));
+      this.appProviderService.logService.log(new LoggedEntry("Plugins Refreshed", this, LogLevel.info, true));
     }
     this.fetchingPlugins = false;
   }

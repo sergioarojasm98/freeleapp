@@ -48,7 +48,7 @@ export class ChangeRegionDialogComponent implements OnInit {
 
   async changeRegion(): Promise<void> {
     await this.regionService.changeRegion(this.session, this.selectedRegion);
-    this.messageToasterService.toast("Default region has been changed!", ToastLevel.success, "Region changed!");
+    this.messageToasterService.toast("Region Changed", ToastLevel.success, "Region changed!");
     this.closeModal();
   }
 }

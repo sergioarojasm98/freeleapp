@@ -220,7 +220,7 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   }
 
   showOptionDialog(): void {
-    this.bsModalService.show(OptionsDialogComponent, { animated: false, class: "option-modal" });
+    this.bsModalService.show(OptionsDialogComponent, { animated: false, class: "option-modal", backdrop: "static", keyboard: false });
   }
 
   showCreateDialog(): void {

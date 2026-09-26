@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, Input, OnDestroy, OnInit, ViewChild, ViewEncapsulation } from "@angular/core";
+import { AfterViewInit, Component, ElementRef, HostListener, Input, OnDestroy, OnInit, ViewChild, ViewEncapsulation } from "@angular/core";
 import { FormControl, FormGroup } from "@angular/forms";
 import { AppService } from "../../../services/app.service";
 import { Router } from "@angular/router";
@@ -8,8 +8,9 @@ import { LoggedEntry, LogLevel } from "@noovolari/leapp-core/services/log-servic
 import { MessageToasterService, ToastLevel } from "../../../services/message-toaster.service";
 import { WindowService } from "../../../services/window.service";
 import { AppProviderService } from "../../../services/app-provider.service";
-import { BsModalService } from "ngx-bootstrap/modal";
+import { BsModalRef, BsModalService } from "ngx-bootstrap/modal";
 import { CredentialProcessDialogComponent } from "../credential-process-dialog/credential-process-dialog.component";
+import { ConfirmationDialogComponent } from "../confirmation-dialog/confirmation-dialog.component";
 import { OptionsService } from "../../../services/options.service";
 import { AwsIamRoleFederatedSession } from "@noovolari/leapp-core/models/aws/aws-iam-role-federated-session";
 import { SessionService } from "@noovolari/leapp-core/services/session/session-service";
@@ -92,6 +93,10 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   // The theme is previewed as soon as it is picked, so closing without Done has to put the original one back
   private initialColorTheme: string;
   private saved = false;
+  // What Done would save, as opened; Cancel asks before dropping anything different
+  private initialSettings: string;
+  private discardConfirmation: BsModalRef;
+  private mouseDownTarget: EventTarget;
 
   constructor(
     public appProviderService: AppProviderService,
@@ -101,7 +106,8 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     private windowService: WindowService,
     private toasterService: MessageToasterService,
     private modalService: BsModalService,
-    private router: Router
+    private router: Router,
+    private elementRef: ElementRef
   ) {
     this.selectedTerminal = this.optionsService.macOsTerminal || constants.macOsTerminal;
 
@@ -112,6 +118,31 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     this.selectedCredentialMethod = this.optionsService.credentialMethod || constants.credentialFile;
 
     this.selectedSsmRegionBehaviour = this.optionsService.ssmRegionBehaviour || constants.ssmRegionNo;
+  }
+
+  // The modal is opened with keyboard and backdrop closing turned off (command bar), so both go through cancel()
+  @HostListener("document:keydown.escape", ["$event"])
+  onEscape(event: KeyboardEvent): void {
+    if (this.discardConfirmation) {
+      this.discardConfirmation.hide();
+    } else if (!event.defaultPrevented && this.modalService.getModalsCount() <= 1) {
+      this.cancel();
+    }
+  }
+
+  @HostListener("document:mousedown", ["$event"])
+  onMouseDown(event: MouseEvent): void {
+    this.mouseDownTarget = event.target;
+  }
+
+  @HostListener("document:click", ["$event"])
+  onClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    // A click on the dimmed area around the dialog, not a drag that started inside it
+    const outside = target.classList?.contains("modal") && target.contains(this.elementRef.nativeElement);
+    if (outside && this.mouseDownTarget === target && !this.discardConfirmation) {
+      this.cancel();
+    }
   }
 
   async ngOnInit(): Promise<void> {
@@ -149,6 +180,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     this.pluginList = this.appProviderService.pluginManagerService.pluginContainers;
 
     this.selectedSsmRegionBehaviour = this.optionsService.ssmRegionBehaviour || constants.ssmRegionNo;
+    this.initialSettings = this.pendingSettings();
   }
 
   ngAfterViewInit(): void {
@@ -169,7 +201,27 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   cancel(): void {
-    this.appService.closeModal();
+    if (this.pendingSettings() === this.initialSettings) {
+      this.appService.closeModal();
+      return;
+    }
+    this.discardConfirmation = this.modalService.show(ConfirmationDialogComponent, {
+      animated: false,
+      class: "confirm-modal",
+      backdrop: "static",
+      keyboard: false,
+      initialState: {
+        message: "Discard the changes you made in Settings?",
+        confirmText: "Discard",
+        cancelText: "Keep Editing",
+        callback: (answer: string) => {
+          if (answer !== constants.confirmClosed) {
+            this.appService.closeModal();
+          }
+        },
+      },
+    });
+    this.discardConfirmation.onHidden.subscribe(() => (this.discardConfirmation = undefined));
   }
 
   setColorTheme(theme: string): void {
@@ -526,5 +578,21 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     this.appNativeService.shell.showItemInFolder(
       this.appNativeService.path.join(this.appNativeService.os.homedir(), constants.appDataDir, "plugins")
     );
+  }
+
+  /**
+   * Everything Done saves, including the previewed theme, in a comparable form
+   */
+  private pendingSettings(): string {
+    const controls = this.form.controls;
+    return JSON.stringify([
+      this.selectedRegion,
+      this.selectedLocation,
+      this.selectedTerminal,
+      this.colorTheme,
+      this.selectedSsmRegionBehaviour,
+      `${controls["sessionDuration"].value}`,
+      ...["proxyProtocol", "proxyUrl", "proxyPort", "proxyUsername", "proxyPassword"].map((name) => controls[name].value ?? ""),
+    ]);
   }
 }

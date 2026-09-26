@@ -83,6 +83,9 @@ export class SideBarComponent implements OnInit, OnDestroy {
   }
 
   showOnlyPinned(): void {
+    // Pinned is a view of its own, like All Sessions: clear a saved filter or search first, otherwise the list shows
+    // only the pinned sessions that also match it (usually none)
+    this.resetFilters();
     sidebarHighlight.next({ showAll: false, showPinned: true, selectedSegment: -1 });
     const globalFilters = globalFilterGroup.value;
     globalFilters.integrationFilter = [];

@@ -4,6 +4,13 @@ All notable changes to Freeleapp are documented here. Versions follow [Semantic 
 
 Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the [Leapp changelog](https://github.com/Noovolari/leapp/blob/v0.26.1/CHANGELOG.md).
 
+## Unreleased
+
+### Bug Fixes
+
+- Macs without the AWS Session Manager plugin no longer get an error at startup. Freeleapp checks the AWS CLI and the plugin when you open **View SSM Sessions** and links to the install steps if one is missing.
+- **Open Issue** and **Request Feature** stay available when the AWS CLI or the Session Manager plugin is not installed.
+
 ## 1.0.0 (2026-09-25)
 
 First Freeleapp release, a maintained fork of Leapp for current macOS versions.

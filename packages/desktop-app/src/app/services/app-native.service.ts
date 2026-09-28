@@ -46,6 +46,7 @@ export class AppNativeService implements INativeService {
   constructor() {
     if (this.isElectron) {
       this.log = window.require("electron-log");
+      this.trustSystemCertificates();
       this.fs = window.require("fs-extra");
       this.rimraf = window.require("rimraf");
       this.os = window.require("os");
@@ -89,5 +90,16 @@ export class AppNativeService implements INativeService {
 
   get isElectron(): boolean {
     return !!(window && window.process && (window.process as any).type);
+  }
+
+  // Node requests (e.g. follow-redirects) only trust the CAs bundled with Node, while Chromium requests use the
+  // OS store: add the certificates the OS trusts, such as the root CA of a TLS-inspecting corporate proxy
+  private trustSystemCertificates(): void {
+    try {
+      const tls = window.require("tls");
+      tls.setDefaultCACertificates([...tls.getCACertificates("default"), ...tls.getCACertificates("system")]);
+    } catch (error) {
+      this.log.warn(`Could not load the system certificates: ${error.message}`);
+    }
   }
 }

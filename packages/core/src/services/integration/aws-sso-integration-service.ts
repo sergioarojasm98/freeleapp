@@ -300,8 +300,10 @@ export class AwsSsoIntegrationService implements IIntegrationService {
 
   private async login(integrationId: string | number, region: string, portalUrl: string): Promise<LoginResponse> {
     const redirectClient = this.nativeService.followRedirects[this.getProtocol(portalUrl)];
-    portalUrl = await new Promise((resolve, _) => {
+    portalUrl = await new Promise((resolve, reject) => {
       const request = redirectClient.request(portalUrl, (response) => resolve(response.responseUrl));
+      // Without it a network or certificate error would leave the login waiting forever
+      request.on("error", reject);
       request.end();
     });
 

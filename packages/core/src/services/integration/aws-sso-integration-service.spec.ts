@@ -383,7 +383,7 @@ describe("AwsSsoIntegrationService", () => {
     const portalUrl = "fake-portal-url";
     const resolvedPortalUrl = "fake-resolved-portal-url";
 
-    const requestMock = { end: jest.fn() };
+    const requestMock = { on: jest.fn(), end: jest.fn() };
     const httpClient = {
       request: jest.fn((actualPortalUrl, responseFn: any) => {
         expect(actualPortalUrl).toBe(portalUrl);
@@ -416,6 +416,27 @@ describe("AwsSsoIntegrationService", () => {
     expect(awsIntegrationService.getProtocol).toHaveBeenCalledWith(portalUrl);
     expect(requestMock.end).toHaveBeenCalled();
     expect(awsSsoOidcService.login).toHaveBeenCalledWith(integrationId, region, resolvedPortalUrl);
+  });
+
+  test("login, portal url request fails", async () => {
+    const requestError = new Error("unable to get local issuer certificate");
+    const requestMock = {
+      on: jest.fn((event: string, listener: any) => {
+        expect(event).toBe("error");
+        listener(requestError);
+      }),
+      end: jest.fn(),
+    };
+    const nativeService = {
+      followRedirects: { https: { request: jest.fn(() => requestMock) } },
+    } as any;
+    const awsSsoOidcService = { login: jest.fn() } as any;
+
+    const awsIntegrationService = new AwsSsoIntegrationService(null, null, null, nativeService, null, awsSsoOidcService, null) as any;
+    awsIntegrationService.getProtocol = jest.fn(() => "https");
+
+    await expect(awsIntegrationService.login("fake-integration-id", "fake-region", "fake-portal-url")).rejects.toBe(requestError);
+    expect(awsSsoOidcService.login).not.toHaveBeenCalled();
   });
 
   test("setupSsoPortalClient, sso portal not set up", async () => {

@@ -11,6 +11,10 @@ Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the
 - Freeleapp runs on Electron 44 (up from 22) and Node.js 24. The old Electron 22 is what made windows lag on macOS 26, and upcoming macOS versions flag it as outdated.
 - Sign-in to AWS IAM Identity Center works behind corporate networks that inspect TLS. Freeleapp now also trusts the root certificates installed in the macOS keychain (for example the one a company's proxy adds), not only the ones bundled with Node.js.
 
+### Bug Fixes
+
+- If the IAM Identity Center portal URL cannot be reached (network or certificate error), syncing the integration fails with an error instead of waiting forever.
+
 ## 1.0.1 (2026-09-26)
 
 ### Features

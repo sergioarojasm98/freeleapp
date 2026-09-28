@@ -75,7 +75,10 @@ export class AppNativeService implements INativeService {
       this.notification = window.require("@electron/remote").Notification;
       this.nodeIpc = window.require("node-ipc");
       this.process = (window as any).process;
-      this.msalEncryptionService = new MsalEncryptionService(window.require("@noovolari/dpapi-addon"));
+      // DPAPI only exists on Windows, the only platform that encrypts the MSAL cache
+      this.msalEncryptionService = new MsalEncryptionService(
+        this.process.platform === "win32" ? window.require("@noovolari/dpapi-addon") : undefined
+      );
       this.requireModule = window.require("require-module");
       this.hashElement = window.require("folder-hash");
       this.crypto = window.require("crypto");

@@ -256,9 +256,9 @@ const create = (win, options) => {
           const target = webContents(win);
 
           if (menuItem.transform) {
-            let clipboardContent = electron.clipboard.readText(props.selectionText);
-            clipboardContent = menuItem.transform ? menuItem.transform(clipboardContent) : clipboardContent;
-            target.insertText(clipboardContent);
+            electron.clipboard.readText().then((clipboardContent) => {
+              target.insertText(menuItem.transform(clipboardContent));
+            });
           } else {
             target.paste();
           }
@@ -314,10 +314,7 @@ const create = (win, options) => {
         click(menuItem) {
           props.linkURL = menuItem.transform ? menuItem.transform(props.linkURL) : props.linkURL;
 
-          electron.clipboard.write({
-            bookmark: props.linkText,
-            text: props.linkURL
-          });
+          electron.clipboard.writeText(props.linkURL);
         }
       }),
       saveLinkAs: decorateMenuItem({
@@ -344,10 +341,7 @@ const create = (win, options) => {
         click(menuItem) {
           props.srcURL = menuItem.transform ? menuItem.transform(props.srcURL) : props.srcURL;
 
-          electron.clipboard.write({
-            bookmark: props.srcURL,
-            text: props.srcURL
-          });
+          electron.clipboard.writeText(props.srcURL);
         }
       }),
       copyVideoAddress: decorateMenuItem({
@@ -357,10 +351,7 @@ const create = (win, options) => {
         click(menuItem) {
           props.srcURL = menuItem.transform ? menuItem.transform(props.srcURL) : props.srcURL;
 
-          electron.clipboard.write({
-            bookmark: props.srcURL,
-            text: props.srcURL
-          });
+          electron.clipboard.writeText(props.srcURL);
         }
       }),
       inspect: () => ({

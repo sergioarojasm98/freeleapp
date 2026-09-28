@@ -4,6 +4,12 @@ All notable changes to Freeleapp are documented here. Versions follow [Semantic 
 
 Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the [Leapp changelog](https://github.com/Noovolari/leapp/blob/v0.26.1/CHANGELOG.md).
 
+## Unreleased
+
+### Features
+
+- Freeleapp runs on Electron 44 (up from 22) and Node.js 24. The old Electron 22 is what made windows lag on macOS 26, and upcoming macOS versions flag it as outdated.
+
 ## 1.0.1 (2026-09-26)
 
 ### Features

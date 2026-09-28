@@ -21,8 +21,6 @@ contextMenu({
   showSearchWithGoogle: false
 });
 
-// Fix for warning at startup
-app.allowRendererProcessReuse = true;
 app.disableHardwareAcceleration();
 
 if (process.platform === "linux") {
@@ -47,7 +45,6 @@ const windowDefaultConfig = {
     webPreferences: {
       devTools: !environment.production,
       contextIsolation: false,
-      enableRemoteModule: true,
       nodeIntegration: true
     },
   },
@@ -157,7 +154,7 @@ const generateMainWindow = () => {
     // The hidden title bar is drawn by the app, so double-clicks are forwarded from the renderer and
     // handled like the native one, following System Settings > Desktop & Dock > "Double-click a window's title bar"
     ipc.on("title-bar-double-click", (evt) => {
-      if (evt.sender.getOwnerBrowserWindow().id !== win.id) {
+      if (BrowserWindow.fromWebContents(evt.sender)?.id !== win.id) {
         return;
       }
       const action = systemPreferences.getUserDefault("AppleActionOnDoubleClick", "string");

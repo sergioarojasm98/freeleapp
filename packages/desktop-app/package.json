@@ -109,7 +109,7 @@
       ]
     },
     "mac": {
-      "icon": "src/assets/images/Leapp.icns",
+      "icon": "build/Freeleapp.icon",
       "forceCodeSigning": true,
       "notarize": true,
       "hardenedRuntime": true,

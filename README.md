@@ -59,7 +59,7 @@ npm install
 cd packages/core && npm install && npm run build
 cd ../desktop-app && npm install
 npx gushio gushio/target-build.js 'configuration production'
-npx electron-builder build --mac dir --arm64 --publish never
+npx electron-builder build --mac dir --arm64 --publish never   # Xcode 26 compiles the Liquid Glass icon
 ```
 
 Tests: `npx jest` in `packages/core`, and `npm test -- --watch=false --browsers=ChromeHeadless` in `packages/desktop-app`.

@@ -18,11 +18,6 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      # node-gyp bundled with npm 8 still needs distutils (removed in Python 3.12)
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.11"
-
       - name: Install root dependencies
         run: npm install
 

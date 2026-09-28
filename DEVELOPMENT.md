@@ -25,7 +25,7 @@ In order to better understanding the Leapp App, firstly check out the [Concept p
 
 Follow [this](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) official guide to install both Node.js and NPM.
 
-The latest build was released using Node.js version 16.14.0 - as specified in the .nvmrc - and NPM version 8.5.5.
+Freeleapp builds with Node.js 24, the version bundled with Electron 44, as specified in the .nvmrc.
 
 ## NVM
 

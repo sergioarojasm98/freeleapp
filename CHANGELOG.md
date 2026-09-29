@@ -14,6 +14,10 @@ Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the
 - A named profile can only belong to one session. Choosing a profile that another session already uses shows which session has it, instead of silently stopping that session later. New sessions get `default` preselected only while no other session uses it.
 - **Port forwarding** in View SSM Sessions: **Forward Port** on an instance forwards a local port to a port on that instance, or through it to another host such as a database endpoint (`AWS-StartPortForwardingSession` and `AWS-StartPortForwardingSessionToRemoteHost`). The tunnel runs in a terminal window, like SSM sessions do.
 
+### Removed
+
+- The plugin system, with its **Plugins** tab in Settings, the Plugins entry of the session menu and the `freeleapp://` links that installed plugins. Plugins were npm packages that ran with full access to your system and were no longer verified: the Leapp service that signed them is gone. SSM port forwarding, the most used plugin feature, is now built in. A leftover `~/.freeleapp/plugins` folder can be deleted.
+
 ### Bug Fixes
 
 - If the IAM Identity Center portal URL cannot be reached (network or certificate error), syncing the integration fails with an error instead of waiting forever.

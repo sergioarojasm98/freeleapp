@@ -41,10 +41,5 @@
   },
   "lint-staged": {
     "*.{ts,html}": "eslint --fix"
-  },
-  "dependencies": {
-    "coverage-badges-cli": "^1.0.11",
-    "open": "^9.1.0",
-    "tsoa": "^4.1.0"
   }
 }

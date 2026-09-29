@@ -1,4 +1,4 @@
-import { Injectable, NgZone } from "@angular/core";
+import { Injectable } from "@angular/core";
 import { AwsSamlAssertionExtractionService } from "@noovolari/leapp-core/services/aws-saml-assertion-extraction-service";
 import { AwsIamUserService } from "@noovolari/leapp-core/services/session/aws/aws-iam-user-service";
 import { FileService } from "@noovolari/leapp-core/services/file-service";
@@ -37,9 +37,6 @@ import { MessageToasterService } from "./message-toaster.service";
 import { AzurePersistenceService } from "@noovolari/leapp-core/services/azure-persistence-service";
 import { AzureIntegrationService } from "@noovolari/leapp-core/services/integration/azure-integration-service";
 import { IntegrationIsOnlineStateRefreshService } from "@noovolari/leapp-core/services/integration/integration-is-online-state-refresh-service";
-import { PluginManagerService } from "@noovolari/leapp-core/plugin-sdk/plugin-manager-service";
-import { HttpClient } from "@angular/common/http";
-import { EnvironmentType, PluginEnvironment } from "@noovolari/leapp-core/plugin-sdk/plugin-environment";
 import { IntegrationFactory } from "@noovolari/leapp-core/services/integration-factory";
 import { AppKeychainService } from "./app-keychain-service";
 import { IKeychainService } from "@noovolari/leapp-core/interfaces/i-keychain-service";
@@ -93,36 +90,16 @@ export class AppProviderService {
   private workspaceServiceInstance: WorkspaceService;
   private azurePersistenceServiceInstance: AzurePersistenceService;
   private integrationIsOnlineStateRefreshServiceInstance: IntegrationIsOnlineStateRefreshService;
-  private pluginManagerServiceInstance: PluginManagerService;
   private integrationFactoryInstance: IntegrationFactory;
   private notificationServiceInstance: NotificationService;
 
-  constructor(
-    private appNativeService: AppNativeService,
-    private messageToaster: MessageToasterService,
-    private ngZone: NgZone,
-    private http: HttpClient
-  ) {}
+  constructor(private appNativeService: AppNativeService, private messageToaster: MessageToasterService) {}
 
   public get notificationService(): NotificationService {
     if (!this.notificationServiceInstance) {
       this.notificationServiceInstance = new NotificationService(this.repository);
     }
     return this.notificationServiceInstance;
-  }
-
-  public get pluginManagerService(): PluginManagerService {
-    if (!this.pluginManagerServiceInstance) {
-      this.pluginManagerServiceInstance = new PluginManagerService(
-        new PluginEnvironment(EnvironmentType.desktopApp, this),
-        this.appNativeService,
-        this.logService,
-        this.repository,
-        this.sessionFactory,
-        this.http
-      );
-    }
-    return this.pluginManagerServiceInstance;
   }
 
   public get workspaceService(): WorkspaceService {

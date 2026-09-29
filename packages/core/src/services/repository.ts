@@ -15,7 +15,6 @@ import * as uuid from "uuid";
 import Folder from "../models/folder";
 import { LoggedException, LogLevel } from "./log-service";
 import { AzureIntegration } from "../models/azure/azure-integration";
-import PluginStatus from "../models/plugin-status";
 import { WorkspaceConsistencyService } from "./workspace-consistency-service";
 import { LeappNotification } from "../models/notification";
 import { GlobalSettings } from "../interfaces/i-global-settings";
@@ -158,18 +157,6 @@ export class Repository {
       childSession = childSession.filter((session) => (session as AwsIamRoleChainedSession).parentSessionId === parentSession.sessionId);
     }
     return childSession;
-  }
-
-  createPluginStatus(pluginId: string): void {
-    this._workspace.pluginsStatus.push({ id: pluginId, active: true });
-  }
-
-  getPluginStatus(pluginId: string): PluginStatus {
-    return this._workspace.pluginsStatus.find((pluginStatus) => pluginStatus.id === pluginId);
-  }
-
-  setPluginStatus(pluginId: string, newStatus: PluginStatus): void {
-    this._workspace.pluginsStatus = this._workspace.pluginsStatus.map((pluginStatus) => (pluginStatus.id === pluginId ? newStatus : pluginStatus));
   }
 
   // REGION AND LOCATION
@@ -467,7 +454,6 @@ export class Repository {
       defaultLocation: workspace.defaultLocation,
       defaultRegion: workspace.defaultRegion,
       macOsTerminal: workspace.macOsTerminal,
-      pluginsStatus: workspace.pluginsStatus,
       samlRoleSessionDuration: workspace.samlRoleSessionDuration,
       pinned: workspace.pinned,
       segments: workspace.segments,
@@ -486,7 +472,6 @@ export class Repository {
     workspace.defaultLocation = globalSettingsInput.defaultLocation;
     workspace.defaultRegion = globalSettingsInput.defaultRegion;
     workspace.macOsTerminal = globalSettingsInput.macOsTerminal;
-    workspace.pluginsStatus = globalSettingsInput.pluginsStatus;
     workspace.samlRoleSessionDuration = globalSettingsInput.samlRoleSessionDuration;
     workspace.pinned = globalSettingsInput.pinned;
     workspace.segments = globalSettingsInput.segments;

@@ -6,11 +6,6 @@
     "email": "info@noovolari.com"
   },
   "description": "Leapp's core module",
-  "dependencies": {
-    "folder-hash": "^4.0.2",
-    "require-module": "^0.1.0",
-    "tsoa": "^4.1.0"
-  },
   "peerDependencies": {
     "@aws-sdk/client-ec2": "3.525.1",
     "@aws-sdk/client-ssm": "3.525.0",
@@ -53,7 +48,6 @@
     "semver": "7.7.2",
     "standard-version": "^9.3.0",
     "sudo-prompt": "~9.2.1",
-    "tar": "6.2.1",
     "tslib": "^2.3.1",
     "uuid": "~8.3.2",
     "wait-on": "8.0.3"

@@ -36,10 +36,6 @@ export class AppNativeService implements INativeService {
   notification: any;
   process: any;
   msalEncryptionService: IMsalEncryptionService;
-  hashElement: any;
-  requireModule: any;
-  crypto: any;
-  tar: any;
   fetch: any;
 
   constructor() {
@@ -78,10 +74,6 @@ export class AppNativeService implements INativeService {
       this.msalEncryptionService = new MsalEncryptionService(
         this.process.platform === "win32" ? window.require("@noovolari/dpapi-addon") : undefined
       );
-      this.requireModule = window.require("require-module");
-      this.hashElement = window.require("folder-hash");
-      this.crypto = window.require("crypto");
-      this.tar = window.require("tar");
       this.fetch = window.fetch.bind(window);
     }
   }

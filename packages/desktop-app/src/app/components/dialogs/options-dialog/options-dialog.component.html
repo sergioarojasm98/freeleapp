@@ -230,59 +230,6 @@
 
     </mat-tab>
 
-    <mat-tab *ngIf=!eConstants.disablePluginSystem>
-      <ng-template mat-tab-label>
-        <i class="mat-tab-icon moon-Puzzle"></i>
-        <span class="mat-tab-label-text">Plugins</span>
-      </ng-template>
-      <div class="no-padding no-margin panel fill-height">
-        <h2>Download Plugin Manually</h2>
-
-        <div class="form-group fill-column">
-          <div class="form-field form-control-input-button max-width">
-            <input spellcheck="false" formControlName="pluginDeepLink" type="text" class="form-control max-width"
-                   placeholder="Insert an npm Package Name"
-                   (keydown.enter)="$event.preventDefault(); installPlugin();">
-            <button [disabled]="fetchingPlugins" class="button" type="button" (click)="installPlugin();"><i class="moon-Add"></i></button>
-          </div>
-
-          <h4> Installed Plugins
-            <button class="borderless-button pull-right" (click)="$event.preventDefault(); openPluginFolder()"><i class="fas fa-folder-open blackery"
-                                                                                                                  matTooltip="Open Plugin Folder"></i>
-            </button>
-            <button [disabled]="fetchingPlugins" class="borderless-button pull-right" (click)="$event.preventDefault(); refreshPluginList(true)"><i
-              class="fa fa-refresh blackery" matTooltip="Refresh Plugin List"></i></button>
-          </h4>
-
-          <div class="form-group scrollable fill-list tableFixHead">
-            <table class="table plugin-table">
-              <thead>
-              <th><span class="centered-column">Name</span></th>
-              <th><span class="centered-column">Version</span></th>
-              <th><span class="centered-column">Supported OS</span></th>
-              <th><span class="centered-column">Enabled</span></th>
-              </thead>
-              <tbody>
-              <ng-container *ngFor="let plugin of pluginList">
-                <tr>
-                  <td><i class="fa fa-info-circle blackery" matTooltipClass="allow-cr"
-                         [matTooltip]="getPluginExtraInfo(plugin)"></i>&nbsp;{{plugin.metadata.uniqueName}}</td>
-                  <td>{{plugin.metadata.version}}</td>
-                  <td [innerHTML]="getSupportedOsIcons(plugin)"></td>
-                  <td>
-                    <mat-slide-toggle class="inline toggleColoredCorrectly" (toggleChange)="togglePluginActivation(plugin)"
-                                      [checked]="plugin.metadata.active"></mat-slide-toggle>
-                  </td>
-                </tr>
-              </ng-container>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
-    </mat-tab>
-
   </mat-tab-group>
 
   <button type="button" (click)="saveOptions();" [disabled]="!form.valid" class="margin-fix">Done</button>

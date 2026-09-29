@@ -99,7 +99,7 @@
   max-height: 200px;
 }
 
-// Tabs built around one list (IdP URLs, Named Profiles, Plugins): the list takes the rest of the tab's height and
+// Tabs built around one list (IdP URLs, Named Profiles): the list takes the rest of the tab's height and
 // scrolls on its own, instead of a fixed height that leaves tall windows half empty
 .panel.fill-height {
   display: flex;
@@ -157,47 +157,6 @@
   &:hover {
     cursor: pointer;
   }
-}
-
-.plugin-table {
-  th {
-    height: 42px !important;
-    z-index: 2;
-  }
-
-  th:nth-child(1),
-  td:nth-child(1) {
-    width: 40%;
-  }
-
-  th:nth-child(3),
-  td:nth-child(3) {
-    text-align: center;
-  }
-
-  th:nth-child(5),
-  td:nth-child(5) {
-    text-align: right;
-  }
-
-  i.fa-apple, i.fa-windows, i.fa-linux {
-    color: $dark-main-background;
-  }
-}
-
-.bw {
-  filter: grayscale(1) !important;
-}
-
-.borderless-button {
-  margin: 0 0 0 15px;
-  padding: 0;
-  background-color: unset !important;
-}
-
-.centered-column {
-  display: inline-block;
-  padding-bottom: 10px;
 }
 
 .touch-id-enable-checkbox {

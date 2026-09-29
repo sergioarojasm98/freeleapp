@@ -19,7 +19,6 @@ import { MessageToasterService, ToastLevel } from "./message-toaster.service";
 import { CreateDialogComponent } from "../components/dialogs/create-dialog/create-dialog.component";
 import { AwsIamRoleFederatedSession } from "@noovolari/leapp-core/models/aws/aws-iam-role-federated-session";
 import { AwsIamUserService } from "@noovolari/leapp-core/services/session/aws/aws-iam-user-service";
-import { AwsCredentialsPlugin } from "@noovolari/leapp-core/plugin-sdk/aws-credentials-plugin";
 import { SessionService } from "@noovolari/leapp-core/services/session/session-service";
 
 @Injectable({
@@ -227,11 +226,6 @@ export class SelectedSessionActionsService {
       this.messageToasterService.toast(err, ToastLevel.warn);
       this.appProviderService.logService.log(new LoggedException(err, this, LogLevel.error, true, err.stack));
     }
-  }
-
-  async applyPluginAction(session: Session, plugin: AwsCredentialsPlugin): Promise<void> {
-    this.behaviouralSubjectService.unselectSessions();
-    await plugin.run(session);
   }
 
   private generateDeleteDialogMessage(session: Session): string {

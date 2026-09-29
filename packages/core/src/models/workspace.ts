@@ -9,7 +9,6 @@ import Folder from "./folder";
 import Segment from "./segment";
 import { AwsSsoIntegration } from "./aws/aws-sso-integration";
 import { AzureIntegration } from "./azure/azure-integration";
-import PluginStatus from "./plugin-status";
 import { LeappNotification } from "./notification";
 import { RemoteWorkspacesSettingsMap } from "./remote-workspace-settings-map";
 
@@ -29,8 +28,6 @@ export class Workspace {
   private _remoteWorkspacesSettingsMap: RemoteWorkspacesSettingsMap;
 
   private _notifications: LeappNotification[];
-
-  private _pluginsStatus: PluginStatus[];
 
   private _pinned: string[];
   private _folders: Folder[];
@@ -67,7 +64,6 @@ export class Workspace {
     this._idpUrls = [];
     this._profiles = [{ id: uuid.v4(), name: constants.defaultAwsProfileName }];
     this._remoteWorkspacesSettingsMap = {};
-    this._pluginsStatus = [];
 
     this._awsSsoIntegrations = [];
     this._azureIntegrations = [];
@@ -214,14 +210,6 @@ export class Workspace {
 
   set credentialMethod(credentialMethod: string) {
     this._credentialMethod = credentialMethod;
-  }
-
-  get pluginsStatus(): PluginStatus[] {
-    return this._pluginsStatus;
-  }
-
-  set pluginsStatus(newPlugins: PluginStatus[]) {
-    this._pluginsStatus = newPlugins;
   }
 
   get ssmRegionBehaviour(): string {

@@ -4,7 +4,6 @@ import { AppComponent } from "./app.component";
 import { mustInjected } from "../base-injectables";
 import { AppProviderService } from "./services/app-provider.service";
 import { Workspace } from "@noovolari/leapp-core/models/workspace";
-import { constants } from "@noovolari/leapp-core/models/constants";
 import { LoggedEntry, LogLevel } from "@noovolari/leapp-core/services/log-service";
 
 describe("AppComponent", () => {
@@ -40,10 +39,6 @@ describe("AppComponent", () => {
     const app = fixture.debugElement.componentInstance;
     expect(app).toBeTruthy();
 
-    // check for deep link at app start
-    (app as any).fileService = {};
-    (app as any).fileService.readFileSync = jasmine.createSpy().and.returnValue("leapp://some-plugin");
-    (app as any).fileService.existsSync = jasmine.createSpy().and.returnValue(true);
     (app as any).awsSsoRoleService = { setAwsIntegrationDelegate: () => {} };
     (app as any).windowService = { blockDevToolInProductionMode: () => {} };
     (app as any).updaterService = { createFoldersIfMissing: () => {} };
@@ -56,7 +51,6 @@ describe("AppComponent", () => {
     (app as any).behaviouralSubjectService.sessions = [];
     (app as any).router = { navigate: jasmine.createSpy().and.returnValue(true) };
 
-    constants.disablePluginSystem = true;
     (app as any).appNativeService = {
       os: {
         homedir: () => {},
@@ -69,11 +63,10 @@ describe("AppComponent", () => {
     };
 
     await app.ngOnInit();
-    expect((app as any).fileService.existsSync).toHaveBeenCalled();
     expect((app as any).router.navigate).toHaveBeenCalledWith(["/dashboard"]);
   });
 
-  it("Should listen for deep links", () => {
+  it("Should listen for updates", () => {
     const fixture = TestBed.createComponent(AppComponent);
     let app = fixture.debugElement.componentInstance;
 
@@ -86,7 +79,6 @@ describe("AppComponent", () => {
 
     app = fixture.debugElement.componentInstance;
     (app as any).behaviouralSubjectService = { sessions: [] };
-    (app as any).pluginManagerService = { installPlugin: jasmine.createSpy().and.returnValue("") };
 
     (app as any).appProviderService = {};
     (app as any).appProviderService.sessionManagementService = {};
@@ -111,18 +103,11 @@ describe("AppComponent", () => {
         (app as any).appProviderService.sessionManagementService.updateSessions((app as any).behaviouralSubjectService.sessions);
       }
     };
-    const mockedCallback2 = (url) => {
-      if (!constants.disablePluginSystem) {
-        (app as any).pluginManagerService.installPlugin(url);
-      }
-    };
 
     (app as any).appNativeService.ipcRenderer = {
       on: (_string, _callback) => {
         if (_string === "UPDATE_AVAILABLE") {
           mockedCallback1();
-        } else {
-          mockedCallback2("leapp://some-plugin");
         }
       },
     };
@@ -137,10 +122,6 @@ describe("AppComponent", () => {
     expect((app as any).updaterService.isUpdateNeeded).toHaveBeenCalled();
     expect((app as any).updaterService.updateDialog).toHaveBeenCalled();
     expect((app as any).appProviderService.sessionManagementService.updateSessions).toHaveBeenCalled();
-
-    constants.disablePluginSystem = false;
-    ipcRenderer.on("PLUGIN_URL", null);
-    expect((app as any).pluginManagerService.installPlugin).toHaveBeenCalledWith("leapp://some-plugin");
   });
 
   it("beforeCloseInstructions", async () => {

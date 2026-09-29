@@ -26,7 +26,6 @@ import { OptionsService } from "./services/options.service";
 import { IntegrationIsOnlineStateRefreshService } from "@noovolari/leapp-core/services/integration/integration-is-online-state-refresh-service";
 import { AzureSessionService } from "@noovolari/leapp-core/services/session/azure/azure-session-service";
 import { AzureCoreService } from "@noovolari/leapp-core/services/azure-core-service";
-import { PluginManagerService } from "@noovolari/leapp-core/plugin-sdk/plugin-manager-service";
 
 @Component({
   selector: "app-root",
@@ -49,7 +48,6 @@ export class AppComponent implements OnInit {
   private integrationIsOnlineStateRefreshService: IntegrationIsOnlineStateRefreshService;
   private azureSessionService: AzureSessionService;
   private azureCoreService: AzureCoreService;
-  private pluginManagerService: PluginManagerService;
 
   /* Main app file: launches the Angular framework inside Electron app */
   constructor(
@@ -82,7 +80,6 @@ export class AppComponent implements OnInit {
     this.integrationIsOnlineStateRefreshService = appProviderService.integrationIsOnlineStateRefreshService;
     this.azureSessionService = appProviderService.azureSessionService;
     this.azureCoreService = appProviderService.azureCoreService;
-    this.pluginManagerService = appProviderService.pluginManagerService;
 
     this.setInitialColorSchema();
     this.setColorSchemaChangeEventListener();
@@ -141,29 +138,6 @@ export class AppComponent implements OnInit {
 
     // Launch Auto Updater Routines
     this.manageAutoUpdate();
-
-    if (!constants.disablePluginSystem) {
-      this.appProviderService.pluginManagerService.verifyAndGeneratePluginFolderIfMissing();
-      await this.appProviderService.pluginManagerService.loadFromPluginDir();
-      this.loggingService.log(
-        new LoggedEntry(`Loaded plugins...\n\n${this.appProviderService.pluginManagerService.pluginContainers}`, this, LogLevel.info)
-      );
-    }
-
-    // Deep link with app closed
-    if (this.fileService.existsSync(this.appNativeService.path.join(this.appNativeService.os.homedir(), environment.deeplinkFile))) {
-      try {
-        const deepLink = this.fileService.readFileSync(this.appNativeService.path.join(this.appNativeService.os.homedir(), environment.deeplinkFile));
-        if (!constants.disablePluginSystem) {
-          await this.pluginManagerService.installPlugin(deepLink);
-          await this.pluginManagerService.loadFromPluginDir();
-        }
-      } catch (err) {
-        this.loggingService.log(new LoggedEntry(`Error in install plugin from file: ${err.toString()}`, this, LogLevel.info));
-      } finally {
-        this.appNativeService.fs.removeSync(this.appNativeService.path.join(this.appNativeService.os.homedir(), environment.deeplinkFile));
-      }
-    }
 
     this.behaviouralSubjectService.fetchingIntegrationState$.subscribe((fetchingState: string | undefined) => {
       this.fetchingState = fetchingState;
@@ -254,12 +228,6 @@ export class AppComponent implements OnInit {
         this.updaterService.updateDialog();
         this.behaviouralSubjectService.sessions = [...this.behaviouralSubjectService.sessions];
         this.appProviderService.sessionManagementService.updateSessions(this.behaviouralSubjectService.sessions);
-      }
-    });
-
-    ipc.on("PLUGIN_URL", (_, url) => {
-      if (!constants.disablePluginSystem) {
-        this.pluginManagerService.installPlugin(url);
       }
     });
   }

@@ -31,12 +31,6 @@
     "set-target-x64": "gushio gushio/set-target-arch.js x64"
   },
   "build": {
-    "protocols": {
-      "name": "freeleapp-deep-linking",
-      "schemes": [
-        "freeleapp"
-      ]
-    },
     "publish": [
       {
         "provider": "github",
@@ -99,9 +93,6 @@
       "target": [
         "deb",
         "AppImage"
-      ],
-      "mimeTypes": [
-        "x-scheme-handler/freeleapp"
       ]
     },
     "mac": {
@@ -177,7 +168,6 @@
     "electron-updater": "6.8.9",
     "emoji-regex": "^8.0.0",
     "extract-zip": "~2.0.1",
-    "folder-hash": "^4.0.2",
     "follow-redirects": "1.15.6",
     "fs-extra": "~9.1.0",
     "github-url-to-object": "^4.0.6",
@@ -202,7 +192,6 @@
     "node-log-rotate": "~0.1.5",
     "node-machine-id": "~1.1.12",
     "reflect-metadata": "^0.1.13",
-    "require-module": "^0.1.0",
     "rimraf": "~3.0.2",
     "rxjs": "~6.6.7",
     "saml-encoder-decoder-js": "~1.0.1",
@@ -211,7 +200,6 @@
     "stream-browserify": "3.0.0",
     "strip-ansi": "^6.0.1",
     "sudo-prompt": "~9.2.1",
-    "tar": "6.2.1",
     "tslib": "^2.3.1",
     "uuid": "~8.3.2",
     "wait-on": "8.0.3",

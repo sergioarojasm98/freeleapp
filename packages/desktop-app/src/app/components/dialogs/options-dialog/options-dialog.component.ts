@@ -16,7 +16,6 @@ import { SessionService } from "@noovolari/leapp-core/services/session/session-s
 import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
 import { OperatingSystem } from "@noovolari/leapp-core/models/operating-system";
 import { AppNativeService } from "../../../services/app-native.service";
-import { PluginContainer } from "@noovolari/leapp-core/plugin-sdk/plugin-manager-service";
 import { colorThemeSubject } from "../../check-icon-svg/check-icon-svg.component";
 import { withRecentRegions } from "../../../services/region-options";
 
@@ -58,9 +57,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   colorTheme: string;
   selectedColorTheme: string;
 
-  pluginList: PluginContainer[];
-  fetchingPlugins: boolean;
-
   selectedSsmRegionBehaviour: string;
 
   form = new FormGroup({
@@ -78,7 +74,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     terminalSelect: new FormControl(""),
     colorThemeSelect: new FormControl(""),
     sessionDuration: new FormControl(""),
-    pluginDeepLink: new FormControl(""),
     ssmRegionBehaviourSelect: new FormControl(""),
   });
 
@@ -141,7 +136,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   async ngOnInit(): Promise<void> {
-    this.fetchingPlugins = false;
     this.idpUrlValue = "";
     this.proxyProtocol = this.optionsService.proxyConfiguration.proxyProtocol;
     this.proxyUrl = this.optionsService.proxyConfiguration.proxyUrl;
@@ -172,8 +166,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
 
     this.appService.validateAllFormFields(this.form);
 
-    this.pluginList = this.appProviderService.pluginManagerService.pluginContainers;
-
     this.selectedSsmRegionBehaviour = this.optionsService.ssmRegionBehaviour || constants.ssmRegionNo;
     this.initialSettings = this.pendingSettings();
   }
@@ -186,7 +178,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
 
   /**
    * Cancel, Esc and a click outside all close the dialog without saving: the fields applied by Done are dropped and a
-   * previewed color theme is reverted. List actions (IdP URLs, profiles, plugins) and the credential method keep
+   * previewed color theme is reverted. List actions (IdP URLs, profiles) and the credential method keep
    * applying immediately, each with its own confirmation.
    */
   ngOnDestroy(): void {
@@ -455,59 +447,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   openBrowser(url: string) {
     this.windowService.openExternalUrl(url);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  async installPlugin(): Promise<void> {
-    this.fetchingPlugins = true;
-    if (this.form.controls.pluginDeepLink.value) {
-      try {
-        await this.appProviderService.pluginManagerService.installPlugin(this.form.controls.pluginDeepLink.value);
-        await this.refreshPluginList();
-      } catch (error) {
-        this.appProviderService.logService.log(new LoggedEntry(error.message, this, LogLevel.error, true));
-      }
-    }
-    this.fetchingPlugins = false;
-  }
-
-  async refreshPluginList(isRefreshingFromAction?: boolean): Promise<void> {
-    this.fetchingPlugins = true;
-    this.appProviderService.pluginManagerService.verifyAndGeneratePluginFolderIfMissing();
-    await this.appProviderService.pluginManagerService.loadFromPluginDir();
-    this.pluginList = this.appProviderService.pluginManagerService.pluginContainers;
-    if (isRefreshingFromAction) {
-      this.appProviderService.logService.log(new LoggedEntry("Plugins Refreshed", this, LogLevel.info, true));
-    }
-    this.fetchingPlugins = false;
-  }
-
-  togglePluginActivation(plugin: PluginContainer): void {
-    plugin.metadata.active = !plugin.metadata.active;
-    const status = this.appProviderService.repository.getPluginStatus(plugin.metadata.uniqueName);
-    status.active = plugin.metadata.active;
-    this.appProviderService.repository.setPluginStatus(plugin.metadata.uniqueName, status);
-  }
-
-  getPluginExtraInfo(plugin: PluginContainer): string {
-    return `Author: ${plugin.metadata.author}
-    Description: ${plugin.metadata.description}
-    Supported Sessions: ${plugin.metadata.supportedSessions.join(",")}`;
-  }
-
-  getSupportedOsIcons(plugin: PluginContainer): string {
-    const supportedOS = plugin.metadata.supportedOS;
-    const icon1 = `<i class="fa fa-apple ${supportedOS.includes(OperatingSystem.mac) ? "" : "bw"}"></i>`;
-    const icon2 = `<i class="fa fa-windows ${supportedOS.includes(OperatingSystem.windows) ? "" : "bw"}"></i>`;
-    const icon3 = `<i class="fa fa-linux ${supportedOS.includes(OperatingSystem.linux) ? "" : "bw"}"></i>`;
-    return `${icon1}&nbsp;${icon2}&nbsp;${icon3}`;
-  }
-
-  openPluginFolder(): void {
-    this.appProviderService.pluginManagerService.verifyAndGeneratePluginFolderIfMissing();
-    this.appNativeService.shell.showItemInFolder(
-      this.appNativeService.path.join(this.appNativeService.os.homedir(), constants.appDataDir, "plugins")
-    );
   }
 
   /**

@@ -10,7 +10,6 @@ const environment = {
   lockFileDestination: "",
   production: true,
   credentialsDestination: ".aws/credentials",
-  deeplinkFile: ".freeleapp/deeplink",
   azureMsalCacheFile: ".azure/msal_token_cache.json",
   defaultRegion: "us-east-1",
   defaultLocation: "eastus",

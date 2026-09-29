@@ -8,8 +8,6 @@ const electronLocalshortcut = require('electron-localshortcut');
 const { autoUpdater } = require("electron-updater");
 
 const url = require("url");
-const fs = require("fs");
-const os = require("os");
 const ipc = ipcMain;
 
 const remote = require("@electron/remote/main");
@@ -27,8 +25,6 @@ if (process.platform === "linux") {
   app.commandLine.appendSwitch("disable-software-rasterizer");
   app.commandLine.appendSwitch("in-process-gpu");
 }
-
-app.setAsDefaultProtocolClient('freeleapp');
 
 
 // Main Window configuration: set here the options to make it works with your app
@@ -188,22 +184,7 @@ const generateMainWindow = () => {
       electronLocalshortcut.unregisterAll(win);
     });
 
-    // On macOS the deep link is correctly retrieved from the event, and because
-    // we are in the ready action the ipc can correctly send the url to the frontend
-    app.on('open-url', (event, url) => {
-      event.preventDefault();
-      win.webContents.send("PLUGIN_URL", url);
-    });
-
     remote.enable(win.webContents);
-
-    // Protocol handler for win32 and linux for deep linking when the app is already launched.
-    // The url is passed in the args so we read and write to a temp file before the frontend is
-    // launched, this way the frontend can read the temp file and load the plugin
-    if (process.platform !== 'darwin' && process.argv[1] && process.argv[1].split("freeleapp://")[1]) {
-      // Keep only command line / deep linked arguments
-      fs.writeFileSync(path.join(os.homedir(),environment.deeplinkFile), process.argv[1].split("freeleapp://")[1]);
-    }
   };
 
   const createTrayWindow = () => {
@@ -288,39 +269,12 @@ const generateMainWindow = () => {
 
   });
 
-  // when the app on macOS is starting for the first time the frontend is not ready so we use 'will-finish-launching'
-  // to encapsulate open-url callback and we write to a temp file because here the frontend is not ready yet.
-  app.on("will-finish-launching", () => {
-    app.on('open-url', (event, url) => {
-      event.preventDefault();
-      try {
-        fs.writeFileSync(path.join(os.homedir(),environment.deeplinkFile), url);
-      } catch(err) {
-        console.log(err);
-      }
-    });
-  });
-
   const gotTheLock = app.requestSingleInstanceLock();
 
   if (!gotTheLock) {
     app.quit();
   } else {
-    app.on("second-instance", (event, argv, _workingDirectory) => {
-      // For Win32 and Linux we can read the deep link from the second instance args and write
-      // to file before the second instance is removed by the first instance lock
-      if (process.platform !== 'darwin') {
-        // Keep only command line / deep linked arguments
-        if (win) {
-          // Win32 and Linux on app already open
-          if(argv.length > 0) {
-            if(argv[argv.length-1] && argv[argv.length-1]?.split("freeleapp://")[1]) {
-              win.webContents.send("PLUGIN_URL", argv[argv.length-1]?.split("freeleapp://")[1]);
-            }
-          }
-          win.focus();
-        }
-      }
+    app.on("second-instance", () => {
       // Someone tried to run a second instance, we should focus our window.
       if (win) {
         if (win.isMinimized()) {

@@ -16,7 +16,7 @@ describe("Workspace Model", () => {
         '{"_sessions":[],"_awsSsoIntegrations":[],"_azureIntegrations":[],"_defaultRegion":"us-east-1",' +
           '"_defaultLocation":"eastus","_macOsTerminal":"Terminal","_idpUrls":[],"_profiles":[{"name":"default"}],' +
           '"_remoteWorkspacesSettingsMap":{},' +
-          '"_notifications":[],"_pluginsStatus":[],"_pinned":[],"_folders":[],"_segments":[],' +
+          '"_notifications":[],"_pinned":[],"_folders":[],"_segments":[],' +
           '"_proxyConfiguration":{"proxyProtocol":"https","proxyPort":"8080"},' +
           '"_credentialMethod":"credential-file-method","_samlRoleSessionDuration":3600,"_ssmRegionBehaviour":"No"}'
       );
@@ -257,18 +257,6 @@ describe("Workspace Model", () => {
     const mock = { mock: "mock" } as any;
     workspace.credentialMethod = mock;
     expect(mock).toStrictEqual((workspace as any)._credentialMethod);
-  });
-
-  test("pluginStatus", () => {
-    const workspace = new Workspace();
-    expect(workspace.pluginsStatus).toStrictEqual([]);
-  });
-
-  test("set pluginStatus", () => {
-    const workspace = new Workspace();
-    const mock = "plugin-status" as any;
-    workspace.pluginsStatus = mock;
-    expect(mock).toStrictEqual((workspace as any)._pluginsStatus);
   });
 
   test("samlRoleSessionDuration", () => {

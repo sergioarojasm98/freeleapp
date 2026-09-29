@@ -15,7 +15,6 @@ describe("OptionsDialogComponent", () => {
         awsCoreService: { getRegions: () => [{ region: "us-east-1" }, { region: "eu-west-1" }] },
         azureCoreService: { getLocations: () => [] },
         repository: { getSessions: () => [] },
-        pluginManagerService: { pluginContainers: [] },
       } as any,
       { closeModal, isDarkMode: () => false, validateAllFormFields: () => {} } as any,
       options,

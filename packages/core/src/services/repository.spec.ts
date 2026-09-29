@@ -1282,30 +1282,6 @@ describe("Repository", () => {
     expect(repository.getColorTheme()).toBe(constants.darkTheme);
   });
 
-  test("createPluginStatus() - creates a new pluginStatus", () => {
-    (repository as any)._workspace = {
-      pluginsStatus: [],
-    };
-    repository.createPluginStatus("pluginId");
-    expect((repository as any)._workspace.pluginsStatus).toStrictEqual([{ id: "pluginId", active: true }]);
-  });
-
-  test("getPluginStatus() - get the pluginStatus from a pluginId", () => {
-    (repository as any)._workspace = {
-      pluginsStatus: [{ id: "id1" }, { id: "id2" }],
-    };
-    const result = repository.getPluginStatus("id1");
-    expect(result).toStrictEqual({ id: "id1" });
-  });
-
-  test("setPluginStatus() - set the newStatus of a pluginStatus from a pluginId", () => {
-    (repository as any)._workspace = {
-      pluginsStatus: [{ id: "id1" }, { id: "id2" }],
-    };
-    repository.setPluginStatus("id1", "new-status");
-    expect((repository as any)._workspace.pluginsStatus).toStrictEqual(["new-status", { id: "id2" }]);
-  });
-
   test("writeFile", () => {
     const data = "data-mock";
     repository.nativeService = { fs: { writeFileSync: jest.fn() } };
@@ -1319,7 +1295,6 @@ describe("Repository", () => {
     mockedWorkspace.defaultLocation = "mock-default-location";
     mockedWorkspace.defaultRegion = "mock-default-region";
     mockedWorkspace.macOsTerminal = "mock-terminal";
-    mockedWorkspace.pluginsStatus = "mock-plugin-status";
     mockedWorkspace.samlRoleSessionDuration = "mock-saml-role-session-duration";
     mockedWorkspace.pinned = "mock-pinned";
     mockedWorkspace.segments = "mock-segments";
@@ -1335,7 +1310,6 @@ describe("Repository", () => {
       defaultRegion: "mock-default-region",
       macOsTerminal: "mock-terminal",
       notifications: mockedNotifications,
-      pluginsStatus: "mock-plugin-status",
       remoteWorkspacesSettingsMap: {},
       requirePassword: undefined,
       samlRoleSessionDuration: "mock-saml-role-session-duration",
@@ -1353,7 +1327,6 @@ describe("Repository", () => {
       defaultLocation: "mock-default-location",
       defaultRegion: "mock-default-region",
       macOsTerminal: "mock-terminal",
-      pluginsStatus: "mock-plugin-status",
       samlRoleSessionDuration: "mock-saml-role-session-duration",
       pinned: "mock-pinned",
       segments: "mock-segments",
@@ -1370,7 +1343,6 @@ describe("Repository", () => {
     expect(mockedWorkspace.defaultLocation).toEqual("mock-default-location");
     expect(mockedWorkspace.defaultRegion).toEqual("mock-default-region");
     expect(mockedWorkspace.macOsTerminal).toEqual("mock-terminal");
-    expect(mockedWorkspace.pluginsStatus).toEqual("mock-plugin-status");
     expect(mockedWorkspace.samlRoleSessionDuration).toEqual("mock-saml-role-session-duration");
     expect(mockedWorkspace.pinned).toEqual("mock-pinned");
     expect(mockedWorkspace.segments).toEqual("mock-segments");

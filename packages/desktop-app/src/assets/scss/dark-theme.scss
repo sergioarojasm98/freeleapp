@@ -550,18 +550,6 @@ body.dark-theme {
     }
   }
 
-  .plugin-table thead th {
-    background-color: $dark-modal-background!important;
-  }
-
-  .blackery {
-    color: $dark-main-text-color !important;
-  }
-
-  i.fa-apple, i.fa-windows, i.fa-linux {
-    color: #5ea9ee!important;
-  }
-
   .selected i.fa-circle.active {
     color: $success-session !important;
   }

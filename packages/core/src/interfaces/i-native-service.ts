@@ -19,9 +19,5 @@ export interface INativeService {
   httpsProxyAgent: any;
   process: any;
   msalEncryptionService: IMsalEncryptionService;
-  hashElement: any;
-  requireModule: any;
-  crypto: any;
-  tar: any;
   fetch: any;
 }

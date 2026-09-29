@@ -33,16 +33,11 @@
     "typescript": "4.5.5"
   },
   "scripts": {
-    "set-pro-environment": "npm install && gushio gushio/set-pro-environment.js",
-    "set-dev-environment": "npm install && gushio gushio/set-dev-environment.js",
-    "bootstrap": "npm install && gushio gushio/bootstrap.js core cli desktop-app",
-    "clean-and-bootstrap": "npm install && gushio gushio/clean-and-bootstrap.js core cli desktop-app",
+    "bootstrap": "npm install && gushio gushio/bootstrap.js core desktop-app",
+    "clean-and-bootstrap": "npm install && gushio gushio/clean-and-bootstrap.js core desktop-app",
     "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",
-    "prepare": "husky install",
-    "leapp-release": "gushio gushio/release.js",
-    "make-badges-core": "gushio gushio/make-badges.js core",
-    "make-badges-cli": "gushio gushio/make-badges.js cli"
+    "prepare": "husky install"
   },
   "lint-staged": {
     "*.{ts,html}": "eslint --fix"

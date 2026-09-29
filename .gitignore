@@ -71,16 +71,6 @@ temp/
 packages/core/node_modules
 packages/core/dist
 
-packages/cli/*-debug.log
-packages/cli/*-error.log
-packages/cli/.nyc_output
-packages/cli/dist
-packages/cli/build
-packages/cli/lib
-packages/cli/tmp
-packages/cli/yarn.lock
-packages/cli/node_modules
-packages/cli/oclif.manifest.json
 /release/
 
 lerna-debug.log

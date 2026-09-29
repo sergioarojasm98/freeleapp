@@ -106,6 +106,7 @@
     },
     "mac": {
       "icon": "build/Freeleapp.icon",
+      "minimumSystemVersion": "13.0",
       "forceCodeSigning": true,
       "notarize": true,
       "hardenedRuntime": true,

@@ -43,7 +43,7 @@ The core library (`packages/core`) holds the session logic and the desktop app i
 
 ## Install
 
-Download the `.dmg` from [Releases](https://github.com/sergioarojasm98/freeleapp/releases) (Apple Silicon). Builds are ad-hoc signed until notarization is set up, so clear the quarantine flag after copying the app:
+Download the `.dmg` from [Releases](https://github.com/sergioarojasm98/freeleapp/releases) (Apple Silicon, macOS 13 Ventura or later). Builds are ad-hoc signed until notarization is set up, so clear the quarantine flag after copying the app:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Freeleapp.app

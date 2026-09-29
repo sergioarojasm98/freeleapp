@@ -14,6 +14,7 @@ Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the
 ### Bug Fixes
 
 - If the IAM Identity Center portal URL cannot be reached (network or certificate error), syncing the integration fails with an error instead of waiting forever.
+- The session list keeps a predictable order. **Order by Date** (on by default) now lists started sessions by start time and the rest by name; before, it left them in the order they were created. Ordering by a column header also survives starting or stopping a session, instead of jumping back to the default order.
 
 ## 1.0.1 (2026-09-26)
 

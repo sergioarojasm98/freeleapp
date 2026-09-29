@@ -5,7 +5,6 @@ import { CreateDialogComponent } from "../dialogs/create-dialog/create-dialog.co
 import { SegmentDialogComponent } from "../dialogs/segment-dialog/segment-dialog.component";
 import { FormControl, FormGroup } from "@angular/forms";
 import { BehaviorSubject, Subject } from "rxjs";
-import { globalOrderingFilter } from "../sessions/sessions.component";
 import { Session } from "@noovolari/leapp-core/models/session";
 import Segment, { GlobalFilters } from "@noovolari/leapp-core/models/segment";
 import { SessionType } from "@noovolari/leapp-core/models/session-type";
@@ -84,7 +83,6 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   private subscription3;
   private subscription4;
   private subscription5;
-  private subscription6;
 
   private behaviouralSubjectService: BehaviouralSubjectService;
 
@@ -194,10 +192,6 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
         globalFilterGroup.next(values);
       }
     });
-
-    this.subscription6 = globalOrderingFilter.subscribe((sessions: Session[]) => {
-      globalFilteredSessions.next(sessions);
-    });
   }
 
   ngOnDestroy(): void {
@@ -208,7 +202,6 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
     this.subscription3?.unsubscribe();
     this.subscription4?.unsubscribe();
     this.subscription5?.unsubscribe();
-    this.subscription6?.unsubscribe();
   }
 
   ngAfterContentChecked(): void {
@@ -436,8 +429,18 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
     return globalFilteredSessions.next(filteredSessions);
   }
 
+  // Started sessions by start time, then the others by name. Only started sessions have a start time: comparing
+  // the missing ones (NaN) left the list in the order the sessions were created.
   private orderByDate(filteredSession: Session[]) {
-    return filteredSession.sort((a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime());
+    return filteredSession.sort((a, b) => {
+      if (a.startDateTime && b.startDateTime) {
+        return new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime();
+      }
+      if (a.startDateTime || b.startDateTime) {
+        return a.startDateTime ? -1 : 1;
+      }
+      return a.sessionName.localeCompare(b.sessionName);
+    });
   }
 
   private updateFilterForm(values: GlobalFilters) {

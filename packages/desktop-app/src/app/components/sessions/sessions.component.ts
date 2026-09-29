@@ -9,7 +9,6 @@ import {
   IGlobalColumns,
 } from "../command-bar/command-bar.component";
 import { ColumnDialogComponent } from "../dialogs/column-dialog/column-dialog.component";
-import { BehaviorSubject } from "rxjs";
 import { SessionCardComponent } from "./session-card/session-card.component";
 import { Session } from "@noovolari/leapp-core/models/session";
 import { GlobalFilters } from "@noovolari/leapp-core/models/segment";
@@ -25,8 +24,6 @@ import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
 import { OptionsService } from "../../services/options.service";
 import { AwsIamUserSession } from "@noovolari/leapp-core/models/aws/aws-iam-user-session";
 import { FilteringPipe } from "./pipes/filtering.pipe";
-
-export const globalOrderingFilter = new BehaviorSubject<Session[]>([]);
 
 export interface ArrowSettings {
   activeArrow: boolean;
@@ -58,6 +55,9 @@ export class SessionsComponent implements OnInit, OnDestroy {
 
   selectedSession?: Session;
 
+  private sortColumn: number | null = null;
+  private sortDescending = false;
+  private filteredSessions: Session[] = [];
   private subscriptions = [];
   private sessionFiltering;
 
@@ -76,7 +76,9 @@ export class SessionsComponent implements OnInit, OnDestroy {
       this.eGlobalFilterExtended = value;
     });
     const subscription2 = globalFilteredSessions.subscribe((value) => {
-      this.eGlobalFilteredSessions = value;
+      // Session changes (start, stop, sync) emit a new list: keep the column order the user chose
+      this.filteredSessions = value;
+      this.eGlobalFilteredSessions = this.sortByColumn(value);
     });
     const subscription3 = compactMode.subscribe((value) => {
       this.eCompactMode = value;
@@ -106,7 +108,6 @@ export class SessionsComponent implements OnInit, OnDestroy {
     });
 
     this.subscriptions.push(subscription, subscription2, subscription3, subscription4, subscription5, subscription6);
-    globalOrderingFilter.next(JSON.parse(JSON.stringify(this.behaviouralSubjectService.sessions)));
   }
 
   get orderedSessions(): Session[] {
@@ -140,137 +141,23 @@ export class SessionsComponent implements OnInit, OnDestroy {
     }
   }
 
-  orderSessionsByName(orderStyle: boolean): void {
-    this.resetArrowsExcept(0);
-    if (!orderStyle) {
-      this.columnSettings[0].activeArrow = true;
-      globalOrderingFilter.next(JSON.parse(JSON.stringify(this.eGlobalFilteredSessions.sort((a, b) => a.sessionName.localeCompare(b.sessionName)))));
-      this.columnSettings[0].orderStyle = !this.columnSettings[0].orderStyle;
-    } else if (this.columnSettings[0].activeArrow) {
-      globalOrderingFilter.next(JSON.parse(JSON.stringify(this.eGlobalFilteredSessions.sort((a, b) => b.sessionName.localeCompare(a.sessionName)))));
-      this.columnSettings[0].activeArrow = false;
+  /**
+   * A click on a column header orders by that column: ascending, then descending, then back to the filter order
+   */
+  orderByColumn(column: number): void {
+    if (this.sortColumn !== column) {
+      this.sortColumn = column;
+      this.sortDescending = false;
+    } else if (!this.sortDescending) {
+      this.sortDescending = true;
     } else {
-      this.columnSettings[0].orderStyle = !this.columnSettings[0].orderStyle;
-      this.orderSessionsByStartTime();
+      this.sortColumn = null;
     }
-  }
-
-  // TODO: verify this sorting!
-  orderSessionsByRole(orderStyle: boolean): void {
-    this.resetArrowsExcept(1);
-    if (!orderStyle) {
-      this.columnSettings[1].activeArrow = true;
-      globalOrderingFilter.next(
-        JSON.parse(
-          JSON.stringify(
-            this.eGlobalFilteredSessions.sort((a, b) => {
-              if (this.getRole(a) === "") {
-                return 1;
-              }
-              if (this.getRole(b) === "") {
-                return -1;
-              }
-              if (this.getRole(a) === this.getRole(b)) {
-                return 0;
-              }
-              return this.getRole(a) < this.getRole(b) ? -1 : 1;
-            })
-          )
-        )
-      );
-      this.columnSettings[1].orderStyle = !this.columnSettings[1].orderStyle;
-    } else if (this.columnSettings[1].activeArrow) {
-      globalOrderingFilter.next(
-        JSON.parse(
-          JSON.stringify(
-            this.eGlobalFilteredSessions.sort((a, b) => {
-              if (this.getRole(a) === "") {
-                return -1;
-              }
-              if (this.getRole(b) === "") {
-                return 1;
-              }
-              if (this.getRole(a) === this.getRole(b)) {
-                return 0;
-              }
-              return this.getRole(b) < this.getRole(a) ? -1 : 1;
-            })
-          )
-        )
-      );
-      this.columnSettings[1].activeArrow = false;
-    } else {
-      this.columnSettings[1].orderStyle = !this.columnSettings[1].orderStyle;
-      this.orderSessionsByStartTime();
-    }
-  }
-
-  orderSessionsByType(orderStyle: boolean): void {
-    this.resetArrowsExcept(2);
-    if (!orderStyle) {
-      this.columnSettings[2].activeArrow = true;
-      globalOrderingFilter.next(JSON.parse(JSON.stringify(this.eGlobalFilteredSessions.sort((a, b) => a.type.localeCompare(b.type)))));
-      this.columnSettings[2].orderStyle = !this.columnSettings[2].orderStyle;
-    } else if (this.columnSettings[2].activeArrow) {
-      globalOrderingFilter.next(JSON.parse(JSON.stringify(this.eGlobalFilteredSessions.sort((a, b) => b.type.localeCompare(a.type)))));
-      this.columnSettings[2].activeArrow = false;
-    } else {
-      this.columnSettings[2].orderStyle = !this.columnSettings[2].orderStyle;
-      this.orderSessionsByStartTime();
-    }
-  }
-
-  orderSessionsByNamedProfile(orderStyle: boolean): void {
-    if (!orderStyle) {
-      this.columnSettings[3].activeArrow = true;
-      globalOrderingFilter.next(
-        JSON.parse(JSON.stringify(this.eGlobalFilteredSessions.sort((a, b) => this.getProfileName(a).localeCompare(this.getProfileName(b)))))
-      );
-      this.columnSettings[3].orderStyle = !this.columnSettings[3].orderStyle;
-    } else if (this.columnSettings[3].activeArrow) {
-      globalOrderingFilter.next(
-        JSON.parse(JSON.stringify(this.eGlobalFilteredSessions.sort((a, b) => this.getProfileName(b).localeCompare(this.getProfileName(a)))))
-      );
-      this.columnSettings[3].activeArrow = false;
-    } else {
-      this.columnSettings[3].orderStyle = !this.columnSettings[3].orderStyle;
-      this.orderSessionsByStartTime();
-    }
-  }
-
-  orderSessionsByNamedRegion(orderStyle: boolean): void {
-    this.resetArrowsExcept(4);
-    if (!orderStyle) {
-      this.columnSettings[4].activeArrow = true;
-      globalOrderingFilter.next(JSON.parse(JSON.stringify(this.eGlobalFilteredSessions.sort((a, b) => a.region.localeCompare(b.region)))));
-      this.columnSettings[4].orderStyle = !this.columnSettings[4].orderStyle;
-    } else if (this.columnSettings[4].activeArrow) {
-      globalOrderingFilter.next(JSON.parse(JSON.stringify(this.eGlobalFilteredSessions.sort((a, b) => b.region.localeCompare(a.region)))));
-      this.columnSettings[4].activeArrow = false;
-    } else {
-      this.columnSettings[4].orderStyle = !this.columnSettings[4].orderStyle;
-      this.orderSessionsByStartTime();
-    }
-  }
-
-  orderSessionsByStartTime(): void {
-    globalOrderingFilter.next(
-      JSON.parse(
-        JSON.stringify(
-          this.eGlobalFilteredSessions.sort((a, b) => {
-            if (a.startDateTime === undefined) {
-              return "z".localeCompare(b.startDateTime);
-            } else if (b.startDateTime === undefined) {
-              return a.startDateTime.localeCompare("z");
-            } else if (!a.startDateTime && !b.startDateTime) {
-              return "z".localeCompare("z");
-            } else {
-              return a.startDateTime.localeCompare(b.startDateTime);
-            }
-          })
-        )
-      )
-    );
+    this.columnSettings.forEach((settings, index) => {
+      settings.activeArrow = index === this.sortColumn && !this.sortDescending;
+      settings.orderStyle = index === this.sortColumn;
+    });
+    this.eGlobalFilteredSessions = this.sortByColumn(this.filteredSessions);
   }
 
   getRole(s: Session): string {
@@ -301,12 +188,27 @@ export class SessionsComponent implements OnInit, OnDestroy {
     return "";
   }
 
-  private resetArrowsExcept(c): void {
-    this.columnSettings.forEach((column, index) => {
-      if (index !== c) {
-        column.orderStyle = false;
-        column.activeArrow = false;
+  private sortByColumn(sessions: Session[]): Session[] {
+    if (this.sortColumn === null) {
+      return sessions;
+    }
+    const sortKeys: ((session: Session) => string)[] = [
+      (session) => session.sessionName,
+      (session) => this.getRole(session),
+      (session) => session.type,
+      (session) => this.getProfileName(session),
+      (session) => session.region,
+    ];
+    const sortKey = sortKeys[this.sortColumn];
+    const direction = this.sortDescending ? -1 : 1;
+    return [...sessions].sort((a, b) => {
+      const keyA = sortKey(a) ?? "";
+      const keyB = sortKey(b) ?? "";
+      // Empty values (e.g. IAM users have no role) go last in ascending order
+      if (!keyA !== !keyB) {
+        return (keyA ? -1 : 1) * direction;
       }
+      return keyA.localeCompare(keyB) * direction;
     });
   }
 }

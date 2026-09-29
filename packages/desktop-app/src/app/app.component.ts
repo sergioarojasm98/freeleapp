@@ -1,5 +1,4 @@
 import { Component, OnInit } from "@angular/core";
-import { RemoteProceduresServer } from "@noovolari/leapp-core/services/remote-procedures-server";
 import { environment } from "../environments/environment";
 import { AppService } from "./services/app.service";
 import { Router } from "@angular/router";
@@ -47,7 +46,6 @@ export class AppComponent implements OnInit {
   private rotationService: RotationService;
   private awsSsoIntegrationService: AwsSsoIntegrationService;
   private awsSsoRoleService: AwsSsoRoleService;
-  private remoteProceduresServer: RemoteProceduresServer;
   private integrationIsOnlineStateRefreshService: IntegrationIsOnlineStateRefreshService;
   private azureSessionService: AzureSessionService;
   private azureCoreService: AzureCoreService;
@@ -81,7 +79,6 @@ export class AppComponent implements OnInit {
     this.rotationService = appProviderService.rotationService;
     this.awsSsoIntegrationService = appProviderService.awsSsoIntegrationService;
     this.awsSsoRoleService = appProviderService.awsSsoRoleService;
-    this.remoteProceduresServer = appProviderService.remoteProceduresServer;
     this.integrationIsOnlineStateRefreshService = appProviderService.integrationIsOnlineStateRefreshService;
     this.azureSessionService = appProviderService.azureSessionService;
     this.azureCoreService = appProviderService.azureCoreService;
@@ -173,8 +170,6 @@ export class AppComponent implements OnInit {
     });
 
     await this.router.navigate(["/dashboard"]);
-
-    (async (): Promise<void> => this.remoteProceduresServer.startServer())();
   }
 
   closeAllRightClickMenus(): void {
@@ -192,8 +187,6 @@ export class AppComponent implements OnInit {
   private async beforeCloseInstructions() {
     // Check if we are here
     this.loggingService.log(new LoggedEntry("Closing app with cleaning process...", this, LogLevel.info));
-
-    this.remoteProceduresServer.stopServer();
 
     // Stop all the sessions
     await this.appProviderService.sessionManagementService.stopAllSessions();

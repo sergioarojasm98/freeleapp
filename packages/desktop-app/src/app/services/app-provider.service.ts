@@ -1,6 +1,5 @@
 import { Injectable, NgZone } from "@angular/core";
 import { AwsSamlAssertionExtractionService } from "@noovolari/leapp-core/services/aws-saml-assertion-extraction-service";
-import { RemoteProceduresServer } from "@noovolari/leapp-core/services/remote-procedures-server";
 import { AwsIamUserService } from "@noovolari/leapp-core/services/session/aws/aws-iam-user-service";
 import { FileService } from "@noovolari/leapp-core/services/file-service";
 import { AwsCoreService } from "@noovolari/leapp-core/services/aws-core-service";
@@ -89,7 +88,6 @@ export class AppProviderService {
   private ssmServiceInstance: SsmService;
   private idpUrlServiceInstance: IdpUrlsService;
   private namedProfileInstance: NamedProfilesService;
-  private remoteProceduresServerInstance: RemoteProceduresServer;
   private segmentServiceInstance: SegmentService;
   private sessionManagementServiceInstance: SessionManagementService;
   private workspaceServiceInstance: WorkspaceService;
@@ -448,24 +446,6 @@ export class AppProviderService {
       this.integrationFactoryInstance = new IntegrationFactory(this.awsSsoIntegrationService, this.azureIntegrationService);
     }
     return this.integrationFactoryInstance;
-  }
-
-  public get remoteProceduresServer(): RemoteProceduresServer {
-    if (!this.remoteProceduresServerInstance) {
-      this.remoteProceduresServerInstance = new RemoteProceduresServer(
-        this.keychainService,
-        this.appNativeService,
-        this.verificationWindowService,
-        this.awsAuthenticationService,
-        this.integrationFactory,
-        this.mfaCodePrompter,
-        this.repository,
-        this.behaviouralSubjectService,
-        this.workspaceService,
-        (uiSafeBlock) => this.ngZone.run(() => uiSafeBlock())
-      );
-    }
-    return this.remoteProceduresServerInstance;
   }
 
   public get integrationIsOnlineStateRefreshService(): IntegrationIsOnlineStateRefreshService {

@@ -54,7 +54,6 @@ describe("AppComponent", () => {
     (app as any).loggingService = { log: () => {} };
     (app as any).behaviouralSubjectService = { fetchingIntegrationState$: { subscribe: () => {} } };
     (app as any).behaviouralSubjectService.sessions = [];
-    (app as any).remoteProceduresServer = { startServer: () => {} };
     (app as any).router = { navigate: jasmine.createSpy().and.returnValue(true) };
 
     constants.disablePluginSystem = true;
@@ -148,7 +147,6 @@ describe("AppComponent", () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.debugElement.componentInstance;
     (app as any).loggingService = { log: jasmine.createSpy().and.callFake(() => {}) };
-    (app as any).remoteProceduresServer = { stopServer: jasmine.createSpy().and.callFake(() => {}) };
     (app as any).appProviderService = {
       sessionManagementService: {
         stopAllSessions: jasmine.createSpy().and.callFake(() => {}),
@@ -159,7 +157,6 @@ describe("AppComponent", () => {
     await (app as any).beforeCloseInstructions();
 
     expect((app as any).loggingService.log).toHaveBeenCalledWith(new LoggedEntry("Closing app with cleaning process...", this, LogLevel.info));
-    expect((app as any).remoteProceduresServer.stopServer).toHaveBeenCalledTimes(1);
     expect((app as any).appProviderService.sessionManagementService.stopAllSessions).toHaveBeenCalledTimes(1);
     expect((app as any).appService.quit).toHaveBeenCalledTimes(1);
   });

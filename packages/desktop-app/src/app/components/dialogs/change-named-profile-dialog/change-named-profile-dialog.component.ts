@@ -44,7 +44,12 @@ export class ChangeNamedProfileDialogComponent implements OnInit {
         this.selectedProfile.value = this.appProviderService.namedProfileService.createNamedProfile(this.selectedProfile.label).id;
       }
 
-      this.appProviderService.namedProfileService.changeNamedProfile(this.session, this.selectedProfile.value);
+      try {
+        await this.appProviderService.namedProfileService.changeNamedProfile(this.session, this.selectedProfile.value);
+      } catch (error) {
+        this.messageToasterService.toast(error.message, ToastLevel.warn, "Profile Not Changed");
+        return;
+      }
 
       this.messageToasterService.toast("Named Profile Changed", ToastLevel.success, "Profile changed!");
       this.closeModal();

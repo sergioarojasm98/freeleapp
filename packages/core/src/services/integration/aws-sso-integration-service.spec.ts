@@ -176,8 +176,22 @@ describe("AwsSsoIntegrationService", () => {
       sessionsToAdd: [
         {
           awsSsoConfigurationId: "configurationId",
+          sessionName: "payments-prod",
+          roleArn: "arn:aws:iam::123456789012/ReadOnly",
+        },
+        {
+          awsSsoConfigurationId: "configurationId",
+          sessionName: "payments-prod",
+          roleArn: "arn:aws:iam::123456789012/Admin",
+          profileId: "kept-profile-id",
         },
       ],
+    };
+    const profiles = [{ id: "default-id", name: "default" }];
+    const repository = {
+      getProfiles: jest.fn(() => profiles),
+      getSessions: jest.fn(() => []),
+      addProfile: jest.fn((profile: any) => profiles.push(profile)),
     };
     const loginAndGetSessionsDiff = jest.fn(async () => sessionDiff);
     const awsSsoRoleService = {
@@ -190,15 +204,34 @@ describe("AwsSsoIntegrationService", () => {
       getSessionService: jest.fn(() => sessionService),
     };
 
-    const awsSsoIntegrationService = new AwsSsoIntegrationService(null, null, null, null, sessionFactory as any, null, awsSsoRoleService as any);
+    const awsSsoIntegrationService = new AwsSsoIntegrationService(
+      repository as any,
+      null,
+      null,
+      null,
+      sessionFactory as any,
+      null,
+      awsSsoRoleService as any
+    );
     (awsSsoIntegrationService as any).loginAndGetSessionsDiff = loginAndGetSessionsDiff;
 
     const syncedSessions = await awsSsoIntegrationService.syncSessions(integrationId, "onAuthenticatedCallback" as any);
 
-    expect(syncedSessions).toEqual({ sessionsAdded: 1, sessionsDeleted: 1 });
+    expect(syncedSessions).toEqual({ sessionsAdded: 2, sessionsDeleted: 1 });
     expect(loginAndGetSessionsDiff).toHaveBeenCalledWith(integrationId, "onAuthenticatedCallback");
-    expect(awsSsoRoleService.create).toHaveBeenCalledWith({
+    const newProfile = profiles.find((profile) => profile.name === "payments-prod-ReadOnly");
+    expect(newProfile).toBeDefined();
+    expect(awsSsoRoleService.create).toHaveBeenNthCalledWith(1, {
       awsSsoConfigurationId: "integrationId",
+      sessionName: "payments-prod",
+      roleArn: "arn:aws:iam::123456789012/ReadOnly",
+      profileId: newProfile.id,
+    });
+    expect(awsSsoRoleService.create).toHaveBeenNthCalledWith(2, {
+      awsSsoConfigurationId: "integrationId",
+      sessionName: "payments-prod",
+      roleArn: "arn:aws:iam::123456789012/Admin",
+      profileId: "kept-profile-id",
     });
     expect(sessionFactory.getSessionService).toHaveBeenCalledWith("type");
     expect(sessionService.delete).toHaveBeenCalledWith("sessionId");
@@ -857,7 +890,7 @@ describe("AwsSsoIntegrationService", () => {
       {
         awsSsoConfigurationId: integrationId,
         email: accountInfo.emailAddress,
-        profileId: "fake-default-profile-id",
+        profileId: undefined,
         region: "fake-default-region",
         roleArn: `arn:aws:iam::${accountInfo.accountId}/${accountRole1.roleName}`,
         sessionName: accountInfo.accountName,

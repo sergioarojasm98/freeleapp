@@ -14,6 +14,8 @@ import { AzureIntegration } from "../models/azure/azure-integration";
 import { IKeychainService } from "../interfaces/i-keychain-service";
 import { IntegrationType } from "../models/integration-type";
 import { LeappNotification } from "../models/notification";
+import { SessionStatus } from "../models/session-status";
+import { pickSsoRoleProfile } from "./sso-role-profile";
 
 export class RetroCompatibilityService {
   constructor(
@@ -39,6 +41,7 @@ export class RetroCompatibilityService {
       this.migration6();
       this.migration7();
       this.migration8();
+      this.migration9();
       // When adding new migrations remember to increase constants.workspaceLastVersion
     }
   }
@@ -302,6 +305,34 @@ export class RetroCompatibilityService {
       workspace._credentialMethod = constants.credentialFile;
       this.removeLeappCredentialProcessProfiles();
     }
+    this.persists(workspace);
+    this.repository.reloadWorkspace();
+  }
+
+  // IAM Identity Center roles used to share the "default" profile, so only one of them could be active. Give each of
+  // those roles its own "<account>-<role>" profile. Roles with a profile the user chose keep it, and so do active ones:
+  // their credentials sit under [default] and are removed from there when the app stops them at startup.
+  private migration9(): void {
+    const workspace = this.getWorkspace();
+    if (!this.checkMigration(workspace, 8, 9)) {
+      return;
+    }
+
+    const profiles = workspace._profiles ?? [];
+    const sessions = workspace._sessions ?? [];
+    const defaultProfileId = profiles.find((profile) => profile.name === constants.defaultAwsProfileName)?.id;
+    const rolesOnDefault = sessions.filter(
+      (session) => session.type === SessionType.awsSsoRole && session.profileId === defaultProfileId && session.status === SessionStatus.inactive
+    );
+    for (const session of rolesOnDefault) {
+      const profile = pickSsoRoleProfile(session.sessionName, session.roleArn, profiles, sessions);
+      if (!profile.id) {
+        profile.id = uuid.v4();
+        profiles.push({ id: profile.id, name: profile.name });
+      }
+      session.profileId = profile.id;
+    }
+    workspace._profiles = profiles;
     this.persists(workspace);
     this.repository.reloadWorkspace();
   }

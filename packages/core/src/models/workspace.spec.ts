@@ -124,7 +124,7 @@ describe("Workspace Model", () => {
   test("setNewWorkspaceVersion", () => {
     const workspace = new Workspace();
     workspace.setNewWorkspaceVersion();
-    expect((workspace as any)._workspaceVersion).toBe(8);
+    expect((workspace as any)._workspaceVersion).toBe(9);
   });
 
   test("get Sessions", () => {

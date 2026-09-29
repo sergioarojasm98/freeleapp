@@ -183,7 +183,7 @@ describe("NamedProfilesService", () => {
     } as any;
     const repository = {
       updateSession: jest.fn(),
-      getSessions: jest.fn(),
+      getSessions: jest.fn(() => [session]),
     } as any;
     const behaviouralSubjectService = {
       setSessions: jest.fn(),
@@ -230,6 +230,40 @@ describe("NamedProfilesService", () => {
     expect(repository.updateSession).toHaveBeenCalledWith(session.sessionId, session);
     expect(behaviouralSubjectService.setSessions).toHaveBeenCalled();
     expect(sessionService.start).toHaveBeenCalledTimes(0);
+  });
+
+  test("changeNamedProfile - profile used by another session", async () => {
+    const session = { sessionId: "sessionId", status: SessionStatus.active, type: "type", profileId: "profileId" } as any;
+    const otherSession = { sessionId: "other", sessionName: "payments-prod", profileId: "newProfileId" } as any;
+    const sessionService = new (AwsSessionService as any)(null, null, null, null);
+    sessionService.stop = jest.fn();
+    const sessionFactory = { getSessionService: jest.fn(() => sessionService) } as any;
+    const repository = {
+      updateSession: jest.fn(),
+      getSessions: jest.fn(() => [session, otherSession]),
+      getProfileName: jest.fn(() => "payments"),
+    } as any;
+
+    const namedProfileService = new NamedProfilesService(sessionFactory, repository, null);
+
+    await expect(namedProfileService.changeNamedProfile(session, "newProfileId")).rejects.toThrow(
+      'The named profile "payments" is already used by payments-prod. Choose another one or type a new name.'
+    );
+    expect(sessionService.stop).not.toHaveBeenCalled();
+    expect(repository.updateSession).not.toHaveBeenCalled();
+  });
+
+  test("checkProfileIsFree", () => {
+    const repository = {
+      getSessions: jest.fn(() => [{ sessionId: "a", sessionName: "A", profileId: "p1" }]),
+      getProfileName: jest.fn(() => "p1-name"),
+    } as any;
+    const namedProfileService = new NamedProfilesService(null, repository, null);
+
+    expect(() => namedProfileService.checkProfileIsFree("p1", "a")).not.toThrow();
+    expect(() => namedProfileService.checkProfileIsFree("p2")).not.toThrow();
+    expect(() => namedProfileService.checkProfileIsFree("p1")).toThrow('The named profile "p1-name" is already used by A.');
+    expect(() => namedProfileService.checkProfileIsFree("p1", "b")).toThrow("already used by A");
   });
 
   test("changeNamedProfile - not AwsSessionService type", async () => {

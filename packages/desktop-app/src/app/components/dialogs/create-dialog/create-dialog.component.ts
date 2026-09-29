@@ -167,7 +167,13 @@ export class CreateDialogComponent implements OnInit {
       // Select default values
       this.selectedRegion = workspace.defaultRegion || constants.defaultRegion || this.regions[0].region;
       this.selectedLocation = workspace.defaultLocation || constants.defaultLocation || this.locations[0].location;
-      this.selectedProfile = workspace.profiles.filter((p) => p.name === "default").map((p) => ({ value: p.id, label: p.name }))[0];
+      // A named profile holds one session's credentials: suggest "default" only while no other session uses it
+      const defaultProfileIsFree =
+        this.leappCoreService.namedProfileService.getSessionsWithNamedProfile(this.leappCoreService.namedProfileService.getDefaultProfileId())
+          .length === 0;
+      this.selectedProfile = defaultProfileIsFree
+        ? workspace.profiles.filter((p) => p.name === "default").map((p) => ({ value: p.id, label: p.name }))[0]
+        : undefined;
 
       // if Shortcut apply default values
       if (this.shortcut) {
@@ -201,7 +207,10 @@ export class CreateDialogComponent implements OnInit {
     }
     this.submitting = true;
     try {
-      this.addProfileToWorkspace();
+      if (this.selectedProfile && this.sessionType !== SessionType.azure) {
+        this.addProfileToWorkspace();
+        this.leappCoreService.namedProfileService.checkProfileIsFree(this.selectedProfile.value);
+      }
       this.addIpdUrlToWorkspace();
       await this.createSession();
       this.router.navigate(["/dashboard"]).then(() => {});

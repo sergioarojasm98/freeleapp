@@ -7,6 +7,8 @@ import { SessionFactory } from "./session-factory";
 import { SessionStatus } from "../models/session-status";
 import { AwsSessionService } from "./session/aws/aws-session-service";
 import { BehaviouralSubjectService } from "./behavioural-subject-service";
+import { LeappBaseError } from "../errors/leapp-base-error";
+import { LogLevel } from "./log-service";
 
 export class NamedProfilesService {
   constructor(private sessionFactory: SessionFactory, private repository: Repository, private behaviouralSubjectService: BehaviouralSubjectService) {}
@@ -44,6 +46,25 @@ export class NamedProfilesService {
 
   getSessionsWithNamedProfile(id: string): Session[] {
     return this.repository.getSessions().filter((session) => (session as any).profileId === id);
+  }
+
+  /**
+   * A named profile holds the credentials of one session at a time, so it cannot be assigned to a second session
+   *
+   * @param profileId the profile to assign
+   * @param sessionId the session it is assigned to (none for a session that is being created)
+   */
+  checkProfileIsFree(profileId: string, sessionId?: string): void {
+    const otherSession = this.getSessionsWithNamedProfile(profileId).find((session) => session.sessionId !== sessionId);
+    if (otherSession) {
+      const profileName = this.repository.getProfileName(profileId);
+      throw new LeappBaseError(
+        "Named profile already in use",
+        this,
+        LogLevel.warn,
+        `The named profile "${profileName}" is already used by ${otherSession.sessionName}. Choose another one or type a new name.`
+      );
+    }
   }
 
   createNamedProfile(name: string): AwsNamedProfile {
@@ -98,6 +119,7 @@ export class NamedProfilesService {
   async changeNamedProfile(session: Session, newNamedProfileId: string): Promise<void> {
     const sessionService = this.sessionFactory.getSessionService(session.type);
     if (sessionService instanceof AwsSessionService) {
+      this.checkProfileIsFree(newNamedProfileId, session.sessionId);
       const wasActive = session.status === SessionStatus.active;
       if (wasActive) {
         await sessionService.stop(session.sessionId);

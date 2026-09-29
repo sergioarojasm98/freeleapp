@@ -235,6 +235,8 @@ export class EditDialogComponent implements OnInit, AfterViewInit {
           } catch (e) {
             this.selectedProfile.value = this.leappCoreService.namedProfileService.createNamedProfile(this.selectedProfile.label).id;
           }
+          // Before stopping the session, so a rejected profile leaves it as it was
+          this.leappCoreService.namedProfileService.checkProfileIsFree(this.selectedProfile.value, this.selectedSession.sessionId);
         }
 
         let wasActive = false;

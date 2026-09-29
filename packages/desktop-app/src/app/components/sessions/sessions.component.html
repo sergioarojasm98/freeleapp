@@ -29,7 +29,7 @@
       <tr class="{{session.status !== eSessionStatus.inactive ? 'active' : ''}} {{eCompactMode ? 'compact' : ''}}" app-session-card
           [globalColumns]="eGlobalColumns" [compactMode]="eCompactMode" [globalColumnsCount]="eGlobalColumnsCount"
           [session]="session" [isSelected]="selectedSession?.sessionId === session.sessionId"
-          *cdkVirtualFor="let session of orderedSessions"></tr>
+          *cdkVirtualFor="let session of orderedSessions; trackBy: trackBySessionId"></tr>
       </tbody>
     </table>
   </cdk-virtual-scroll-viewport>

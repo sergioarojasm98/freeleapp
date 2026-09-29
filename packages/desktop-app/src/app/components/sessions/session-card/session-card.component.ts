@@ -73,6 +73,20 @@ export class SessionCardComponent implements OnInit {
   }
 
   /**
+   * Start or stop the session from its row icon, and keep it selected. The row's own click would select it too, but
+   * starting a session re-orders the list first, and the recycled row could then select another session.
+   */
+  async toggleSessionFromIcon(event: MouseEvent): Promise<void> {
+    event.stopPropagation();
+    const session = this.session;
+    const isRunning = session.status === SessionStatus.active || session.status === SessionStatus.pending;
+    const toggle = isRunning ? this.selectedSessionActionService.stopSession(session) : this.selectedSessionActionService.startSession(session);
+    // After the synchronous part of start/stop, which clears the selection
+    this.behaviouralSubjectService.selectSession(session.sessionId);
+    await toggle;
+  }
+
+  /**
    * Start the selected sessions
    */
   async startSession(): Promise<void> {

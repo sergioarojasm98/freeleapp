@@ -119,6 +119,11 @@ export class SessionsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {}
 
+  // Keeps each recycled row bound to the same session when the list is re-ordered
+  trackBySessionId(_index: number, session: Session): string {
+    return session.sessionId;
+  }
+
   ngOnDestroy(): void {
     this.subscriptions.forEach((subscription) => {
       subscription.unsubscribe();

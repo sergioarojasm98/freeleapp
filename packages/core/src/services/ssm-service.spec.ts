@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
-import { SsmService } from "./ssm-service";
+import { portForwardingCommand, SsmService, validatePortForwarding } from "./ssm-service";
 import { ExecuteService } from "./execute-service";
 import { CredentialsInfo } from "../models/credentials-info";
 import { INativeService } from "../interfaces/i-native-service";
@@ -123,6 +123,54 @@ describe("SsmService", () => {
       done();
       expect(logService.log).not.toHaveBeenCalled();
     }, 100);
+  });
+
+  test("startPortForwardingSession - opens a terminal with the port forwarding command", (done) => {
+    const logService = new LogService({ log: jest.fn() } as any);
+    ssmService = new SsmService(logService as any, executeService, nativeService, null);
+
+    ssmService.startPortForwardingSession(credentialInfo, "i-096cb506adb838c72", "us-east-1", { remotePort: 15672, localPort: 17007 });
+
+    setTimeout(() => {
+      expect(executeService.openTerminal).toHaveBeenCalledWith(
+        "aws ssm start-session --region us-east-1 --target i-096cb506adb838c72 --document-name AWS-StartPortForwardingSession" +
+          " --parameters portNumber=15672,localPortNumber=17007",
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        { AWS_ACCESS_KEY_ID: "123", AWS_SECRET_ACCESS_KEY: "345", AWS_SESSION_TOKEN: "678" },
+        undefined
+      );
+      done();
+    }, 100);
+  });
+
+  test("portForwardingCommand - to a remote host through the instance", () => {
+    expect(
+      portForwardingCommand("i-0c6bb0d9296e3cc2e", "us-west-2", {
+        remoteHost: "batchengine-psql.clykg60eg5sn.us-west-2.rds.amazonaws.com",
+        remotePort: 5432,
+        localPort: 15454,
+      })
+    ).toBe(
+      "aws ssm start-session --region us-west-2 --target i-0c6bb0d9296e3cc2e --document-name AWS-StartPortForwardingSessionToRemoteHost" +
+        " --parameters host=batchengine-psql.clykg60eg5sn.us-west-2.rds.amazonaws.com,portNumber=5432,localPortNumber=15454"
+    );
+  });
+
+  test("portForwardingCommand - rejects values that are not plain hosts and ports", () => {
+    expect(() => portForwardingCommand("i-1", "us-east-1", { remoteHost: "db.local; rm -rf ~", remotePort: 5432, localPort: 5432 })).toThrow(
+      "The remote host must be a host name or an IP address."
+    );
+  });
+
+  test("validatePortForwarding", () => {
+    expect(validatePortForwarding({ remotePort: 22, localPort: 2222 })).toBeUndefined();
+    expect(validatePortForwarding({ remoteHost: "10.0.1.25", remotePort: 3306, localPort: 13306 })).toBeUndefined();
+    expect(validatePortForwarding({ remoteHost: "-bad", remotePort: 22, localPort: 2222 })).toBe(
+      "The remote host must be a host name or an IP address."
+    );
+    expect(validatePortForwarding({ remotePort: 0, localPort: 2222 })).toBe("The remote port must be a number from 1 to 65535.");
+    expect(validatePortForwarding({ remotePort: 22, localPort: 70000 })).toBe("The local port must be a number from 1 to 65535.");
+    expect(validatePortForwarding({ remotePort: 22.5, localPort: 2222 })).toBe("The remote port must be a number from 1 to 65535.");
   });
 
   test("startSession - on macOS, should create the env file, start an ssm session, and then remove the file", (done) => {

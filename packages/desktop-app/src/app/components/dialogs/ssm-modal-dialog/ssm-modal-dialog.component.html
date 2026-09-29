@@ -32,13 +32,32 @@
 
       <ul class="ssm-ul" *ngIf="instances.length > 0">
         <li *ngFor="let instance of instances" class="ssm-card">
-          <div>
-            <span><b>{{instance.Name.length >= 24 ? instance.Name.substr(0, 21) + '...' : instance.Name}}</b> - {{instance.IPAddress}}</span>
+          <div class="ssm-card-row">
+            <span class="ssm-instance"><b>{{instance.Name.length >= 24 ? instance.Name.substr(0, 21) + '...' : instance.Name}}</b> - {{instance.IPAddress}}</span>
+            <button class="btn-control btn-sm toggle-button {{forwardingInstanceId === instance.InstanceId ? 'toggled' : ''}}"
+                    (click)="togglePortForwarding(instance.InstanceId)">Forward Port</button>
             <button class="btn-control btn-sm" (click)="startSsmSession(instance.InstanceId)">
               <i class="fa fa-spinner fa-spin" *ngIf="instance.loading"></i>
               <span *ngIf="!instance.loading">Connect</span>
             </button>
           </div>
+
+          <form class="port-forwarding" *ngIf="forwardingInstanceId === instance.InstanceId" (ngSubmit)="startPortForwarding(instance.InstanceId)">
+            <div class="port-forwarding-fields">
+              <label class="remote-host">Remote Host
+                <input class="form-control" name="remoteHost" [(ngModel)]="forwarding.remoteHost" spellcheck="false"
+                       placeholder="This instance, or e.g. a database endpoint"/>
+              </label>
+              <label>Remote Port
+                <input class="form-control" name="remotePort" [(ngModel)]="forwarding.remotePort" inputmode="numeric" placeholder="5432"/>
+              </label>
+              <label>Local Port
+                <input class="form-control" name="localPort" [(ngModel)]="forwarding.localPort" inputmode="numeric" placeholder="Same as remote"/>
+              </label>
+            </div>
+            <p class="port-forwarding-message {{forwardingMessage.error ? 'error' : ''}}" *ngIf="forwardingMessage">{{forwardingMessage.text}}</p>
+            <button type="submit" class="btn-control btn-sm">Start Forwarding</button>
+          </form>
         </li>
       </ul>
     </div>

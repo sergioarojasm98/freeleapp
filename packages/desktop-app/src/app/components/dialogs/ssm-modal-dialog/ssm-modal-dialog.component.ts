@@ -4,7 +4,7 @@ import { AppService } from "../../../services/app.service";
 import { AppProviderService } from "../../../services/app-provider.service";
 import { SessionFactory } from "@noovolari/leapp-core/services/session-factory";
 import { AwsSessionService } from "@noovolari/leapp-core/services/session/aws/aws-session-service";
-import { SsmService } from "@noovolari/leapp-core/services/ssm-service";
+import { SsmPortForwarding, SsmService, validatePortForwarding } from "@noovolari/leapp-core/services/ssm-service";
 import { LeappBaseError } from "@noovolari/leapp-core/errors/leapp-base-error";
 import { LogLevel } from "@noovolari/leapp-core/services/log-service";
 import { constants } from "@noovolari/leapp-core/models/constants";
@@ -24,6 +24,10 @@ export class SsmModalDialogComponent implements OnInit {
   public askingSsmRegion: boolean;
   public selectedSsmRegion: string;
   public awsRegions: { region: string }[];
+  // The instance whose port forwarding form is open, and the values typed in it
+  public forwardingInstanceId: string | null = null;
+  public forwarding = { remoteHost: "", remotePort: "", localPort: "" };
+  public forwardingMessage: { text: string; error: boolean } | null = null;
 
   private sessionFactory: SessionFactory;
   private ssmService: SsmService;
@@ -121,5 +125,43 @@ export class SsmModalDialogComponent implements OnInit {
     }, 4000);
 
     this.ssmLoading = false;
+  }
+
+  togglePortForwarding(instanceId: string): void {
+    this.forwardingInstanceId = this.forwardingInstanceId === instanceId ? null : instanceId;
+    this.forwardingMessage = null;
+  }
+
+  /**
+   * Forward a local port to a port on the instance, or on a host the instance can reach, in a terminal window
+   *
+   * @param instanceId - the instance that forwards the traffic
+   */
+  async startPortForwarding(instanceId: string): Promise<void> {
+    const remotePort = Number(this.forwarding.remotePort);
+    const forwarding: SsmPortForwarding = {
+      remoteHost: this.forwarding.remoteHost.trim() || undefined,
+      remotePort,
+      // An empty local port uses the same number as the remote one
+      localPort: this.forwarding.localPort.trim() ? Number(this.forwarding.localPort) : remotePort,
+    };
+    const problem = validatePortForwarding(forwarding);
+    if (problem) {
+      this.forwardingMessage = { text: problem, error: true };
+      return;
+    }
+
+    const instance = this.instances.find((i) => i.InstanceId === instanceId);
+    instance.loading = true;
+    try {
+      const credentials = await (this.sessionService as AwsSessionService).generateCredentials(this.session.sessionId);
+      this.ssmService.startPortForwardingSession(credentials, instanceId, this.selectedSsmRegion, forwarding);
+      this.forwardingMessage = {
+        text: `Opening a terminal: connect to localhost:${forwarding.localPort}. Stop the command there to close the tunnel.`,
+        error: false,
+      };
+    } finally {
+      setTimeout(() => (instance.loading = false), 4000);
+    }
   }
 }

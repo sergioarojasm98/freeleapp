@@ -12,6 +12,7 @@ Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the
 - Sign-in to AWS IAM Identity Center works behind corporate networks that inspect TLS. Freeleapp now also trusts the root certificates installed in the macOS keychain (for example the one a company's proxy adds), not only the ones bundled with Node.js.
 - Each AWS IAM Identity Center role gets its own named profile, `<account>-<role>` (for example `payments-prod-AdministratorAccess`), so several roles can be active at the same time. You can still pick or type another profile. On first launch, roles that were on the `default` profile move to their own profile; roles with a profile you chose keep it.
 - A named profile can only belong to one session. Choosing a profile that another session already uses shows which session has it, instead of silently stopping that session later. New sessions get `default` preselected only while no other session uses it.
+- **Port forwarding** in View SSM Sessions: **Forward Port** on an instance forwards a local port to a port on that instance, or through it to another host such as a database endpoint (`AWS-StartPortForwardingSession` and `AWS-StartPortForwardingSessionToRemoteHost`). The tunnel runs in a terminal window, like SSM sessions do.
 
 ### Bug Fixes
 

@@ -1,3 +1,5 @@
+@import "../../../../assets/scss/mixins/palette";
+
 .ssm-tray-form {
   margin-top: 20px;
 
@@ -17,11 +19,61 @@
   padding: 20px;
 
   .ssm-card {
-    height: 40px;
+    padding: 4px 0;
 
     button {
+      flex-shrink: 0;
       padding: 5px 10px !important;
-      float: right;
+      white-space: nowrap;
+    }
+  }
+
+  .ssm-card-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .ssm-instance {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .toggle-button {
+      margin-right: 0;
+      font-size: 14px;
+    }
+  }
+
+  .port-forwarding {
+    margin: 10px 0 6px;
+
+    .port-forwarding-fields {
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: 10px;
+
+      label {
+        flex: 1 1 0;
+        min-width: 0;
+        margin-bottom: 8px;
+        font-size: 13px;
+      }
+
+      .remote-host {
+        flex-basis: 100%;
+      }
+    }
+
+    .port-forwarding-message {
+      margin-bottom: 8px;
+      font-size: 13px;
+
+      &.error {
+        color: $danger-color;
+      }
     }
   }
 }

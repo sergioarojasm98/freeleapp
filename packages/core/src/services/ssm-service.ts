@@ -7,6 +7,49 @@ import { FileService } from "./file-service";
 import { DescribeInstanceInformationCommand, SSMClient } from "@aws-sdk/client-ssm";
 import { DescribeInstancesCommand, EC2Client } from "@aws-sdk/client-ec2";
 
+export interface SsmPortForwarding {
+  // Host the instance forwards to; the instance itself when empty
+  remoteHost?: string;
+  remotePort: number;
+  localPort: number;
+}
+
+const isPort = (port: number): boolean => Number.isInteger(port) && port >= 1 && port <= 65535;
+
+/**
+ * Check a port forwarding request. The values end up in a shell command inside an AppleScript string, so only
+ * plain ports and host names (letters, digits, dots and hyphens) are accepted.
+ *
+ * @returns the problem to show, or undefined when the request is valid
+ */
+export const validatePortForwarding = (forwarding: SsmPortForwarding): string | undefined => {
+  if (forwarding.remoteHost && !/^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$/.test(forwarding.remoteHost)) {
+    return "The remote host must be a host name or an IP address.";
+  }
+  if (!isPort(forwarding.remotePort)) {
+    return "The remote port must be a number from 1 to 65535.";
+  }
+  if (!isPort(forwarding.localPort)) {
+    return "The local port must be a number from 1 to 65535.";
+  }
+  return undefined;
+};
+
+/**
+ * The AWS CLI command for a port forwarding session. Parameters use the CLI shorthand syntax, which needs no quotes.
+ */
+export const portForwardingCommand = (instanceId: string, region: string, forwarding: SsmPortForwarding): string => {
+  const problem = validatePortForwarding(forwarding);
+  if (problem) {
+    throw new Error(problem);
+  }
+  const ports = `portNumber=${forwarding.remotePort},localPortNumber=${forwarding.localPort}`;
+  const [document, parameters] = forwarding.remoteHost
+    ? ["AWS-StartPortForwardingSessionToRemoteHost", `host=${forwarding.remoteHost},${ports}`]
+    : ["AWS-StartPortForwardingSession", ports];
+  return `aws ssm start-session --region ${region} --target ${instanceId} --document-name ${document} --parameters ${parameters}`;
+};
+
 export class SsmService {
   ssmClient: SSMClient;
   ec2Client: EC2Client;
@@ -81,6 +124,30 @@ export class SsmService {
    */
   startSession(credentials: CredentialsInfo, instanceId: string, region: string, macOsTerminalType?: string): void {
     const quote = this.executeService.getQuote();
+    this.openSsmTerminal(credentials, `aws ssm start-session --region ${region} --target ${quote}${instanceId}${quote}`, macOsTerminalType);
+  }
+
+  /**
+   * Start a port forwarding session: a local port reaches a port on the instance, or on a host the instance can reach
+   * (e.g. a database endpoint). It runs in a terminal window, and stops when that command is interrupted.
+   *
+   * @param credentials - CredentialsInfo data from generate credentials method
+   * @param instanceId - the instance that forwards the traffic
+   * @param region - the region of the instance
+   * @param forwarding - remote host (optional), remote port and local port
+   * @param macOsTerminalType - optional to override terminal type selection on macOS
+   */
+  startPortForwardingSession(
+    credentials: CredentialsInfo,
+    instanceId: string,
+    region: string,
+    forwarding: SsmPortForwarding,
+    macOsTerminalType?: string
+  ): void {
+    this.openSsmTerminal(credentials, portForwardingCommand(instanceId, region, forwarding), macOsTerminalType);
+  }
+
+  private openSsmTerminal(credentials: CredentialsInfo, command: string, macOsTerminalType?: string): void {
     const env = {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       AWS_ACCESS_KEY_ID: credentials.sessionToken.aws_access_key_id,
@@ -99,7 +166,7 @@ export class SsmService {
     }
 
     this.executeService
-      .openTerminal(`aws ssm start-session --region ${region} --target ${quote}${instanceId}${quote}`, env, macOsTerminalType)
+      .openTerminal(command, env, macOsTerminalType)
       .then(() => {
         if (this.nativeService.process.platform === "darwin")
           this.nativeService.rimraf(this.nativeService.os.homedir() + "/" + constants.ssmSourceFileDestination, {}, () => {});

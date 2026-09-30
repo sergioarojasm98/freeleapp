@@ -234,9 +234,8 @@ export class SsmService {
 
       if (instances.length > 0) {
         instances.forEach((instance) => {
-          // Add name if exists
-          instance["ComputerName"] = instance.InstanceId;
-          instance["Name"] = instance["ComputerName"];
+          // Replaced by the EC2 Name tag when the instance has one
+          instance["Name"] = instance.InstanceId;
         });
 
         // We have found and managed a list of instances
@@ -251,8 +250,12 @@ export class SsmService {
     }
   }
 
-  private async applyEc2MetadataInformation(instances: any): Promise<any> {
-    let reservations = [];
+  /**
+   * Names each instance after its EC2 Name tag, drops the ones EC2 reports as not running, and sorts them: named ones
+   * first, by name, then the others by id. Instances EC2 does not know (e.g. on-premises nodes) are kept.
+   */
+  private async applyEc2MetadataInformation(instances: any[]): Promise<any[]> {
+    const ec2Instances = new Map<string, any>();
     let nextToken = null;
 
     try {
@@ -262,22 +265,29 @@ export class SsmService {
         const command = new DescribeInstancesCommand(input);
         const describeInstanceResponse = await this.ec2Client.send(command);
 
-        reservations = reservations.concat(describeInstanceResponse.Reservations);
-        nextToken = describeInstanceResponse.NextToken;
-      } while (nextToken);
-      instances.forEach((instance) => {
-        const foundInstance = reservations.filter((r) => r.Instances[0].InstanceId === instance.Name);
-        if (foundInstance.length > 0) {
-          const foundName = foundInstance[0].Instances[0].Tags.filter((t) => t.Key === "Name");
-          if (foundName.length > 0) {
-            instance.Name = foundName[0].Value;
+        // A reservation holds every instance launched together, not just one
+        for (const reservation of describeInstanceResponse.Reservations ?? []) {
+          for (const ec2Instance of reservation.Instances ?? []) {
+            ec2Instances.set(ec2Instance.InstanceId, ec2Instance);
           }
         }
-      });
-
-      return instances;
+        nextToken = describeInstanceResponse.NextToken;
+      } while (nextToken);
     } catch (err) {
       throw new LoggedException(err.message, this, LogLevel.warn);
     }
+
+    return instances
+      .filter((instance) => {
+        const state = ec2Instances.get(instance.InstanceId)?.State?.Name;
+        return !state || state === "running";
+      })
+      .map((instance) => {
+        const nameTag = ec2Instances.get(instance.InstanceId)?.Tags?.find((tag) => tag.Key === "Name")?.Value;
+        instance.Name = nameTag || instance.InstanceId;
+        instance.HasName = !!nameTag;
+        return instance;
+      })
+      .sort((a, b) => (a.HasName === b.HasName ? a.Name.localeCompare(b.Name) : a.HasName ? -1 : 1));
   }
 }

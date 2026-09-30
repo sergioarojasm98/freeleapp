@@ -325,8 +325,6 @@ describe("SsmService", () => {
 
     const resultObject = {
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      ComputerName: undefined,
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       Name: undefined,
       fakeInstanceId: "fake-id-2",
       // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -367,139 +365,58 @@ describe("SsmService", () => {
     }).rejects.toThrow(new Error("No instances are accessible by this Role."));
   });
 
-  test("applyEc2MetadataInformation", async () => {
-    const mockedInstances = [
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      { id: 1, Name: "fake-instance-ip-address" },
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      { id: 2, Name: "found-id" },
+  test("applyEc2MetadataInformation - names, running state and order from EC2", async () => {
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const ssmInstances = [
+      { InstanceId: "i-3", Name: "i-3", IPAddress: "10.0.0.3" },
+      { InstanceId: "i-1", Name: "i-1", IPAddress: "10.0.0.1" },
+      { InstanceId: "i-2", Name: "i-2", IPAddress: "10.0.0.2" },
+      { InstanceId: "i-stopped", Name: "i-stopped" },
+      { InstanceId: "mi-onprem", Name: "mi-onprem" },
     ];
-    let reservations = {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      Reservations: [
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          Instances: [
-            {
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              InstanceId: "found-id",
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              Tags: [{ Key: "Name", Value: "Mocked Name" }],
-            },
-          ],
-        },
-      ],
-    };
+    const pages = [
+      {
+        Reservations: [
+          {
+            // Launched together: every instance of the reservation must be named, not just the first one
+            Instances: [
+              { InstanceId: "i-1", State: { Name: "running" }, Tags: [{ Key: "Name", Value: "rabbitmq" }] },
+              { InstanceId: "i-2", State: { Name: "running" }, Tags: [{ Key: "Name", Value: "api" }] },
+            ],
+          },
+        ],
+        NextToken: "page-2",
+      },
+      {
+        Reservations: [
+          { Instances: [{ InstanceId: "i-3", State: { Name: "running" } }] },
+          { Instances: [{ InstanceId: "i-stopped", State: { Name: "stopped" }, Tags: [{ Key: "Name", Value: "old" }] }] },
+        ],
+      },
+    ];
+    /* eslint-enable @typescript-eslint/naming-convention */
+    ssmService = new SsmService({ log: jest.fn() } as any, executeService, nativeService, null);
+    (ssmService as any).ec2Client = { send: jest.fn(async () => pages.shift()) };
 
-    let ec2Client = {
-      send: jest.fn(async () => Promise.resolve(reservations)),
-    };
+    const result = await (ssmService as any).applyEc2MetadataInformation(ssmInstances);
 
-    const logService: any = {
-      log: jest.fn(),
-    };
-
-    ssmService = new SsmService(logService, executeService, nativeService, null);
-    (ssmService as any).ec2Client = ec2Client;
-    let result = await (ssmService as any).applyEc2MetadataInformation(mockedInstances);
-    expect(result).toStrictEqual(mockedInstances);
-
-    reservations = {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      Reservations: [
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          Instances: [
-            {
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              InstanceId: "not-found-id",
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              Tags: [{ Key: "Name", Value: "Mocked Name" }],
-            },
-          ],
-        },
-      ],
-    };
-    ec2Client = {
-      send: jest.fn(async () => Promise.resolve(reservations)),
-    };
-    (ssmService as any).ec2Client = ec2Client;
-    result = await (ssmService as any).applyEc2MetadataInformation(mockedInstances);
-    expect(result).toStrictEqual(mockedInstances);
-
-    reservations = {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      Reservations: [
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          Instances: [
-            {
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              InstanceId: "found-id",
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              Tags: [{ Key: "Not-Name", Value: "Not Mocked Name" }],
-            },
-          ],
-        },
-      ],
-    };
-    ec2Client = {
-      send: jest.fn(async () => Promise.resolve(reservations)),
-    };
-    (ssmService as any).ec2Client = ec2Client;
-    result = await (ssmService as any).applyEc2MetadataInformation(mockedInstances);
-    expect(result).toStrictEqual(mockedInstances);
-    expect(mockedInstances[1].Name).not.toStrictEqual("Not Mocked Name");
-
-    ec2Client.send = jest.fn(async () => Promise.reject({ message: "Error" }));
-
-    await expect(async () => {
-      await (ssmService as any).applyEc2MetadataInformation(mockedInstances);
-    }).rejects.toThrow(new LoggedException("Error", this, LogLevel.warn));
+    expect(result.map((instance) => [instance.InstanceId, instance.Name, instance.HasName])).toEqual([
+      ["i-2", "api", true],
+      ["i-1", "rabbitmq", true],
+      ["i-3", "i-3", false],
+      ["mi-onprem", "mi-onprem", false],
+    ]);
   });
 
-  test("applyEc2MetadataInformation - no found names", async () => {
-    const mockedInstances = [
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      { id: 1, Name: "fake-instance-ip-address" },
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      { id: 2, Name: "found-id" },
-    ];
-    const reservations = {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      Reservations: [
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          Instances: [
-            {
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              InstanceId: "found-id",
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              Tags: [{ Key: "Not-Name", Value: "Mocked Name" }],
-            },
-          ],
-        },
-      ],
-    };
-
-    const logService: any = {
-      log: jest.fn(),
-    };
-
-    ssmService = new SsmService(logService, executeService, nativeService, null);
+  test("applyEc2MetadataInformation - EC2 errors are reported", async () => {
+    ssmService = new SsmService({ log: jest.fn() } as any, executeService, nativeService, null);
     (ssmService as any).ec2Client = {
-      send: jest.fn(async () => Promise.resolve(reservations)),
+      send: jest.fn(async () => {
+        throw new Error("UnauthorizedOperation");
+      }),
     };
 
-    const result = await (ssmService as any).applyEc2MetadataInformation(mockedInstances);
-    expect(result).toStrictEqual(mockedInstances);
-
-    const result2 = await (ssmService as any).applyEc2MetadataInformation([]);
-    expect(result2).toStrictEqual([]);
+    await expect((ssmService as any).applyEc2MetadataInformation([])).rejects.toThrow("UnauthorizedOperation");
   });
 
   test("log service completion - must be done here because it seems that for jest --coverage the file is tied here...", () => {

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from "@angular/core";
+import { Component, NgZone, OnDestroy, OnInit } from "@angular/core";
 import {
   globalFilteredSessions,
   globalFilterGroup,
@@ -25,6 +25,8 @@ export interface HighlightSettings {
   showAll: boolean;
   showPinned: boolean;
   selectedSegment?: number;
+  // The Tunnels view replaces the session list
+  showTunnels?: boolean;
 }
 
 export const segmentFilter = new BehaviorSubject<Segment[]>([]);
@@ -41,12 +43,14 @@ export class SideBarComponent implements OnInit, OnDestroy {
   selectedS: SelectedSegment[];
   showAll: boolean;
   showPinned: boolean;
+  showTunnels = false;
+  runningTunnels = 0;
   modalRef: BsModalRef;
 
   private unsubscribe: () => void;
   private behaviouralSubjectService: BehaviouralSubjectService;
 
-  constructor(private bsModalService: BsModalService, private appProviderService: AppProviderService) {
+  constructor(private bsModalService: BsModalService, private appProviderService: AppProviderService, private ngZone: NgZone) {
     this.behaviouralSubjectService = appProviderService.behaviouralSubjectService;
     this.showAll = true;
     this.showPinned = false;
@@ -61,12 +65,18 @@ export class SideBarComponent implements OnInit, OnDestroy {
 
     const sidebarHighlightSubscription = sidebarHighlight.subscribe((value) => {
       this.highlightSelectedRow(value.showAll, value.showPinned, value.selectedSegment);
+      this.showTunnels = !!value.showTunnels;
     });
+    // Tunnel processes report outside Angular's zone
+    const tunnelsSubscription = this.appProviderService.ssmTunnelService.states$.subscribe(() =>
+      this.ngZone.run(() => (this.runningTunnels = this.appProviderService.ssmTunnelService.runningCount))
+    );
     sidebarHighlight.next({ showAll: true, showPinned: false, selectedSegment: -1 });
 
     this.unsubscribe = () => {
       segmentFilterSubscription.unsubscribe();
       sidebarHighlightSubscription.unsubscribe();
+      tunnelsSubscription.unsubscribe();
     };
   }
 
@@ -91,6 +101,11 @@ export class SideBarComponent implements OnInit, OnDestroy {
     globalFilters.integrationFilter = [];
     globalFilters.pinnedFilter = true;
     globalFilterGroup.next(globalFilters);
+  }
+
+  showTunnelsView(): void {
+    this.behaviouralSubjectService.unselectSessions();
+    sidebarHighlight.next({ showAll: false, showPinned: false, selectedSegment: -1, showTunnels: true });
   }
 
   applySegmentFilter(segment: Segment, event: any): void {

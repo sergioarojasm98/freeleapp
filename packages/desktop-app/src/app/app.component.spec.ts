@@ -25,6 +25,7 @@ describe("AppComponent", () => {
       workspaceService: spyBehaviouralSubjectService,
       repository: spyRepositoryService,
       awsCoreService: { getRegions: () => [] },
+      ssmTunnelService: { watchSessions: () => {}, stopOrphanTunnels: async () => {} },
     });
 
     TestBed.configureTestingModule({
@@ -132,12 +133,14 @@ describe("AppComponent", () => {
       sessionManagementService: {
         stopAllSessions: jasmine.createSpy().and.callFake(() => {}),
       },
+      ssmTunnelService: { stopAll: jasmine.createSpy() },
     };
     (app as any).appService = { quit: jasmine.createSpy().and.callFake(() => {}) };
 
     await (app as any).beforeCloseInstructions();
 
     expect((app as any).loggingService.log).toHaveBeenCalledWith(new LoggedEntry("Closing app with cleaning process...", this, LogLevel.info));
+    expect((app as any).appProviderService.ssmTunnelService.stopAll).toHaveBeenCalledTimes(1);
     expect((app as any).appProviderService.sessionManagementService.stopAllSessions).toHaveBeenCalledTimes(1);
     expect((app as any).appService.quit).toHaveBeenCalledTimes(1);
   });

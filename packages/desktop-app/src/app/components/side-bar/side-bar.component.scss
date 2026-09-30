@@ -299,3 +299,25 @@ i.moon-Caret-down {
 app-sync-pro-widget {
   width: 100%;
 }
+
+// The running tunnels badge; the rule above sizes every sidebar label to 150px
+::ng-deep .tunnels-item .mat-list-item-content {
+  position: relative;
+}
+
+::ng-deep .mat-list-text div span.tunnel-count {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  width: auto;
+  transform: translateY(-50%);
+  min-width: 20px;
+  margin-top: 0;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: $main-color-light;
+  color: $white-text-color;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+}

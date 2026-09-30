@@ -1,0 +1,145 @@
+import { Component, NgZone, OnDestroy, OnInit } from "@angular/core";
+import { Subscription } from "rxjs";
+import { BsModalService } from "ngx-bootstrap/modal";
+import { SsmTunnel, SsmTunnelState, SsmTunnelStatus } from "@noovolari/leapp-core/models/ssm-tunnel";
+import { ssmCommandForProfile } from "@noovolari/leapp-core/services/ssm-service";
+import { SsmTunnelService } from "@noovolari/leapp-core/services/ssm-tunnel-service";
+import { constants } from "@noovolari/leapp-core/models/constants";
+import { AppProviderService } from "../../services/app-provider.service";
+import { AppService } from "../../services/app.service";
+import { MessageToasterService, ToastLevel } from "../../services/message-toaster.service";
+import { ConfirmationDialogComponent } from "../dialogs/confirmation-dialog/confirmation-dialog.component";
+import { SsmTunnelDialogComponent } from "../dialogs/ssm-tunnel-dialog/ssm-tunnel-dialog.component";
+
+const statusLabels: Record<SsmTunnelStatus, string> = {
+  [SsmTunnelStatus.stopped]: "Stopped",
+  [SsmTunnelStatus.starting]: "Starting",
+  [SsmTunnelStatus.active]: "Active",
+  [SsmTunnelStatus.reconnecting]: "Reconnecting",
+  [SsmTunnelStatus.failed]: "Failed",
+};
+
+@Component({
+  selector: "app-ssm-tunnels",
+  templateUrl: "./ssm-tunnels.component.html",
+  styleUrls: ["./ssm-tunnels.component.scss"],
+})
+export class SsmTunnelsComponent implements OnInit, OnDestroy {
+  tunnels: SsmTunnel[] = [];
+  states = new Map<string, SsmTunnelState>();
+  now = Date.now();
+
+  private subscriptions: Subscription[] = [];
+  private clock: ReturnType<typeof setInterval>;
+
+  constructor(
+    private appProviderService: AppProviderService,
+    private appService: AppService,
+    private messageToasterService: MessageToasterService,
+    private modalService: BsModalService,
+    private ngZone: NgZone
+  ) {}
+
+  get tunnelService(): SsmTunnelService {
+    return this.appProviderService.ssmTunnelService;
+  }
+
+  ngOnInit(): void {
+    // Tunnel processes report outside Angular's zone
+    this.subscriptions.push(this.tunnelService.states$.subscribe((states) => this.ngZone.run(() => (this.states = states))));
+    // Session names change, and deleted sessions take their tunnels with them
+    this.subscriptions.push(this.appProviderService.behaviouralSubjectService.sessions$.subscribe(() => this.refresh()));
+    // Keeps "active for …" current
+    this.clock = setInterval(() => (this.now = Date.now()), 30000);
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach((subscription) => subscription.unsubscribe());
+    clearInterval(this.clock);
+  }
+
+  refresh(): void {
+    this.tunnels = [...this.appProviderService.repository.listSsmTunnels()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  trackById(_index: number, tunnel: SsmTunnel): string {
+    return tunnel.id;
+  }
+
+  state(tunnel: SsmTunnel): SsmTunnelState {
+    return this.states.get(tunnel.id) ?? { status: SsmTunnelStatus.stopped };
+  }
+
+  statusLabel(tunnel: SsmTunnel): string {
+    const state = this.state(tunnel);
+    if (state.status === SsmTunnelStatus.active && state.activeSince) {
+      const minutes = Math.floor((this.now - new Date(state.activeSince).getTime()) / 60000);
+      const duration = minutes < 1 ? "less than a minute" : minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
+      return `Active for ${duration}`;
+    }
+    return statusLabels[state.status];
+  }
+
+  isRunning(tunnel: SsmTunnel): boolean {
+    return this.tunnelService.isRunning(tunnel.id);
+  }
+
+  sessionName(tunnel: SsmTunnel): string {
+    return this.appProviderService.repository.getSessionById(tunnel.sessionId)?.sessionName ?? "";
+  }
+
+  profileName(tunnel: SsmTunnel): string {
+    const session = this.appProviderService.repository.getSessionById(tunnel.sessionId) as any;
+    try {
+      return session?.profileId ? this.appProviderService.namedProfileService.getProfileName(session.profileId) : "";
+    } catch (_) {
+      return "";
+    }
+  }
+
+  async toggle(tunnel: SsmTunnel): Promise<void> {
+    if (this.isRunning(tunnel)) {
+      this.tunnelService.stop(tunnel.id);
+      return;
+    }
+    if (await this.appService.checkSsmRequirements()) {
+      await this.tunnelService.start(tunnel.id);
+    }
+  }
+
+  copyLocalAddress(tunnel: SsmTunnel): void {
+    this.appService.copyToClipboard(`localhost:${tunnel.localPort}`);
+    this.messageToasterService.toast(`localhost:${tunnel.localPort}`, ToastLevel.success, "Address Copied");
+  }
+
+  // To run the same tunnel from a terminal, with the session's named profile
+  copyCommand(tunnel: SsmTunnel): void {
+    this.appService.copyToClipboard(ssmCommandForProfile(tunnel.instanceId, tunnel.region, this.profileName(tunnel), tunnel));
+    this.messageToasterService.toast("It uses the session's named profile, so start the session first.", ToastLevel.success, "Command Copied");
+  }
+
+  edit(tunnel: SsmTunnel): void {
+    this.modalService.show(SsmTunnelDialogComponent, {
+      animated: false,
+      class: "ssm-tunnel-modal",
+      initialState: { tunnel, onSaved: () => this.refresh() },
+    });
+  }
+
+  delete(tunnel: SsmTunnel): void {
+    this.modalService.show(ConfirmationDialogComponent, {
+      animated: false,
+      initialState: {
+        message: `Delete the tunnel "${tunnel.name}"?`,
+        confirmText: "Delete",
+        callback: (answer: string) => {
+          if (answer === constants.confirmed.toString()) {
+            this.tunnelService.stop(tunnel.id);
+            this.appProviderService.repository.deleteSsmTunnel(tunnel.id);
+            this.refresh();
+          }
+        },
+      },
+    });
+  }
+}

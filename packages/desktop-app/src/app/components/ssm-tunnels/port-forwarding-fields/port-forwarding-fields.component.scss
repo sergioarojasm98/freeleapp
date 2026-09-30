@@ -1,0 +1,27 @@
+.port-forwarding-fields {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 10px;
+
+  label {
+    flex: 1 1 0;
+    min-width: 0;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+
+  .full {
+    flex-basis: 100%;
+  }
+
+  .free-port {
+    float: right;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  mat-checkbox {
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+}

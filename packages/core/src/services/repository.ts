@@ -5,6 +5,7 @@ import { AwsNamedProfile } from "../models/aws/aws-named-profile";
 import { AwsSsoIntegration } from "../models/aws/aws-sso-integration";
 import { constants } from "../models/constants";
 import Segment from "../models/segment";
+import { SsmTunnel } from "../models/ssm-tunnel";
 import { Session } from "../models/session";
 import { SessionStatus } from "../models/session-status";
 import { SessionType } from "../models/session-type";
@@ -127,8 +128,32 @@ export class Repository {
     const index = workspace.sessions.findIndex((sess) => sess.sessionId === sessionId);
     if (index > -1) {
       workspace.sessions.splice(index, 1);
+      // A tunnel cannot start without its session
+      workspace.ssmTunnels = (workspace.ssmTunnels ?? []).filter((tunnel) => tunnel.sessionId !== sessionId);
       this.persistWorkspace(workspace);
     }
+  }
+
+  listSsmTunnels(): SsmTunnel[] {
+    return this.getWorkspace().ssmTunnels ?? [];
+  }
+
+  addSsmTunnel(tunnel: SsmTunnel): void {
+    const workspace = this.getWorkspace();
+    workspace.ssmTunnels = [...(workspace.ssmTunnels ?? []), tunnel];
+    this.persistWorkspace(workspace);
+  }
+
+  updateSsmTunnel(tunnel: SsmTunnel): void {
+    const workspace = this.getWorkspace();
+    workspace.ssmTunnels = (workspace.ssmTunnels ?? []).map((t) => (t.id === tunnel.id ? tunnel : t));
+    this.persistWorkspace(workspace);
+  }
+
+  deleteSsmTunnel(tunnelId: string): void {
+    const workspace = this.getWorkspace();
+    workspace.ssmTunnels = (workspace.ssmTunnels ?? []).filter((tunnel) => tunnel.id !== tunnelId);
+    this.persistWorkspace(workspace);
   }
 
   listPending(): Session[] {

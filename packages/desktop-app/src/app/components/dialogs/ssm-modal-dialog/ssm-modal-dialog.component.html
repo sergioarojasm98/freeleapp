@@ -36,27 +36,24 @@
             <span class="ssm-instance"><b>{{instance.Name.length >= 24 ? instance.Name.substr(0, 21) + '...' : instance.Name}}</b> - {{instance.IPAddress}}</span>
             <button class="btn-control btn-sm toggle-button {{forwardingInstanceId === instance.InstanceId ? 'toggled' : ''}}"
                     (click)="togglePortForwarding(instance.InstanceId)">Forward Port</button>
+            <a class="copy-command" (click)="copyCommand(instance.InstanceId, false)" matTooltip="Copy the Connect Command"><i class="moon-Copy"></i></a>
             <button class="btn-control btn-sm" (click)="startSsmSession(instance.InstanceId)">
               <i class="fa fa-spinner fa-spin" *ngIf="instance.loading"></i>
               <span *ngIf="!instance.loading">Connect</span>
             </button>
           </div>
 
-          <form class="port-forwarding" *ngIf="forwardingInstanceId === instance.InstanceId" (ngSubmit)="startPortForwarding(instance.InstanceId)">
-            <div class="port-forwarding-fields">
-              <label class="remote-host">Remote Host
-                <input class="form-control" name="remoteHost" [(ngModel)]="forwarding.remoteHost" spellcheck="false"
-                       placeholder="This instance, or e.g. a database endpoint"/>
-              </label>
-              <label>Remote Port
-                <input class="form-control" name="remotePort" [(ngModel)]="forwarding.remotePort" inputmode="numeric" placeholder="5432"/>
-              </label>
-              <label>Local Port
-                <input class="form-control" name="localPort" [(ngModel)]="forwarding.localPort" inputmode="numeric" placeholder="Same as remote"/>
-              </label>
+          <form class="port-forwarding" *ngIf="forwardingInstanceId === instance.InstanceId" (ngSubmit)="startTunnel(instance)">
+            <app-port-forwarding-fields [draft]="forwarding" [suggestLocalPort]="suggestLocalPort"
+                                        [namePlaceholder]="'e.g. ' + instance.Name + ':5432'"></app-port-forwarding-fields>
+            <p class="port-forwarding-message {{forwardingMessage.error ? 'error' : ''}}" *ngIf="forwardingMessage">
+              {{forwardingMessage.text}} <a *ngIf="forwardingMessage.showTunnels" (click)="showTunnels()">Show Tunnels</a>
+            </p>
+            <div class="port-forwarding-actions">
+              <button type="submit" class="btn-control btn-sm">Start Tunnel</button>
+              <button type="button" class="btn-control btn-sm toggle-button" (click)="copyCommand(instance.InstanceId, true)">Copy Command</button>
+              <a (click)="openInTerminal(instance.InstanceId)">Open in Terminal</a>
             </div>
-            <p class="port-forwarding-message {{forwardingMessage.error ? 'error' : ''}}" *ngIf="forwardingMessage">{{forwardingMessage.text}}</p>
-            <button type="submit" class="btn-control btn-sm">Start Forwarding</button>
           </form>
         </li>
       </ul>

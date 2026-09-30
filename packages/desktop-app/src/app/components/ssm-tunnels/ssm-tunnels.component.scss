@@ -1,0 +1,150 @@
+@import "../../../assets/scss/mixins/palette";
+
+.ssm-tunnels {
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+.tunnels-header {
+  margin-bottom: 16px;
+
+  h3 {
+    margin-bottom: 4px;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  span {
+    color: $table-text;
+    font-size: 13px;
+  }
+}
+
+.tunnels-empty {
+  margin-top: 80px;
+  text-align: center;
+  color: $table-text;
+
+  i {
+    font-size: 40px;
+  }
+
+  p {
+    margin-top: 12px;
+  }
+}
+
+.tunnels-table {
+  th {
+    color: $table-text;
+    font-size: 13px;
+    font-weight: 500;
+    border-top: none;
+  }
+
+  td {
+    vertical-align: middle;
+    color: $text-color;
+    font-size: 14px;
+  }
+
+  small {
+    display: block;
+    color: $table-text;
+    font-size: 12px;
+  }
+
+  .target {
+    max-width: 280px;
+  }
+
+  .truncated {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tunnel-name {
+    font-weight: 600;
+  }
+
+  .auto-start {
+    margin-left: 6px;
+    font-size: 12px;
+    color: $main-color-light;
+  }
+
+  .local-address {
+    cursor: pointer;
+    white-space: nowrap;
+
+    i {
+      font-size: 12px;
+    }
+  }
+
+  .status {
+    white-space: nowrap;
+
+    i {
+      font-size: 9px;
+      color: $silver-dark;
+    }
+  }
+
+  .status-message {
+    max-width: 260px;
+  }
+
+  .status-active .status i {
+    color: $success-session;
+  }
+
+  .status-starting .status i,
+  .status-reconnecting .status i {
+    color: $warning-color;
+  }
+
+  .status-failed .status i,
+  .status-failed .status-message {
+    color: $danger-color;
+  }
+
+  .actions {
+    text-align: right;
+    white-space: nowrap;
+
+    button {
+      min-width: 64px;
+      padding: 5px 10px !important;
+    }
+
+    .toggle-button {
+      margin-right: 0;
+    }
+
+    .more {
+      display: inline-block;
+      margin-left: 8px;
+      color: $text-color;
+      font-size: 18px;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+  }
+}
+
+:host-context(body.dark-theme) {
+  .tunnels-header h3,
+  .tunnels-table td,
+  .tunnels-table .actions .more {
+    color: $dark-main-text-color;
+  }
+
+  .tunnels-table td,
+  .tunnels-table th {
+    border-color: $dark-tablehead-border;
+  }
+}

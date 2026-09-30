@@ -1,0 +1,16 @@
+<div class="port-forwarding-fields">
+  <label class="full">Name
+    <input class="form-control" [(ngModel)]="draft.name" [ngModelOptions]="{standalone: true}" spellcheck="false" [placeholder]="namePlaceholder"/>
+  </label>
+  <label class="full">Remote Host
+    <input class="form-control" [(ngModel)]="draft.remoteHost" [ngModelOptions]="{standalone: true}" spellcheck="false"
+           placeholder="This instance, or e.g. a database endpoint"/>
+  </label>
+  <label>Remote Port
+    <input class="form-control" [(ngModel)]="draft.remotePort" [ngModelOptions]="{standalone: true}" inputmode="numeric" placeholder="5432"/>
+  </label>
+  <label>Local Port <a class="free-port" *ngIf="suggestLocalPort" (click)="useFreePort()">Use a Free Port</a>
+    <input class="form-control" [(ngModel)]="draft.localPort" [ngModelOptions]="{standalone: true}" inputmode="numeric" placeholder="Same as remote"/>
+  </label>
+  <mat-checkbox class="full" [(ngModel)]="draft.autoStart" [ngModelOptions]="{standalone: true}">Start with the session</mat-checkbox>
+</div>

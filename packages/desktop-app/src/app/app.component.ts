@@ -136,6 +136,10 @@ export class AppComponent implements OnInit {
     // Start Global Timer
     this.timerService.start(() => this.timerFunction(this.rotationService, this.integrationIsOnlineStateRefreshService));
 
+    // Tunnels left running by a crash or a forced quit, then the auto-start tunnels of each session that becomes active
+    this.appProviderService.ssmTunnelService.stopOrphanTunnels().then(() => {});
+    this.appProviderService.ssmTunnelService.watchSessions();
+
     // Launch Auto Updater Routines
     this.manageAutoUpdate();
 
@@ -163,6 +167,7 @@ export class AppComponent implements OnInit {
     this.loggingService.log(new LoggedEntry("Closing app with cleaning process...", this, LogLevel.info));
 
     // Stop all the sessions
+    this.appProviderService.ssmTunnelService.stopAll();
     await this.appProviderService.sessionManagementService.stopAllSessions();
 
     // Finally quit

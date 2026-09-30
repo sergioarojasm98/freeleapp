@@ -36,9 +36,10 @@ export const validatePortForwarding = (forwarding: SsmPortForwarding): string | 
 };
 
 /**
- * The AWS CLI command for a port forwarding session. Parameters use the CLI shorthand syntax, which needs no quotes.
+ * The AWS CLI arguments (after "aws") for a port forwarding session. Parameters use the CLI shorthand syntax, which
+ * needs no quotes.
  */
-export const portForwardingCommand = (instanceId: string, region: string, forwarding: SsmPortForwarding): string => {
+export const portForwardingArgs = (instanceId: string, region: string, forwarding: SsmPortForwarding): string[] => {
   const problem = validatePortForwarding(forwarding);
   if (problem) {
     throw new Error(problem);
@@ -47,7 +48,31 @@ export const portForwardingCommand = (instanceId: string, region: string, forwar
   const [document, parameters] = forwarding.remoteHost
     ? ["AWS-StartPortForwardingSessionToRemoteHost", `host=${forwarding.remoteHost},${ports}`]
     : ["AWS-StartPortForwardingSession", ports];
-  return `aws ssm start-session --region ${region} --target ${instanceId} --document-name ${document} --parameters ${parameters}`;
+  return ["ssm", "start-session", "--region", region, "--target", instanceId, "--document-name", document, "--parameters", parameters];
+};
+
+/**
+ * The AWS CLI command for a port forwarding session
+ */
+export const portForwardingCommand = (instanceId: string, region: string, forwarding: SsmPortForwarding): string =>
+  ["aws", ...portForwardingArgs(instanceId, region, forwarding)].join(" ");
+
+// Quotes a named profile for a shell when it has characters the shell would split or expand
+const shellWord = (word: string): string => (/^[A-Za-z0-9._@%+=:,/-]+$/.test(word) ? word : `'${word.replace(/'/g, "'\\''")}'`);
+
+/**
+ * A command to paste in any terminal: it uses the session's named profile, which works while the session is active
+ *
+ * @param instanceId - the instance to connect to
+ * @param region - the region of the instance
+ * @param profileName - the named profile of the session
+ * @param forwarding - a port forwarding, or none for a shell session
+ */
+export const ssmCommandForProfile = (instanceId: string, region: string, profileName: string, forwarding?: SsmPortForwarding): string => {
+  const command = forwarding
+    ? portForwardingCommand(instanceId, region, forwarding)
+    : `aws ssm start-session --region ${region} --target ${instanceId}`;
+  return `${command} --profile ${shellWord(profileName)}`;
 };
 
 export class SsmService {

@@ -288,6 +288,34 @@ describe("Repository", () => {
     expect(repository.persistWorkspace).not.toHaveBeenCalled();
   });
 
+  test("deleteSession() - also removes the session's SSM tunnels", () => {
+    const tunnel = (id: string, sessionId: string) => ({ id, sessionId } as any);
+    const workspace: any = { sessions: [{ sessionId: "s1" }, { sessionId: "s2" }], ssmTunnels: [tunnel("t1", "s1"), tunnel("t2", "s2")] };
+    repository.persistWorkspace = jest.fn();
+    repository.getWorkspace = () => workspace;
+
+    repository.deleteSession("s1");
+
+    expect(workspace.sessions).toEqual([{ sessionId: "s2" }]);
+    expect(workspace.ssmTunnels).toEqual([tunnel("t2", "s2")]);
+    expect(repository.persistWorkspace).toHaveBeenCalledWith(workspace);
+  });
+
+  test("SSM tunnels - list, add, update and delete", () => {
+    const workspace: any = {};
+    repository.persistWorkspace = jest.fn();
+    repository.getWorkspace = () => workspace;
+
+    expect(repository.listSsmTunnels()).toEqual([]);
+    repository.addSsmTunnel({ id: "t1", name: "db", localPort: 15432 } as any);
+    repository.addSsmTunnel({ id: "t2", name: "mq", localPort: 17007 } as any);
+    repository.updateSsmTunnel({ id: "t1", name: "database", localPort: 15433 } as any);
+    repository.deleteSsmTunnel("t2");
+
+    expect(repository.listSsmTunnels()).toEqual([{ id: "t1", name: "database", localPort: 15433 }]);
+    expect(repository.persistWorkspace).toHaveBeenCalledTimes(4);
+  });
+
   test("listPending() - list sessions in pending state", () => {
     mockedSession.status = SessionStatus.pending;
     const workspace = new Workspace();

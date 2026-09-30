@@ -1,0 +1,52 @@
+<div class="ssm-tunnels">
+  <div class="tunnels-header">
+    <h3>Tunnels</h3>
+    <span>SSM port forwardings that run in the background, with fresh credentials from their session.</span>
+  </div>
+
+  <div class="tunnels-empty" *ngIf="tunnels.length === 0">
+    <i class="moon-Server"></i>
+    <p>No tunnels yet. On a session, open <b>View SSM Sessions</b>, pick an instance and use <b>Forward Port</b>.</p>
+  </div>
+
+  <table class="table tunnels-table" *ngIf="tunnels.length > 0">
+    <thead>
+    <tr>
+      <th>Tunnel</th>
+      <th>Target</th>
+      <th>Local Address</th>
+      <th>Status</th>
+      <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr *ngFor="let tunnel of tunnels; trackBy: trackById" class="status-{{state(tunnel).status}}">
+      <td>
+        <span class="tunnel-name">{{tunnel.name}}</span>
+        <i class="moon-Play auto-start" *ngIf="tunnel.autoStart" matTooltip="Starts with its session"></i>
+        <small>{{sessionName(tunnel)}}<ng-container *ngIf="profileName(tunnel)"> · {{profileName(tunnel)}}</ng-container></small>
+      </td>
+      <td class="target">
+        <span class="truncated" [title]="(tunnel.remoteHost || tunnel.instanceName) + ':' + tunnel.remotePort">{{tunnel.remoteHost || tunnel.instanceName}}:{{tunnel.remotePort}}</span>
+        <small class="truncated">{{tunnel.remoteHost ? 'through ' + tunnel.instanceName + ', ' : ''}}{{tunnel.region}}</small>
+      </td>
+      <td>
+        <a class="local-address" (click)="copyLocalAddress(tunnel)" matTooltip="Copy the address">localhost:{{tunnel.localPort}} <i class="moon-Copy"></i></a>
+      </td>
+      <td class="status-cell">
+        <span class="status"><i class="fa fa-circle"></i> {{statusLabel(tunnel)}}</span>
+        <small class="status-message" *ngIf="state(tunnel).message">{{state(tunnel).message}}</small>
+      </td>
+      <td class="actions">
+        <button class="btn-control btn-sm {{isRunning(tunnel) ? 'toggle-button' : ''}}" (click)="toggle(tunnel)">{{isRunning(tunnel) ? 'Stop' : 'Start'}}</button>
+        <a class="more" [matMenuTriggerFor]="tunnelMenu"><i class="moon-More"></i></a>
+        <mat-menu #tunnelMenu>
+          <button mat-menu-item (click)="copyCommand(tunnel)"><i class="moon-Terminal"></i>&nbsp;<span>Copy Command</span></button>
+          <button mat-menu-item (click)="edit(tunnel)"><i class="moon-Edit"></i>&nbsp;<span>Edit Tunnel</span></button>
+          <button mat-menu-item (click)="delete(tunnel)"><i class="moon-Delete"></i>&nbsp;<span>Delete Tunnel</span></button>
+        </mat-menu>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</div>

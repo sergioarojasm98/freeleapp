@@ -4,11 +4,16 @@ import { AppService } from "../../../services/app.service";
 import { AppProviderService } from "../../../services/app-provider.service";
 import { SessionFactory } from "@noovolari/leapp-core/services/session-factory";
 import { AwsSessionService } from "@noovolari/leapp-core/services/session/aws/aws-session-service";
-import { SsmPortForwarding, SsmService, validatePortForwarding } from "@noovolari/leapp-core/services/ssm-service";
+import { SsmPortForwarding, SsmService, ssmCommandForProfile, validatePortForwarding } from "@noovolari/leapp-core/services/ssm-service";
+import { SsmTunnel } from "@noovolari/leapp-core/models/ssm-tunnel";
+import * as uuid from "uuid";
 import { LeappBaseError } from "@noovolari/leapp-core/errors/leapp-base-error";
 import { LogLevel } from "@noovolari/leapp-core/services/log-service";
 import { constants } from "@noovolari/leapp-core/models/constants";
 import { withRecentRegions } from "../../../services/region-options";
+import { MessageToasterService, ToastLevel } from "../../../services/message-toaster.service";
+import { sidebarHighlight } from "../../side-bar/side-bar.component";
+import { defaultTunnelName, emptyTunnelDraft, forwardingFrom, TunnelDraft } from "../../ssm-tunnels/tunnel-draft";
 
 @Component({
   selector: "app-ssm-modal-dialog",
@@ -26,13 +31,17 @@ export class SsmModalDialogComponent implements OnInit {
   public awsRegions: { region: string }[];
   // The instance whose port forwarding form is open, and the values typed in it
   public forwardingInstanceId: string | null = null;
-  public forwarding = { remoteHost: "", remotePort: "", localPort: "" };
-  public forwardingMessage: { text: string; error: boolean } | null = null;
+  public forwarding: TunnelDraft = emptyTunnelDraft();
+  public forwardingMessage: { text: string; error: boolean; showTunnels?: boolean } | null = null;
 
   private sessionFactory: SessionFactory;
   private ssmService: SsmService;
 
-  constructor(private appService: AppService, private appProviderService: AppProviderService) {}
+  constructor(private appService: AppService, private appProviderService: AppProviderService, private messageToasterService: MessageToasterService) {}
+
+  get suggestLocalPort(): () => Promise<number> {
+    return () => this.appProviderService.ssmTunnelService.suggestLocalPort();
+  }
 
   get sessionService(): AwsSessionService {
     return this.sessionFactory.getSessionService(this.session.type) as AwsSessionService;
@@ -133,35 +142,81 @@ export class SsmModalDialogComponent implements OnInit {
   }
 
   /**
-   * Forward a local port to a port on the instance, or on a host the instance can reach, in a terminal window
+   * Save the port forwarding as a tunnel and run it in the background
+   *
+   * @param instance - the instance that forwards the traffic
+   */
+  async startTunnel(instance: any): Promise<void> {
+    const forwarding = this.validForwarding();
+    if (!forwarding) {
+      return;
+    }
+    const tunnelService = this.appProviderService.ssmTunnelService;
+    if (!(await tunnelService.isLocalPortFree(forwarding.localPort))) {
+      this.forwardingMessage = { text: `Local port ${forwarding.localPort} is already in use. Use another one.`, error: true };
+      return;
+    }
+    const tunnel: SsmTunnel = {
+      id: uuid.v4(),
+      name: this.forwarding.name.trim() || defaultTunnelName(instance.Name, forwarding),
+      sessionId: this.session.sessionId,
+      instanceId: instance.InstanceId,
+      instanceName: instance.Name,
+      region: this.selectedSsmRegion,
+      ...forwarding,
+      autoStart: this.forwarding.autoStart,
+    };
+    this.appProviderService.repository.addSsmTunnel(tunnel);
+    await tunnelService.start(tunnel.id);
+    this.forwardingMessage = {
+      text: `Tunnel "${tunnel.name}" is starting on localhost:${tunnel.localPort}. It runs in the background; follow it in Tunnels.`,
+      error: false,
+      showTunnels: true,
+    };
+  }
+
+  /**
+   * The old way: run the port forwarding in a terminal window, without saving it
    *
    * @param instanceId - the instance that forwards the traffic
    */
-  async startPortForwarding(instanceId: string): Promise<void> {
-    const remotePort = Number(this.forwarding.remotePort);
-    const forwarding: SsmPortForwarding = {
-      remoteHost: this.forwarding.remoteHost.trim() || undefined,
-      remotePort,
-      // An empty local port uses the same number as the remote one
-      localPort: this.forwarding.localPort.trim() ? Number(this.forwarding.localPort) : remotePort,
+  async openInTerminal(instanceId: string): Promise<void> {
+    const forwarding = this.validForwarding();
+    if (!forwarding) {
+      return;
+    }
+    const credentials = await (this.sessionService as AwsSessionService).generateCredentials(this.session.sessionId);
+    this.ssmService.startPortForwardingSession(credentials, instanceId, this.selectedSsmRegion, forwarding);
+    this.forwardingMessage = {
+      text: `Opening a terminal: connect to localhost:${forwarding.localPort}. Stop the command there to close the tunnel.`,
+      error: false,
     };
+  }
+
+  // A command to paste in any terminal; it uses the session's named profile
+  copyCommand(instanceId: string, withForwarding: boolean): void {
+    const forwarding = withForwarding ? this.validForwarding() : undefined;
+    if (withForwarding && !forwarding) {
+      return;
+    }
+    const profileName = this.appProviderService.namedProfileService.getProfileName((this.session as any).profileId);
+    this.appService.copyToClipboard(ssmCommandForProfile(instanceId, this.selectedSsmRegion, profileName, forwarding));
+    this.messageToasterService.toast("It uses the session's named profile, so start the session first.", ToastLevel.success, "Command Copied");
+  }
+
+  showTunnels(): void {
+    this.closeModal();
+    this.appProviderService.behaviouralSubjectService.unselectSessions();
+    sidebarHighlight.next({ showAll: false, showPinned: false, selectedSegment: -1, showTunnels: true });
+  }
+
+  private validForwarding(): SsmPortForwarding | undefined {
+    const forwarding = forwardingFrom(this.forwarding);
     const problem = validatePortForwarding(forwarding);
     if (problem) {
       this.forwardingMessage = { text: problem, error: true };
-      return;
+      return undefined;
     }
-
-    const instance = this.instances.find((i) => i.InstanceId === instanceId);
-    instance.loading = true;
-    try {
-      const credentials = await (this.sessionService as AwsSessionService).generateCredentials(this.session.sessionId);
-      this.ssmService.startPortForwardingSession(credentials, instanceId, this.selectedSsmRegion, forwarding);
-      this.forwardingMessage = {
-        text: `Opening a terminal: connect to localhost:${forwarding.localPort}. Stop the command there to close the tunnel.`,
-        error: false,
-      };
-    } finally {
-      setTimeout(() => (instance.loading = false), 4000);
-    }
+    return forwarding;
   }
 }

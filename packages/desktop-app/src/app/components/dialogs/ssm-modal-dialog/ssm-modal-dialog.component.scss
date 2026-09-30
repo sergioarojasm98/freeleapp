@@ -47,25 +47,12 @@
     }
   }
 
+  .copy-command {
+    cursor: pointer;
+  }
+
   .port-forwarding {
     margin: 10px 0 6px;
-
-    .port-forwarding-fields {
-      display: flex;
-      flex-wrap: wrap;
-      column-gap: 10px;
-
-      label {
-        flex: 1 1 0;
-        min-width: 0;
-        margin-bottom: 8px;
-        font-size: 13px;
-      }
-
-      .remote-host {
-        flex-basis: 100%;
-      }
-    }
 
     .port-forwarding-message {
       margin-bottom: 8px;
@@ -73,6 +60,26 @@
 
       &.error {
         color: $danger-color;
+      }
+
+      a {
+        cursor: pointer;
+      }
+    }
+
+    .port-forwarding-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .toggle-button {
+        margin-right: 0;
+      }
+
+      a {
+        margin-left: 4px;
+        font-size: 13px;
+        cursor: pointer;
       }
     }
   }

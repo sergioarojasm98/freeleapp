@@ -3,6 +3,7 @@ import { combineLatest, BehaviorSubject, Subscription } from "rxjs";
 import { compactMode, sidebarCollapsed, sidebarToggleRequests } from "../../components/command-bar/command-bar.component";
 import { AppProviderService } from "../../services/app-provider.service";
 import { AppNativeService } from "../../services/app-native.service";
+import { sidebarHighlight } from "../../components/side-bar/side-bar.component";
 
 // Below this window width the sidebar hides itself so the session list keeps usable space
 export const sidebarAutoHideWidth = 900;
@@ -23,6 +24,8 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   sidebarVisible = true;
   // On narrow windows the sidebar button shows the sidebar on top of the list instead of docking it
   sidebarOverlay = false;
+  // Tunnels in the sidebar shows the tunnel list instead of the sessions
+  showTunnels = false;
 
   private windowWidth$ = new BehaviorSubject<number>(window.innerWidth);
   private subscriptions: Subscription[] = [];
@@ -51,6 +54,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       })
     );
     this.subscriptions.push(sidebarToggleRequests.subscribe(() => this.toggleSidebar()));
+    this.subscriptions.push(sidebarHighlight.subscribe((highlight) => (this.showTunnels = !!highlight.showTunnels)));
   }
 
   ngOnDestroy(): void {

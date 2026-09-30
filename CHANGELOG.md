@@ -12,7 +12,8 @@ Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the
 - Sign-in to AWS IAM Identity Center works behind corporate networks that inspect TLS. Freeleapp now also trusts the root certificates installed in the macOS keychain (for example the one a company's proxy adds), not only the ones bundled with Node.js.
 - Each AWS IAM Identity Center role gets its own named profile, `<account>-<role>` (for example `payments-prod-AdministratorAccess`), so several roles can be active at the same time. You can still pick or type another profile. On first launch, roles that were on the `default` profile move to their own profile; roles with a profile you chose keep it.
 - A named profile can only belong to one session. Choosing a profile that another session already uses shows which session has it, instead of silently stopping that session later. New sessions get `default` preselected only while no other session uses it.
-- **Port forwarding** in View SSM Sessions: **Forward Port** on an instance forwards a local port to a port on that instance, or through it to another host such as a database endpoint (`AWS-StartPortForwardingSession` and `AWS-StartPortForwardingSessionToRemoteHost`). The tunnel runs in a terminal window, like SSM sessions do.
+- **Tunnels**: SSM port forwarding that runs in the background. In View SSM Sessions, **Forward Port** on an instance saves a tunnel to a port on that instance, or through it to another host such as a database endpoint, and starts it without a terminal window. **Tunnels** in the sidebar lists them with their status and local address: start, stop, edit or delete them, copy `localhost:port`, or copy the equivalent `aws ssm start-session` command. A tunnel that drops reconnects with fresh credentials (up to three times), a busy local port is reported before starting, and a tunnel can start with its session. Tunnels stop when Freeleapp quits, and ones left by a crash are stopped on the next launch. They need the AWS CLI and the Session Manager plugin.
+- **Copy Command** next to each instance in View SSM Sessions copies the `aws ssm start-session` command with the session's named profile, to paste in any terminal.
 
 ### Removed
 
@@ -22,6 +23,8 @@ Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the
 
 - If the IAM Identity Center portal URL cannot be reached (network or certificate error), syncing the integration fails with an error instead of waiting forever.
 - The session list keeps a predictable order. **Order by Date** (on by default) now lists started sessions by start time and the rest by name; before, it left them in the order they were created. Ordering by a column header also survives starting or stopping a session, instead of jumping back to the default order.
+- Starting or stopping a session from its row icon keeps that session selected. As the list re-ordered, the selection could land on another row.
+- Checked checkboxes use the app's blue instead of Material's pink.
 
 ## 1.0.1 (2026-09-26)
 

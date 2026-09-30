@@ -58,6 +58,9 @@ import { InfoDialogComponent } from "./dialogs/info-dialog/info-dialog.component
 import { OverlayModule } from "@angular/cdk/overlay";
 import { CheckIconSvgComponent } from "./check-icon-svg/check-icon-svg.component";
 import { AuthorizationDialogComponent } from "./dialogs/authorization-dialog/authorization-dialog.component";
+import { SsmTunnelsComponent } from "./ssm-tunnels/ssm-tunnels.component";
+import { PortForwardingFieldsComponent } from "./ssm-tunnels/port-forwarding-fields/port-forwarding-fields.component";
+import { SsmTunnelDialogComponent } from "./dialogs/ssm-tunnel-dialog/ssm-tunnel-dialog.component";
 
 @NgModule({
   declarations: [
@@ -89,6 +92,9 @@ import { AuthorizationDialogComponent } from "./dialogs/authorization-dialog/aut
     BottomBarComponent,
     InfoDialogComponent,
     CheckIconSvgComponent,
+    SsmTunnelsComponent,
+    PortForwardingFieldsComponent,
+    SsmTunnelDialogComponent,
   ],
   imports: [
     CommonModule,
@@ -135,6 +141,7 @@ import { AuthorizationDialogComponent } from "./dialogs/authorization-dialog/aut
     CommandBarComponent,
     SideBarComponent,
     SessionsComponent,
+    SsmTunnelsComponent,
   ],
 })
 export class ComponentsModule {}

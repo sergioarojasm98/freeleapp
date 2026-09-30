@@ -27,6 +27,7 @@ import { AwsSsoIntegrationService } from "@noovolari/leapp-core/services/integra
 import { WebConsoleService } from "@noovolari/leapp-core/services/web-console-service";
 import { WindowService } from "./window.service";
 import { SsmService } from "@noovolari/leapp-core/services/ssm-service";
+import { SsmTunnelService } from "@noovolari/leapp-core/services/ssm-tunnel-service";
 import { IdpUrlsService } from "@noovolari/leapp-core/services/idp-urls-service";
 import { NamedProfilesService } from "@noovolari/leapp-core/services/named-profiles-service";
 import { SegmentService } from "@noovolari/leapp-core/services/segment-service";
@@ -83,6 +84,7 @@ export class AppProviderService {
   private azureCoreServiceInstance: AzureCoreService;
   private webConsoleServiceInstance: WebConsoleService;
   private ssmServiceInstance: SsmService;
+  private ssmTunnelServiceInstance: SsmTunnelService;
   private idpUrlServiceInstance: IdpUrlsService;
   private namedProfileInstance: NamedProfilesService;
   private segmentServiceInstance: SegmentService;
@@ -315,6 +317,19 @@ export class AppProviderService {
       );
     }
     return this.sessionFactoryInstance;
+  }
+
+  public get ssmTunnelService(): SsmTunnelService {
+    if (!this.ssmTunnelServiceInstance) {
+      this.ssmTunnelServiceInstance = new SsmTunnelService(
+        this.repository,
+        this.sessionFactory,
+        this.appNativeService,
+        this.logService,
+        this.behaviouralSubjectService
+      );
+    }
+    return this.ssmTunnelServiceInstance;
   }
 
   public get ssmService(): SsmService {

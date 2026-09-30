@@ -42,6 +42,7 @@ export class RetroCompatibilityService {
       this.migration7();
       this.migration8();
       this.migration9();
+      this.migration10();
       // When adding new migrations remember to increase constants.workspaceLastVersion
     }
   }
@@ -333,6 +334,17 @@ export class RetroCompatibilityService {
       session.profileId = profile.id;
     }
     workspace._profiles = profiles;
+    this.persists(workspace);
+    this.repository.reloadWorkspace();
+  }
+
+  // Saved SSM tunnels (port forwarding) are stored in the workspace
+  private migration10(): void {
+    const workspace = this.getWorkspace();
+    if (!this.checkMigration(workspace, 9, 10)) {
+      return;
+    }
+    workspace._ssmTunnels = workspace._ssmTunnels ?? [];
     this.persists(workspace);
     this.repository.reloadWorkspace();
   }

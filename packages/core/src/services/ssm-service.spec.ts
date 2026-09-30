@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
-import { portForwardingCommand, SsmService, validatePortForwarding } from "./ssm-service";
+import { portForwardingCommand, ssmCommandForProfile, SsmService, validatePortForwarding } from "./ssm-service";
 import { ExecuteService } from "./execute-service";
 import { CredentialsInfo } from "../models/credentials-info";
 import { INativeService } from "../interfaces/i-native-service";
@@ -159,6 +159,19 @@ describe("SsmService", () => {
   test("portForwardingCommand - rejects values that are not plain hosts and ports", () => {
     expect(() => portForwardingCommand("i-1", "us-east-1", { remoteHost: "db.local; rm -rf ~", remotePort: 5432, localPort: 5432 })).toThrow(
       "The remote host must be a host name or an IP address."
+    );
+  });
+
+  test("ssmCommandForProfile - commands to paste in a terminal use the session's named profile", () => {
+    expect(ssmCommandForProfile("i-0aa1", "us-east-1", "cogs-jo-prd")).toBe(
+      "aws ssm start-session --region us-east-1 --target i-0aa1 --profile cogs-jo-prd"
+    );
+    expect(ssmCommandForProfile("i-0aa1", "us-east-1", "cogs-jo-prd", { remotePort: 15672, localPort: 17007 })).toBe(
+      "aws ssm start-session --region us-east-1 --target i-0aa1 --document-name AWS-StartPortForwardingSession" +
+        " --parameters portNumber=15672,localPortNumber=17007 --profile cogs-jo-prd"
+    );
+    expect(ssmCommandForProfile("i-0aa1", "us-east-1", "my profile's")).toBe(
+      "aws ssm start-session --region us-east-1 --target i-0aa1 --profile 'my profile'\\''s'"
     );
   });
 

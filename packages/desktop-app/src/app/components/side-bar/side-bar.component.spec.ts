@@ -1,3 +1,4 @@
+import { BehaviorSubject } from "rxjs";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { SideBarComponent } from "./side-bar.component";
@@ -22,6 +23,7 @@ describe("SideBarComponent", () => {
       segmentService: { list: () => [] },
       awsCoreService: { getRegions: () => [] },
       behaviouralSubjectService: { sessions: [], unselectSessions: () => {} },
+      ssmTunnelService: { states$: new BehaviorSubject(new Map()), runningCount: 0 },
     });
 
     await TestBed.configureTestingModule({

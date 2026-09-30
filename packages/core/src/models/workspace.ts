@@ -7,6 +7,7 @@ import { Type } from "class-transformer";
 import { constants } from "./constants";
 import Folder from "./folder";
 import Segment from "./segment";
+import { SsmTunnel } from "./ssm-tunnel";
 import { AwsSsoIntegration } from "./aws/aws-sso-integration";
 import { AzureIntegration } from "./azure/azure-integration";
 import { LeappNotification } from "./notification";
@@ -32,6 +33,7 @@ export class Workspace {
   private _pinned: string[];
   private _folders: Folder[];
   private _segments: Segment[];
+  private _ssmTunnels: SsmTunnel[];
 
   private _colorTheme: string;
 
@@ -58,6 +60,7 @@ export class Workspace {
     this._sessions = [];
     this._folders = [];
     this._segments = [];
+    this._ssmTunnels = [];
     this._defaultRegion = constants.defaultRegion;
     this._defaultLocation = constants.defaultLocation;
     this._macOsTerminal = constants.macOsTerminal;
@@ -194,6 +197,14 @@ export class Workspace {
 
   set segments(segments: Segment[]) {
     this._segments = segments;
+  }
+
+  get ssmTunnels(): SsmTunnel[] {
+    return this._ssmTunnels;
+  }
+
+  set ssmTunnels(ssmTunnels: SsmTunnel[]) {
+    this._ssmTunnels = ssmTunnels;
   }
 
   get colorTheme(): string {

@@ -7,6 +7,8 @@ export interface INativeService {
   os: any;
   ini: any;
   exec: any;
+  spawn: any;
+  net: any;
   unzip: any;
   copydir: any;
   sudo: any;

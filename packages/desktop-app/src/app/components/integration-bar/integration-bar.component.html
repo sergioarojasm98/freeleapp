@@ -99,7 +99,7 @@
           </div>
         </ng-container>
 
-        <button class="btn-right-margin {{formValid() ? '': 'mat-button-disabled'}}" [disabled]="!formValid() || submitting" (click)="save();">
+        <button class="btn-control btn-right-margin {{formValid() ? '': 'mat-button-disabled'}}" [disabled]="!formValid() || submitting" (click)="save();">
           <ng-container *ngIf="modifying === 1">Add Integration </ng-container>
           <ng-container *ngIf="modifying === 2">Edit Integration </ng-container>
           <i *ngIf="submitting" class="fa fa-spinner fa-spin"></i>

@@ -23,7 +23,7 @@
   <small>The filter will show under Saved Filters in your sidebar.</small>
   <br>
   <br>
-  <button (click)="saveSegment()" [disabled]="!formValid()" class="{{formValid() ? '': 'mat-button-disabled'}}">Save Filter</button>
+  <button (click)="saveSegment()" [disabled]="!formValid()" class="btn-control {{formValid() ? '': 'mat-button-disabled'}}">Save Filter</button>
   <a (click)="closeModal()">Cancel</a>
 
 </form>

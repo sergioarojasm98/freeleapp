@@ -300,23 +300,27 @@ app-sync-pro-widget {
   width: 100%;
 }
 
-// Active sessions and running tunnels badges; the rule above sizes every sidebar label to 150px
-::ng-deep .counted-item .mat-list-item-content {
-  position: relative;
+// Active sessions and running tunnels badges, at the end of their row. The rule above sizes every sidebar label to
+// 150px; a flex row keeps the badge in place whatever the hover state does to the list item.
+// Also while hovered: an older rule resets every property of a hovered .mat-line
+::ng-deep .counted-item .mat-line,
+::ng-deep .counted-item .mat-line:hover:not(.workspace-menu-line) {
+  display: flex !important;
+  align-items: center !important;
+  // The width a selected row leaves its line, so badges line up whether their row is selected or not
+  max-width: 196px !important;
 }
 
 ::ng-deep .mat-list-text div span.sidebar-count {
-  position: absolute;
-  top: 50%;
-  right: 12px;
+  flex: none;
   width: auto;
-  transform: translateY(-50%);
   min-width: 20px;
-  margin-top: 0;
+  height: 20px;
+  margin: 0 0 0 auto;
   padding: 0 6px;
   border-radius: 10px;
   background: $main-color-light;
-  color: $white-text-color;
+  color: $white-text-color !important;
   font-size: 12px;
   line-height: 20px;
   text-align: center;

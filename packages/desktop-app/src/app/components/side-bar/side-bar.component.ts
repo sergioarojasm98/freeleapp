@@ -109,6 +109,11 @@ export class SideBarComponent implements OnInit, OnDestroy {
     globalFilterGroup.next(globalFilters);
   }
 
+  // Keeps the badge a small circle; its tooltip gives the exact number
+  badge(count: number): string {
+    return count > 9 ? "9+" : `${count}`;
+  }
+
   showTunnelsView(): void {
     this.behaviouralSubjectService.unselectSessions();
     sidebarHighlight.next({ showAll: false, showPinned: false, selectedSegment: -1, showTunnels: true });

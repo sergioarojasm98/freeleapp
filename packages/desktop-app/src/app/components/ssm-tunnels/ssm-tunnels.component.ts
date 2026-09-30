@@ -73,13 +73,17 @@ export class SsmTunnelsComponent implements OnInit, OnDestroy {
   }
 
   statusLabel(tunnel: SsmTunnel): string {
+    return statusLabels[this.state(tunnel).status];
+  }
+
+  // How long an active tunnel has been up, shown under its status
+  activeFor(tunnel: SsmTunnel): string {
     const state = this.state(tunnel);
-    if (state.status === SsmTunnelStatus.active && state.activeSince) {
-      const minutes = Math.floor((this.now - new Date(state.activeSince).getTime()) / 60000);
-      const duration = minutes < 1 ? "less than a minute" : minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
-      return `Active for ${duration}`;
+    if (state.status !== SsmTunnelStatus.active || !state.activeSince) {
+      return "";
     }
-    return statusLabels[state.status];
+    const minutes = Math.floor((this.now - new Date(state.activeSince).getTime()) / 60000);
+    return minutes < 1 ? "less than a minute" : minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
   }
 
   isRunning(tunnel: SsmTunnel): boolean {

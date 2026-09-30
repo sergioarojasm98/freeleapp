@@ -8,15 +8,16 @@
       <span class="workspace-name">Local Workspace</span>
     </div>
   </mat-list-item>
-  <mat-list-item (click)="resetFilters();" class="{{this.showAll ? 'selected-segment' : ''}}">
-    <div mat-line><i class="moon-Row"></i> <span>All Sessions</span></div>
+  <mat-list-item (click)="resetFilters();" class="counted-item {{this.showAll ? 'selected-segment' : ''}}">
+    <div mat-line><i class="moon-Row"></i> <span>All Sessions</span>
+      <span class="sidebar-count" *ngIf="activeSessions > 0" matTooltip="Active sessions">{{activeSessions}}</span></div>
   </mat-list-item>
   <mat-list-item (click)="showOnlyPinned();" class="{{this.showPinned ? 'selected-segment' : ''}}">
     <div mat-line><i class="moon-Pin"></i> <span>Pinned</span></div>
   </mat-list-item>
-  <mat-list-item (click)="showTunnelsView();" class="tunnels-item {{this.showTunnels ? 'selected-segment' : ''}}">
+  <mat-list-item (click)="showTunnelsView();" class="counted-item {{this.showTunnels ? 'selected-segment' : ''}}">
     <div mat-line><i class="moon-Server"></i> <span>Tunnels</span>
-      <span class="tunnel-count" *ngIf="runningTunnels > 0" matTooltip="Running tunnels">{{runningTunnels}}</span></div>
+      <span class="sidebar-count" *ngIf="runningTunnels > 0" matTooltip="Running tunnels">{{runningTunnels}}</span></div>
   </mat-list-item>
   <div class="space-between-mat-lists"></div>
   <app-integration-bar></app-integration-bar>

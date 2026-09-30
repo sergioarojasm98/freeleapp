@@ -888,3 +888,8 @@ tr:hover .moon-hover-session {
   border-color: $main-color-light !important;
   background-color: $main-color-light !important;
 }
+
+.mat-mdc-checkbox .mdc-checkbox .mdc-checkbox__ripple,
+.mat-mdc-checkbox .mat-mdc-checkbox-ripple .mat-ripple-element {
+  background-color: $main-color-light !important;
+}

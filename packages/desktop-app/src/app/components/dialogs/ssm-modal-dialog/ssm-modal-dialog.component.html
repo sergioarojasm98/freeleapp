@@ -33,7 +33,10 @@
       <ul class="ssm-ul" *ngIf="instances.length > 0">
         <li *ngFor="let instance of instances" class="ssm-card">
           <div class="ssm-card-row">
-            <span class="ssm-instance"><b>{{instance.Name.length >= 24 ? instance.Name.substr(0, 21) + '...' : instance.Name}}</b> - {{instance.IPAddress}}</span>
+            <div class="ssm-instance">
+              <span class="instance-name" [title]="instance.Name">{{instance.Name}}</span>
+              <small>{{instance.HasName ? instance.InstanceId + ' · ' : ''}}{{instance.IPAddress}}{{instance.PlatformName ? ' · ' + instance.PlatformName : ''}}</small>
+            </div>
             <button class="btn-control btn-sm toggle-button {{forwardingInstanceId === instance.InstanceId ? 'toggled' : ''}}"
                     (click)="togglePortForwarding(instance.InstanceId)">Forward Port</button>
             <a class="copy-command" (click)="copyCommand(instance.InstanceId, false)" matTooltip="Copy the Connect Command"><i class="moon-Copy"></i></a>

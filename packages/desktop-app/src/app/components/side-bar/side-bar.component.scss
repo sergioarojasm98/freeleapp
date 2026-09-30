@@ -300,12 +300,12 @@ app-sync-pro-widget {
   width: 100%;
 }
 
-// The running tunnels badge; the rule above sizes every sidebar label to 150px
-::ng-deep .tunnels-item .mat-list-item-content {
+// Active sessions and running tunnels badges; the rule above sizes every sidebar label to 150px
+::ng-deep .counted-item .mat-list-item-content {
   position: relative;
 }
 
-::ng-deep .mat-list-text div span.tunnel-count {
+::ng-deep .mat-list-text div span.sidebar-count {
   position: absolute;
   top: 50%;
   right: 12px;

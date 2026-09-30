@@ -10,6 +10,8 @@ import { AppService } from "../../services/app.service";
 import { MessageToasterService, ToastLevel } from "../../services/message-toaster.service";
 import { ConfirmationDialogComponent } from "../dialogs/confirmation-dialog/confirmation-dialog.component";
 import { SsmTunnelDialogComponent } from "../dialogs/ssm-tunnel-dialog/ssm-tunnel-dialog.component";
+import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
+import { copiedCommandMessage } from "./tunnel-draft";
 
 const statusLabels: Record<SsmTunnelStatus, string> = {
   [SsmTunnelStatus.stopped]: "Stopped",
@@ -115,7 +117,8 @@ export class SsmTunnelsComponent implements OnInit, OnDestroy {
   // To run the same tunnel from a terminal, with the session's named profile
   copyCommand(tunnel: SsmTunnel): void {
     this.appService.copyToClipboard(ssmCommandForProfile(tunnel.instanceId, tunnel.region, this.profileName(tunnel), tunnel));
-    this.messageToasterService.toast("It uses the session's named profile, so start the session first.", ToastLevel.success, "Command Copied");
+    const sessionActive = this.appProviderService.repository.getSessionById(tunnel.sessionId)?.status === SessionStatus.active;
+    this.messageToasterService.toast(copiedCommandMessage(this.profileName(tunnel), sessionActive), ToastLevel.success, "Command Copied");
   }
 
   edit(tunnel: SsmTunnel): void {

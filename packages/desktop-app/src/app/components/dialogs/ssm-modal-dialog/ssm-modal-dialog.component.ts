@@ -13,7 +13,8 @@ import { constants } from "@noovolari/leapp-core/models/constants";
 import { withRecentRegions } from "../../../services/region-options";
 import { MessageToasterService, ToastLevel } from "../../../services/message-toaster.service";
 import { sidebarHighlight } from "../../side-bar/side-bar.component";
-import { defaultTunnelName, emptyTunnelDraft, forwardingFrom, TunnelDraft } from "../../ssm-tunnels/tunnel-draft";
+import { copiedCommandMessage, defaultTunnelName, emptyTunnelDraft, forwardingFrom, TunnelDraft } from "../../ssm-tunnels/tunnel-draft";
+import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
 
 @Component({
   selector: "app-ssm-modal-dialog",
@@ -201,7 +202,8 @@ export class SsmModalDialogComponent implements OnInit {
     }
     const profileName = this.appProviderService.namedProfileService.getProfileName((this.session as any).profileId);
     this.appService.copyToClipboard(ssmCommandForProfile(instanceId, this.selectedSsmRegion, profileName, forwarding));
-    this.messageToasterService.toast("It uses the session's named profile, so start the session first.", ToastLevel.success, "Command Copied");
+    const sessionActive = this.appProviderService.repository.getSessionById(this.session.sessionId)?.status === SessionStatus.active;
+    this.messageToasterService.toast(copiedCommandMessage(profileName, sessionActive), ToastLevel.success, "Command Copied");
   }
 
   showTunnels(): void {

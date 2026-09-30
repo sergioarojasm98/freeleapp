@@ -15,6 +15,7 @@ import { BehaviouralSubjectService } from "@noovolari/leapp-core/services/behavi
 import { AppProviderService } from "../../services/app-provider.service";
 import { constants } from "@noovolari/leapp-core/models/constants";
 import { integrationHighlight } from "../integration-bar/integration-bar.component";
+import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
 
 export interface SelectedSegment {
   name: string;
@@ -45,6 +46,7 @@ export class SideBarComponent implements OnInit, OnDestroy {
   showPinned: boolean;
   showTunnels = false;
   runningTunnels = 0;
+  activeSessions = 0;
   modalRef: BsModalRef;
 
   private unsubscribe: () => void;
@@ -68,6 +70,9 @@ export class SideBarComponent implements OnInit, OnDestroy {
       this.showTunnels = !!value.showTunnels;
     });
     // Tunnel processes report outside Angular's zone
+    const sessionsSubscription = this.behaviouralSubjectService.sessions$.subscribe(
+      (sessions) => (this.activeSessions = sessions.filter((session) => session.status === SessionStatus.active).length)
+    );
     const tunnelsSubscription = this.appProviderService.ssmTunnelService.states$.subscribe(() =>
       this.ngZone.run(() => (this.runningTunnels = this.appProviderService.ssmTunnelService.runningCount))
     );
@@ -77,6 +82,7 @@ export class SideBarComponent implements OnInit, OnDestroy {
       segmentFilterSubscription.unsubscribe();
       sidebarHighlightSubscription.unsubscribe();
       tunnelsSubscription.unsubscribe();
+      sessionsSubscription.unsubscribe();
     };
   }
 

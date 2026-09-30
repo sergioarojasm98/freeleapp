@@ -12,5 +12,5 @@
   <label>Local Port <a class="free-port" *ngIf="suggestLocalPort" (click)="useFreePort()">Use a Free Port</a>
     <input class="form-control" [(ngModel)]="draft.localPort" [ngModelOptions]="{standalone: true}" inputmode="numeric" placeholder="Same as remote"/>
   </label>
-  <mat-checkbox class="full" [(ngModel)]="draft.autoStart" [ngModelOptions]="{standalone: true}">Start with the session</mat-checkbox>
+  <mat-checkbox class="full" [(ngModel)]="draft.autoStart" [ngModelOptions]="{standalone: true}">Also start it whenever this session starts</mat-checkbox>
 </div>

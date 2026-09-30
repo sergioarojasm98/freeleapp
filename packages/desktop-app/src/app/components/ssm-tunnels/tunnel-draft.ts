@@ -33,3 +33,9 @@ export const forwardingFrom = (draft: TunnelDraft): SsmPortForwarding => {
 // "rabbitmq-prod-1:15672", or the first label of the remote host: "batchengine-psql:5432"
 export const defaultTunnelName = (instanceName: string, forwarding: SsmPortForwarding): string =>
   `${forwarding.remoteHost ? forwarding.remoteHost.split(".")[0] : instanceName}:${forwarding.remotePort}`;
+
+// Copied commands use the session's named profile, which only has credentials while the session is active
+export const copiedCommandMessage = (profileName: string, sessionActive: boolean): string =>
+  sessionActive
+    ? `Command copied. It uses the "${profileName}" profile, so paste it in any terminal.`
+    : `Command copied. It uses the "${profileName}" profile, which has credentials only while the session is active: start the session before running it.`;

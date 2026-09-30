@@ -1,4 +1,4 @@
-import { defaultTunnelName, emptyTunnelDraft, forwardingFrom, tunnelDraftFrom } from "./tunnel-draft";
+import { copiedCommandMessage, defaultTunnelName, emptyTunnelDraft, forwardingFrom, tunnelDraftFrom } from "./tunnel-draft";
 
 describe("tunnel-draft", () => {
   it("forwardingFrom trims the host and uses the remote port when the local one is empty", () => {
@@ -29,5 +29,10 @@ describe("tunnel-draft", () => {
       autoStart: true,
     };
     expect(tunnelDraftFrom(tunnel)).toEqual({ name: "db", remoteHost: "", remotePort: "5432", localPort: "15454", autoStart: true });
+  });
+
+  it("copiedCommandMessage says whether the profile can be used right now", () => {
+    expect(copiedCommandMessage("cogs-jo-prd", true)).toBe('Command copied. It uses the "cogs-jo-prd" profile, so paste it in any terminal.');
+    expect(copiedCommandMessage("cogs-jo-prd", false)).toContain("start the session before running it");
   });
 });

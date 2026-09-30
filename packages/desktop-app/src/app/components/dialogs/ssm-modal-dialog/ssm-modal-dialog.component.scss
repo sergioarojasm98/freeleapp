@@ -18,8 +18,10 @@
 .ssm-ul {
   padding: 20px;
 
+  list-style: none;
+
   .ssm-card {
-    padding: 4px 0;
+    padding: 6px 0;
 
     button {
       flex-shrink: 0;
@@ -36,9 +38,23 @@
     .ssm-instance {
       flex: 1 1 auto;
       min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+
+      .instance-name {
+        font-weight: 600;
+      }
+
+      .instance-name,
+      small {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      small {
+        color: $table-text;
+        font-size: 12px;
+      }
     }
 
     .toggle-button {
@@ -83,6 +99,12 @@
       }
     }
   }
+}
+
+// Wider than the other edit dialogs, so instance names fit next to their buttons
+::ng-deep .edit-modal.ssm-instances-modal {
+  max-width: 760px !important;
+  width: calc(100vw - 40px);
 }
 
 // Keep the dialog inside the window like the settings dialog: the modal never grows past the viewport

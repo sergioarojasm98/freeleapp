@@ -3,6 +3,7 @@ import { SsmTunnel } from "@noovolari/leapp-core/models/ssm-tunnel";
 import { validatePortForwarding } from "@noovolari/leapp-core/services/ssm-service";
 import { AppService } from "../../../services/app.service";
 import { AppProviderService } from "../../../services/app-provider.service";
+import { MessageToasterService, ToastLevel } from "../../../services/message-toaster.service";
 import { defaultTunnelName, forwardingFrom, TunnelDraft, tunnelDraftFrom } from "../../ssm-tunnels/tunnel-draft";
 
 @Component({
@@ -17,7 +18,7 @@ export class SsmTunnelDialogComponent implements OnInit {
   draft: TunnelDraft;
   error: string;
 
-  constructor(private appService: AppService, private appProviderService: AppProviderService) {}
+  constructor(private appService: AppService, private appProviderService: AppProviderService, private messageToasterService: MessageToasterService) {}
 
   get suggestLocalPort(): () => Promise<number> {
     return () => this.appProviderService.ssmTunnelService.suggestLocalPort();
@@ -50,7 +51,13 @@ export class SsmTunnelDialogComponent implements OnInit {
     const tunnelService = this.appProviderService.ssmTunnelService;
     const changed =
       this.tunnel.remoteHost !== tunnel.remoteHost || this.tunnel.remotePort !== tunnel.remotePort || this.tunnel.localPort !== tunnel.localPort;
-    if (changed && tunnelService.isRunning(tunnel.id)) {
+    const restart = changed && tunnelService.isRunning(tunnel.id);
+    this.messageToasterService.toast(
+      restart ? `"${tunnel.name}" is restarting with its new settings.` : `"${tunnel.name}" was saved.`,
+      ToastLevel.success,
+      "Tunnel Saved"
+    );
+    if (restart) {
       await tunnelService.restart(tunnel.id);
     }
   }

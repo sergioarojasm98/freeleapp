@@ -175,6 +175,22 @@ describe("SsmService", () => {
     );
   });
 
+  test("caches instances per session and region, and remembers each session's last region", () => {
+    ssmService = new SsmService({ log: jest.fn() } as any, executeService, nativeService, null);
+    const instances = [{ ["InstanceId"]: "i-1" }];
+
+    expect(ssmService.getCachedInstances("s1", "us-east-1")).toBeUndefined();
+    ssmService.cacheInstances("s1", "us-east-1", instances);
+    expect(ssmService.getCachedInstances("s1", "us-east-1").instances).toBe(instances);
+    expect(ssmService.getCachedInstances("s1", "us-east-1").loadedAt).toBeInstanceOf(Date);
+    expect(ssmService.getCachedInstances("s1", "eu-west-1")).toBeUndefined();
+    expect(ssmService.getCachedInstances("s2", "us-east-1")).toBeUndefined();
+
+    expect(ssmService.getLastRegion("s1")).toBeUndefined();
+    ssmService.rememberRegion("s1", "us-west-2");
+    expect(ssmService.getLastRegion("s1")).toBe("us-west-2");
+  });
+
   test("validatePortForwarding", () => {
     expect(validatePortForwarding({ remotePort: 22, localPort: 2222 })).toBeUndefined();
     expect(validatePortForwarding({ remoteHost: "10.0.1.25", remotePort: 3306, localPort: 13306 })).toBeUndefined();

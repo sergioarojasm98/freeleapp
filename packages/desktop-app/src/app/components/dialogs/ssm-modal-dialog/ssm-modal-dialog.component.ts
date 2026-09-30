@@ -34,6 +34,8 @@ export class SsmModalDialogComponent implements OnInit {
   public forwardingInstanceId: string | null = null;
   public forwarding: TunnelDraft = emptyTunnelDraft();
   public forwardingMessage: { text: string; error: boolean; showTunnels?: boolean } | null = null;
+  // When the listed instances were fetched from AWS; they may come from an earlier opening of this dialog
+  public instancesLoadedAt: Date | null = null;
 
   private sessionFactory: SessionFactory;
   private ssmService: SsmService;
@@ -57,8 +59,14 @@ export class SsmModalDialogComponent implements OnInit {
     this.sessionFactory = this.appProviderService.sessionFactory;
     this.ssmService = this.appProviderService.ssmService;
 
-    if (this.appProviderService.repository.getWorkspace().ssmRegionBehaviour === constants.ssmRegionDefault) {
+    // The region used last time for this session, else the session's region when the SSM setting asks for it
+    const lastRegion = this.ssmService.getLastRegion(this.session.sessionId);
+    if (lastRegion) {
+      this.selectedSsmRegion = lastRegion;
+    } else if (this.appProviderService.repository.getWorkspace().ssmRegionBehaviour === constants.ssmRegionDefault) {
       this.selectedSsmRegion = this.session.region;
+    }
+    if (this.selectedSsmRegion) {
       this.changeSsmRegion();
     }
   }
@@ -73,9 +81,18 @@ export class SsmModalDialogComponent implements OnInit {
    * @param event - the change select event
    * @param session - The sessions in which the aws region need to change
    */
-  async changeSsmRegion(): Promise<void> {
+  async changeSsmRegion(forceRefresh = false): Promise<void> {
     // We have a valid SSM region
     if (this.selectedSsmRegion) {
+      this.ssmService.rememberRegion(this.session.sessionId, this.selectedSsmRegion);
+      const cached = forceRefresh ? undefined : this.ssmService.getCachedInstances(this.session.sessionId, this.selectedSsmRegion);
+      if (cached) {
+        this.instances = cached.instances;
+        this.instancesNotFiltered = cached.instances;
+        this.instancesLoadedAt = cached.loadedAt;
+        this.askingSsmRegion = false;
+        return;
+      }
       // Start process
       this.ssmLoading = true;
       this.askingSsmRegion = true;
@@ -85,6 +102,8 @@ export class SsmModalDialogComponent implements OnInit {
       try {
         this.instances = await this.ssmService.getSsmInstances(credentials, this.selectedSsmRegion);
         this.instancesNotFiltered = this.instances;
+        this.ssmService.cacheInstances(this.session.sessionId, this.selectedSsmRegion, this.instances);
+        this.instancesLoadedAt = new Date();
         this.askingSsmRegion = false;
       } catch (err) {
         this.instances = [];
@@ -135,6 +154,15 @@ export class SsmModalDialogComponent implements OnInit {
     }, 4000);
 
     this.ssmLoading = false;
+  }
+
+  refreshInstances(): void {
+    this.changeSsmRegion(true);
+  }
+
+  get loadedAgo(): string {
+    const minutes = Math.floor((Date.now() - this.instancesLoadedAt.getTime()) / 60000);
+    return minutes < 1 ? "just now" : minutes < 60 ? `${minutes} min ago` : `${Math.floor(minutes / 60)} h ago`;
   }
 
   togglePortForwarding(instanceId: string): void {

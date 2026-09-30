@@ -75,9 +75,18 @@ export const ssmCommandForProfile = (instanceId: string, region: string, profile
   return `${command} --profile ${shellWord(profileName)}`;
 };
 
+export interface CachedSsmInstances {
+  instances: any[];
+  loadedAt: Date;
+}
+
 export class SsmService {
   ssmClient: SSMClient;
   ec2Client: EC2Client;
+
+  // Instances already listed, by session and region, and the last region used by each session, while the app runs
+  private instanceCache = new Map<string, CachedSsmInstances>();
+  private lastRegions = new Map<string, string>();
 
   constructor(
     private logService: LogService,
@@ -137,6 +146,22 @@ export class SsmService {
     // Get Ssm instances info data
     const instances = await this.requestSsmInstances();
     return await this.applyEc2MetadataInformation(instances);
+  }
+
+  getCachedInstances(sessionId: string, region: string): CachedSsmInstances | undefined {
+    return this.instanceCache.get(`${sessionId}|${region}`);
+  }
+
+  cacheInstances(sessionId: string, region: string, instances: any[]): void {
+    this.instanceCache.set(`${sessionId}|${region}`, { instances, loadedAt: new Date() });
+  }
+
+  getLastRegion(sessionId: string): string | undefined {
+    return this.lastRegions.get(sessionId);
+  }
+
+  rememberRegion(sessionId: string, region: string): void {
+    this.lastRegions.set(sessionId, region);
   }
 
   /**

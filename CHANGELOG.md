@@ -14,7 +14,9 @@ Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the
 - A named profile can only belong to one session. Choosing a profile that another session already uses shows which session has it, instead of silently stopping that session later. New sessions get `default` preselected only while no other session uses it.
 - **Tunnels**: SSM port forwarding that runs in the background. In View SSM Sessions, **Forward Port** on an instance saves a tunnel to a port on that instance, or through it to another host such as a database endpoint, and starts it without a terminal window. **Tunnels** in the sidebar lists them with their status and local address: start, stop, edit or delete them, copy `localhost:port`, or copy the equivalent `aws ssm start-session` command. A tunnel that drops reconnects with fresh credentials (up to three times), a busy local port is reported before starting, and a tunnel can start with its session. Tunnels stop when Freeleapp quits, and ones left by a crash are stopped on the next launch. They need the AWS CLI and the Session Manager plugin.
 - **Copy Command** next to each instance in View SSM Sessions copies the `aws ssm start-session` command with the session's named profile, to paste in any terminal.
-- **All Sessions** in the sidebar shows how many sessions are active, like **Tunnels** shows the running tunnels.
+- **All Sessions** in the sidebar shows how many sessions are active, like **Tunnels** shows the running tunnels. Past 9 the badge reads *9+*; hover it for the exact number.
+- View SSM Sessions remembers the region you used last for each session and shows the instances it already loaded right away, with when they were loaded. The refresh button next to the region loads them from AWS again.
+- Buttons look the same everywhere: blue with white text, with the same hover and pressed states, in both color themes. Filter chips turn blue while they filter something. Action buttons explain what they do on hover.
 
 ### Removed
 
@@ -26,6 +28,7 @@ Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the
 - The session list keeps a predictable order. **Order by Date** (on by default) now lists started sessions by start time and the rest by name; before, it left them in the order they were created. Ordering by a column header also survives starting or stopping a session, instead of jumping back to the default order.
 - Starting or stopping a session from its row icon keeps that session selected. As the list re-ordered, the selection could land on another row.
 - Checked checkboxes use the app's blue instead of Material's pink.
+- The status dot of a selected session stays visible while the pointer is over it.
 - View SSM Sessions shows every instance by its EC2 Name tag, with its id, IP address and platform below. Instances launched together (for example by an Auto Scaling group) showed their id instead of their name, and stopped instances are no longer listed. The dialog is wider, so long names fit.
 
 ## 1.0.1 (2026-09-26)

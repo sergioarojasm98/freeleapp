@@ -110,16 +110,6 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     this.selectedSsmRegionBehaviour = this.optionsService.ssmRegionBehaviour || constants.ssmRegionNo;
   }
 
-  // The modal is opened with keyboard and backdrop closing turned off (command bar), so both go through cancel()
-  @HostListener("document:keydown.escape", ["$event"])
-  onEscape(event: KeyboardEvent): void {
-    if (this.discardConfirmation) {
-      this.discardConfirmation.hide();
-    } else if (!event.defaultPrevented && this.modalService.getModalsCount() <= 1) {
-      this.cancel();
-    }
-  }
-
   @HostListener("document:mousedown", ["$event"])
   onMouseDown(event: MouseEvent): void {
     this.mouseDownTarget = event.target;
@@ -131,6 +121,14 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     // A click on the dimmed area around the dialog, not a drag that started inside it
     const outside = target.classList?.contains("modal") && target.contains(this.elementRef.nativeElement);
     if (outside && this.mouseDownTarget === target && !this.discardConfirmation) {
+      this.cancel();
+    }
+  }
+
+  // Escape (app-dialog-escape) and a click around the dialog both go through cancel(). A discard confirmation on top
+  // handles Escape itself.
+  onEscape(): void {
+    if (!this.discardConfirmation) {
       this.cancel();
     }
   }

@@ -124,6 +124,17 @@ export class SsmTunnelService {
     });
   }
 
+  /**
+   * The local port of a tunnel whose Local Port field was left empty. By default the remote port; with the Default Local
+   * Port setting on "free", a port free right now when the remote one is taken on this Mac.
+   */
+  async defaultLocalPort(remotePort: number): Promise<number> {
+    if (this.repository.getWorkspace().ssmLocalPort !== constants.ssmLocalPortFree || (await this.isLocalPortFree(remotePort))) {
+      return remotePort;
+    }
+    return this.suggestLocalPort();
+  }
+
   async start(tunnelId: string): Promise<void> {
     if (this.runs.has(tunnelId)) {
       return;

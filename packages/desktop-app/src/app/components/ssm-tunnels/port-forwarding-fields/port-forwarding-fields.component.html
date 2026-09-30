@@ -10,7 +10,12 @@
     <input class="form-control" [(ngModel)]="draft.remotePort" [ngModelOptions]="{standalone: true}" inputmode="numeric" placeholder="5432"/>
   </label>
   <label>Local Port <a class="free-port" *ngIf="suggestLocalPort" (click)="useFreePort()">Use a Free Port</a>
-    <input class="form-control" [(ngModel)]="draft.localPort" [ngModelOptions]="{standalone: true}" inputmode="numeric" placeholder="Same as remote"/>
+    <input class="form-control" [(ngModel)]="draft.localPort" [ngModelOptions]="{standalone: true}" inputmode="numeric"
+           [placeholder]="freeLocalPortByDefault ? 'Remote port, or a free one' : 'Same as remote'"/>
   </label>
+  <div class="full common-ports">
+    <button type="button" *ngFor="let common of commonPorts" class="port-chip" [class.selected]="isCommonPortSelected(common.port)"
+            (click)="useCommonPort(common.port)">{{common.name}} <span>{{common.port}}</span></button>
+  </div>
   <mat-checkbox class="full" [(ngModel)]="draft.autoStart" [ngModelOptions]="{standalone: true}">Also start it whenever this session starts</mat-checkbox>
 </div>

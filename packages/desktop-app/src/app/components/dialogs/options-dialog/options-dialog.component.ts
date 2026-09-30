@@ -57,7 +57,11 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   colorTheme: string;
   selectedColorTheme: string;
 
-  selectedSsmRegionBehaviour: string;
+  selectedSsmLocalPort: string;
+  readonly ssmLocalPortOptions = [
+    { value: constants.ssmLocalPortSameAsRemote, label: "Same as the remote port" },
+    { value: constants.ssmLocalPortFree, label: "The remote port, or a free one if it is taken" },
+  ];
 
   form = new FormGroup({
     idpUrl: new FormControl(""),
@@ -74,7 +78,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     terminalSelect: new FormControl(""),
     colorThemeSelect: new FormControl(""),
     sessionDuration: new FormControl(""),
-    ssmRegionBehaviourSelect: new FormControl(""),
+    ssmLocalPortSelect: new FormControl(""),
   });
 
   webConsoleSessionDuration: number;
@@ -107,7 +111,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     this.selectedColorTheme = this.colorTheme;
     this.initialColorTheme = this.colorTheme;
 
-    this.selectedSsmRegionBehaviour = this.optionsService.ssmRegionBehaviour || constants.ssmRegionNo;
+    this.selectedSsmLocalPort = this.optionsService.ssmLocalPort || constants.ssmLocalPortSameAsRemote;
   }
 
   @HostListener("document:mousedown", ["$event"])
@@ -164,7 +168,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
 
     this.appService.validateAllFormFields(this.form);
 
-    this.selectedSsmRegionBehaviour = this.optionsService.ssmRegionBehaviour || constants.ssmRegionNo;
+    this.selectedSsmLocalPort = this.optionsService.ssmLocalPort || constants.ssmLocalPortSameAsRemote;
     this.initialSettings = this.pendingSettings();
   }
 
@@ -244,7 +248,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
       this.optionsService.macOsTerminal = this.selectedTerminal;
       this.optionsService.samlRoleSessionDuration = parseInt(this.form.controls["sessionDuration"].value, 10);
 
-      this.optionsService.ssmRegionBehaviour = this.selectedSsmRegionBehaviour;
+      this.optionsService.ssmLocalPort = this.selectedSsmLocalPort;
 
       if (this.checkIfNeedDialogBox()) {
         // eslint-disable-next-line max-len
@@ -457,7 +461,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
       this.selectedLocation,
       this.selectedTerminal,
       this.colorTheme,
-      this.selectedSsmRegionBehaviour,
+      this.selectedSsmLocalPort,
       `${controls["sessionDuration"].value}`,
       ...["proxyProtocol", "proxyUrl", "proxyPort", "proxyUsername", "proxyPassword"].map((name) => controls[name].value ?? ""),
     ]);

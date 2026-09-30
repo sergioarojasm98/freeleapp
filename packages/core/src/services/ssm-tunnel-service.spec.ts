@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from "@jest/globals";
+import { constants } from "../models/constants";
 import { EventEmitter } from "events";
 import * as net from "net";
 import { BehaviorSubject } from "rxjs";
@@ -56,12 +57,14 @@ describe("SsmTunnelService", () => {
   let portFree: boolean;
   let registry: string;
   let commands: Record<string, string>;
+  let workspace: { ssmLocalPort: string };
 
   beforeEach(() => {
     processes = [];
     portFree = true;
     registry = "[]";
     commands = {};
+    workspace = { ssmLocalPort: constants.ssmLocalPortSameAsRemote };
     let generated = 0;
     sessionService = { generateCredentials: jest.fn(async () => credentials(++generated)) };
     nativeService = {
@@ -90,6 +93,7 @@ describe("SsmTunnelService", () => {
     const repository = {
       listSsmTunnels: () => [tunnel],
       getSessionById: () => ({ sessionId: "session-1", type: "awsSsoRole" }),
+      getWorkspace: () => workspace,
     } as any;
     const sessionFactory = { getSessionService: () => sessionService } as any;
     sessions$ = new BehaviorSubject<any[]>([]);
@@ -321,5 +325,17 @@ describe("SsmTunnelService", () => {
     await new Promise<void>((resolve) => server.listen(port, "127.0.0.1", () => resolve()));
     expect(await service.isLocalPortFree(port)).toBe(false);
     await new Promise<void>((resolve) => server.close(() => resolve()));
+  });
+
+  test("defaultLocalPort is the remote port, or with the free setting a free one when the remote port is taken", async () => {
+    portFree = false;
+    expect(await service.defaultLocalPort(5432)).toBe(5432);
+
+    workspace.ssmLocalPort = constants.ssmLocalPortFree;
+    service.suggestLocalPort = jest.fn(async () => 50123);
+    expect(await service.defaultLocalPort(5432)).toBe(50123);
+
+    portFree = true;
+    expect(await service.defaultLocalPort(5432)).toBe(5432);
   });
 });

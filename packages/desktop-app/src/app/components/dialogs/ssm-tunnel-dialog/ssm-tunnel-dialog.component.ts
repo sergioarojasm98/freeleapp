@@ -1,10 +1,11 @@
 import { Component, Input, OnInit } from "@angular/core";
 import { SsmTunnel } from "@noovolari/leapp-core/models/ssm-tunnel";
 import { validatePortForwarding } from "@noovolari/leapp-core/services/ssm-service";
+import { constants } from "@noovolari/leapp-core/models/constants";
 import { AppService } from "../../../services/app.service";
 import { AppProviderService } from "../../../services/app-provider.service";
 import { MessageToasterService, ToastLevel } from "../../../services/message-toaster.service";
-import { defaultTunnelName, forwardingFrom, TunnelDraft, tunnelDraftFrom } from "../../ssm-tunnels/tunnel-draft";
+import { defaultTunnelName, resolveForwarding, TunnelDraft, tunnelDraftFrom } from "../../ssm-tunnels/tunnel-draft";
 
 @Component({
   selector: "app-ssm-tunnel-dialog",
@@ -24,6 +25,10 @@ export class SsmTunnelDialogComponent implements OnInit {
     return () => this.appProviderService.ssmTunnelService.suggestLocalPort();
   }
 
+  get freeLocalPortByDefault(): boolean {
+    return this.appProviderService.repository.getWorkspace().ssmLocalPort === constants.ssmLocalPortFree;
+  }
+
   ngOnInit(): void {
     this.draft = tunnelDraftFrom(this.tunnel);
   }
@@ -33,7 +38,10 @@ export class SsmTunnelDialogComponent implements OnInit {
   }
 
   async save(): Promise<void> {
-    const forwarding = forwardingFrom(this.draft);
+    // The tunnel's own port stays: while it runs, it is the one that looks taken
+    const forwarding = await resolveForwarding(this.draft, (remotePort) =>
+      remotePort === this.tunnel.localPort ? Promise.resolve(remotePort) : this.appProviderService.ssmTunnelService.defaultLocalPort(remotePort)
+    );
     this.error = validatePortForwarding(forwarding);
     if (this.error) {
       return;

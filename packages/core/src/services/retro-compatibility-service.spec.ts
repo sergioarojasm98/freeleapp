@@ -59,6 +59,7 @@ describe("RetroCompatibilityService", () => {
       (service as any).migration8 = jest.fn();
       (service as any).migration9 = jest.fn();
       (service as any).migration10 = jest.fn();
+      (service as any).migration11 = jest.fn();
 
       await service.applyWorkspaceMigrations();
 
@@ -74,6 +75,7 @@ describe("RetroCompatibilityService", () => {
       expect((service as any).migration8).toHaveBeenCalled();
       expect((service as any).migration9).toHaveBeenCalled();
       expect((service as any).migration10).toHaveBeenCalled();
+      expect((service as any).migration11).toHaveBeenCalled();
     });
 
     test("should try migrations, retropatch not necessary", async () => {
@@ -97,6 +99,7 @@ describe("RetroCompatibilityService", () => {
       (service as any).migration8 = jest.fn();
       (service as any).migration9 = jest.fn();
       (service as any).migration10 = jest.fn();
+      (service as any).migration11 = jest.fn();
 
       await service.applyWorkspaceMigrations();
 
@@ -112,6 +115,7 @@ describe("RetroCompatibilityService", () => {
       expect((service as any).migration8).toHaveBeenCalled();
       expect((service as any).migration9).toHaveBeenCalled();
       expect((service as any).migration10).toHaveBeenCalled();
+      expect((service as any).migration11).toHaveBeenCalled();
     });
 
     test("should try migrations, integrationpatch not necessary", async () => {
@@ -135,6 +139,7 @@ describe("RetroCompatibilityService", () => {
       (service as any).migration8 = jest.fn();
       (service as any).migration9 = jest.fn();
       (service as any).migration10 = jest.fn();
+      (service as any).migration11 = jest.fn();
 
       await service.applyWorkspaceMigrations();
 
@@ -150,6 +155,7 @@ describe("RetroCompatibilityService", () => {
       expect((service as any).migration8).toHaveBeenCalled();
       expect((service as any).migration9).toHaveBeenCalled();
       expect((service as any).migration10).toHaveBeenCalled();
+      expect((service as any).migration11).toHaveBeenCalled();
     });
   });
 
@@ -715,6 +721,20 @@ describe("RetroCompatibilityService", () => {
     (service as any).migration10();
 
     expect(workspace).toEqual({ _workspaceVersion: 10, _ssmTunnels: [] });
+    expect((service as any).persists).toHaveBeenCalledWith(workspace);
+    expect(repository.reloadWorkspace).toHaveBeenCalled();
+  });
+
+  test("migration11 sets the Default Local Port setting to the remote port", () => {
+    const repository = { reloadWorkspace: jest.fn() } as any;
+    service = new RetroCompatibilityService(null, null, repository, null);
+    (service as any).persists = jest.fn();
+    const workspace: any = { _workspaceVersion: 10 };
+    (service as any).getWorkspace = jest.fn(() => workspace);
+
+    (service as any).migration11();
+
+    expect(workspace).toEqual({ _workspaceVersion: 11, _ssmLocalPort: constants.ssmLocalPortSameAsRemote });
     expect((service as any).persists).toHaveBeenCalledWith(workspace);
     expect(repository.reloadWorkspace).toHaveBeenCalled();
   });

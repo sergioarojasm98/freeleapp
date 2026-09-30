@@ -210,20 +210,21 @@
       </ng-template>
 
       <ng-container>
-        <h2>AWS SSM Dialog Behaviour</h2>
+        <h2>Tunnels</h2>
         <div class="form-container">
           <div class="form-group">
             <div class="form-field">
-              <label>Populate Region</label>
-              <ng-select formControlName="ssmRegionBehaviourSelect"
-                         bindLabel="ssmRegionBehaviour"
-                         bindValue="ssmRegionBehaviour"
+              <label>Default Local Port</label>
+              <ng-select formControlName="ssmLocalPortSelect"
+                         bindLabel="label"
+                         bindValue="value"
                          [clearable]="false"
                          [searchable]="false"
-                         [items]="[{ssmRegionBehaviour: eConstants.ssmRegionNo}, {ssmRegionBehaviour: eConstants.ssmRegionDefault}]"
-                         [(ngModel)]="selectedSsmRegionBehaviour"
+                         [items]="ssmLocalPortOptions"
+                         [(ngModel)]="selectedSsmLocalPort"
                          [appendTo]="'body'">
               </ng-select>
+              <p class="setting-help">Used when a tunnel's Local Port is left empty. A port is taken when something on this Mac already listens on it, such as a local database.</p>
             </div>
           </div>
         </div>

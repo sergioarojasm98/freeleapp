@@ -13,7 +13,7 @@ import { constants } from "@noovolari/leapp-core/models/constants";
 import { withRecentRegions } from "../../../services/region-options";
 import { MessageToasterService, ToastLevel } from "../../../services/message-toaster.service";
 import { sidebarHighlight } from "../../side-bar/side-bar.component";
-import { copiedCommandMessage, defaultTunnelName, emptyTunnelDraft, forwardingFrom, TunnelDraft } from "../../ssm-tunnels/tunnel-draft";
+import { copiedCommandMessage, defaultTunnelName, emptyTunnelDraft, resolveForwarding, TunnelDraft } from "../../ssm-tunnels/tunnel-draft";
 import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
 
 @Component({
@@ -46,6 +46,10 @@ export class SsmModalDialogComponent implements OnInit {
     return () => this.appProviderService.ssmTunnelService.suggestLocalPort();
   }
 
+  get freeLocalPortByDefault(): boolean {
+    return this.appProviderService.repository.getWorkspace().ssmLocalPort === constants.ssmLocalPortFree;
+  }
+
   get sessionService(): AwsSessionService {
     return this.sessionFactory.getSessionService(this.session.type) as AwsSessionService;
   }
@@ -59,13 +63,8 @@ export class SsmModalDialogComponent implements OnInit {
     this.sessionFactory = this.appProviderService.sessionFactory;
     this.ssmService = this.appProviderService.ssmService;
 
-    // The region used last time for this session, else the session's region when the SSM setting asks for it
-    const lastRegion = this.ssmService.getLastRegion(this.session.sessionId);
-    if (lastRegion) {
-      this.selectedSsmRegion = lastRegion;
-    } else if (this.appProviderService.repository.getWorkspace().ssmRegionBehaviour === constants.ssmRegionDefault) {
-      this.selectedSsmRegion = this.session.region;
-    }
+    // The region used last time for this session, else the session's own region
+    this.selectedSsmRegion = this.ssmService.getLastRegion(this.session.sessionId) || this.session.region || null;
     if (this.selectedSsmRegion) {
       this.changeSsmRegion();
     }
@@ -176,7 +175,7 @@ export class SsmModalDialogComponent implements OnInit {
    * @param instance - the instance that forwards the traffic
    */
   async startTunnel(instance: any): Promise<void> {
-    const forwarding = this.validForwarding();
+    const forwarding = await this.validForwarding();
     if (!forwarding) {
       return;
     }
@@ -210,7 +209,7 @@ export class SsmModalDialogComponent implements OnInit {
    * @param instanceId - the instance that forwards the traffic
    */
   async openInTerminal(instanceId: string): Promise<void> {
-    const forwarding = this.validForwarding();
+    const forwarding = await this.validForwarding();
     if (!forwarding) {
       return;
     }
@@ -223,8 +222,8 @@ export class SsmModalDialogComponent implements OnInit {
   }
 
   // A command to paste in any terminal; it uses the session's named profile
-  copyCommand(instanceId: string, withForwarding: boolean): void {
-    const forwarding = withForwarding ? this.validForwarding() : undefined;
+  async copyCommand(instanceId: string, withForwarding: boolean): Promise<void> {
+    const forwarding = withForwarding ? await this.validForwarding() : undefined;
     if (withForwarding && !forwarding) {
       return;
     }
@@ -240,8 +239,9 @@ export class SsmModalDialogComponent implements OnInit {
     sidebarHighlight.next({ showAll: false, showPinned: false, selectedSegment: -1, showTunnels: true });
   }
 
-  private validForwarding(): SsmPortForwarding | undefined {
-    const forwarding = forwardingFrom(this.forwarding);
+  private async validForwarding(): Promise<SsmPortForwarding | undefined> {
+    const tunnelService = this.appProviderService.ssmTunnelService;
+    const forwarding = await resolveForwarding(this.forwarding, (remotePort) => tunnelService.defaultLocalPort(remotePort));
     const problem = validatePortForwarding(forwarding);
     if (problem) {
       this.forwardingMessage = { text: problem, error: true };

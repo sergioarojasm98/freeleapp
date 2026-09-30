@@ -183,3 +183,11 @@
 .form-field button {
   padding: 2px 5px;
 }
+
+.setting-help {
+  // Under the field, past the 28% label column (form.scss)
+  margin: 10px 0 0 28%;
+  font-size: 12px;
+  line-height: 16px;
+  color: $table-text;
+}

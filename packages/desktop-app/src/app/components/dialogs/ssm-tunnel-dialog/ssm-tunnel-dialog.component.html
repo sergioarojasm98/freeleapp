@@ -4,7 +4,7 @@
 <h5>{{tunnel.instanceName}} ({{tunnel.instanceId}}), {{tunnel.region}}</h5>
 
 <form class="ssm-tunnel-form" (ngSubmit)="save()">
-  <app-port-forwarding-fields [draft]="draft" [suggestLocalPort]="suggestLocalPort"></app-port-forwarding-fields>
+  <app-port-forwarding-fields [draft]="draft" [suggestLocalPort]="suggestLocalPort" [freeLocalPortByDefault]="freeLocalPortByDefault"></app-port-forwarding-fields>
   <p class="error" *ngIf="error">{{error}}</p>
   <p class="hint">A running tunnel restarts when its host or ports change.</p>
   <button type="submit" class="btn-control">Save Tunnel</button>

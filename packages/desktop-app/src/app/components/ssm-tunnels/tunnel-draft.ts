@@ -30,6 +30,24 @@ export const forwardingFrom = (draft: TunnelDraft): SsmPortForwarding => {
   };
 };
 
+/**
+ * The forwarding typed in the form, with an empty local port resolved by the Default Local Port setting
+ *
+ * @param draft - the form values
+ * @param defaultLocalPort - the local port for a remote port when the Local Port field is empty
+ */
+export const resolveForwarding = async (
+  draft: TunnelDraft,
+  defaultLocalPort: (remotePort: number) => Promise<number>
+): Promise<SsmPortForwarding> => {
+  const forwarding = forwardingFrom(draft);
+  // An invalid remote port is left for validatePortForwarding to report
+  if (!draft.localPort.trim() && Number.isInteger(forwarding.remotePort) && forwarding.remotePort >= 1 && forwarding.remotePort <= 65535) {
+    forwarding.localPort = await defaultLocalPort(forwarding.remotePort);
+  }
+  return forwarding;
+};
+
 // "rabbitmq-prod-1:15672", or the first label of the remote host: "batchengine-psql:5432"
 export const defaultTunnelName = (instanceName: string, forwarding: SsmPortForwarding): string =>
   `${forwarding.remoteHost ? forwarding.remoteHost.split(".")[0] : instanceName}:${forwarding.remotePort}`;

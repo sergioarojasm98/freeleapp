@@ -1,4 +1,4 @@
-import { copiedCommandMessage, defaultTunnelName, emptyTunnelDraft, forwardingFrom, tunnelDraftFrom } from "./tunnel-draft";
+import { copiedCommandMessage, defaultTunnelName, emptyTunnelDraft, forwardingFrom, resolveForwarding, tunnelDraftFrom } from "./tunnel-draft";
 
 describe("tunnel-draft", () => {
   it("forwardingFrom trims the host and uses the remote port when the local one is empty", () => {
@@ -7,6 +7,22 @@ describe("tunnel-draft", () => {
 
     const withHost = { ...emptyTunnelDraft(), remoteHost: " db.internal ", remotePort: "5432", localPort: "15454" };
     expect(forwardingFrom(withHost)).toEqual({ remoteHost: "db.internal", remotePort: 5432, localPort: 15454 });
+  });
+
+  it("resolveForwarding asks for the local port only when the field is empty and the remote port is valid", async () => {
+    const defaultLocalPort = jasmine.createSpy("defaultLocalPort").and.callFake(async () => 50123);
+
+    expect(await resolveForwarding({ ...emptyTunnelDraft(), remotePort: "5432" }, defaultLocalPort)).toEqual({
+      remoteHost: undefined,
+      remotePort: 5432,
+      localPort: 50123,
+    });
+    expect(defaultLocalPort).toHaveBeenCalledWith(5432);
+
+    defaultLocalPort.calls.reset();
+    expect((await resolveForwarding({ ...emptyTunnelDraft(), remotePort: "5432", localPort: "15454" }, defaultLocalPort)).localPort).toBe(15454);
+    expect((await resolveForwarding({ ...emptyTunnelDraft(), remotePort: "abc" }, defaultLocalPort)).remotePort).toBeNaN();
+    expect(defaultLocalPort).not.toHaveBeenCalled();
   });
 
   it("defaultTunnelName uses the instance, or the first label of the remote host", () => {

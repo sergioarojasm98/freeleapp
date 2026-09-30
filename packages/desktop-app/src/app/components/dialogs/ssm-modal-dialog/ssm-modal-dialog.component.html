@@ -57,7 +57,7 @@
           </div>
 
           <form class="port-forwarding" *ngIf="forwardingInstanceId === instance.InstanceId" (ngSubmit)="startTunnel(instance)">
-            <app-port-forwarding-fields [draft]="forwarding" [suggestLocalPort]="suggestLocalPort"
+            <app-port-forwarding-fields [draft]="forwarding" [suggestLocalPort]="suggestLocalPort" [freeLocalPortByDefault]="freeLocalPortByDefault"
                                         [namePlaceholder]="'e.g. ' + instance.Name + ':5432'"></app-port-forwarding-fields>
             <p class="port-forwarding-message {{forwardingMessage.error ? 'error' : ''}}" *ngIf="forwardingMessage">
               {{forwardingMessage.text}} <a *ngIf="forwardingMessage.showTunnels" (click)="showTunnels()">Show Tunnels</a>

@@ -43,6 +43,7 @@ export class RetroCompatibilityService {
       this.migration8();
       this.migration9();
       this.migration10();
+      this.migration11();
       // When adding new migrations remember to increase constants.workspaceLastVersion
     }
   }
@@ -345,6 +346,17 @@ export class RetroCompatibilityService {
       return;
     }
     workspace._ssmTunnels = workspace._ssmTunnels ?? [];
+    this.persists(workspace);
+    this.repository.reloadWorkspace();
+  }
+
+  // Freeleapp 1.1: the Default Local Port setting of tunnels
+  private migration11(): void {
+    const workspace = this.getWorkspace();
+    if (!this.checkMigration(workspace, 10, 11)) {
+      return;
+    }
+    workspace._ssmLocalPort = workspace._ssmLocalPort ?? constants.ssmLocalPortSameAsRemote;
     this.persists(workspace);
     this.repository.reloadWorkspace();
   }

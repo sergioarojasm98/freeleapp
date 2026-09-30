@@ -52,6 +52,7 @@ export class Workspace {
   private _samlRoleSessionDuration: number;
 
   private _ssmRegionBehaviour: string;
+  private _ssmLocalPort: string;
 
   private _workspaceVersion: number;
 
@@ -85,6 +86,7 @@ export class Workspace {
     this._samlRoleSessionDuration = constants.samlRoleSessionDuration;
 
     this._ssmRegionBehaviour = constants.ssmRegionNo;
+    this._ssmLocalPort = constants.ssmLocalPortSameAsRemote;
   }
 
   setNewWorkspaceVersion(): void {
@@ -229,6 +231,14 @@ export class Workspace {
 
   set ssmRegionBehaviour(ssmRegionBehaviour: string) {
     this._ssmRegionBehaviour = ssmRegionBehaviour;
+  }
+
+  get ssmLocalPort(): string {
+    return this._ssmLocalPort;
+  }
+
+  set ssmLocalPort(ssmLocalPort: string) {
+    this._ssmLocalPort = ssmLocalPort;
   }
 
   get samlRoleSessionDuration(): number {

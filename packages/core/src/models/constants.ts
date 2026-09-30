@@ -10,7 +10,7 @@ export const constants = {
   lockFileBackupPath: ".freeleapp/freeleapp-lock.backup.bin",
   latestUrl: "https://github.com/sergioarojasm98/freeleapp/releases/latest",
   docsUrl: "https://freeleapp.com",
-  workspaceLastVersion: 10,
+  workspaceLastVersion: 11,
   localWorkspaceName: "Local workspace",
   localWorkspaceDescription: "Community Edition",
   localWorkspaceKeychainValue: "local",
@@ -59,9 +59,14 @@ export const constants = {
   credentialFile: "credential-file-method",
   legacyCredentialProcess: "credential-process-method",
 
-  // SSM region behavior
+  // SSM region behavior. Unused since Freeleapp 1.1: View SSM Sessions preselects the region used last for the session,
+  // else the session's own region. Kept because Leapp workspaces store it.
   ssmRegionNo: "No",
   ssmRegionDefault: "Use default region",
+
+  // The local port of a tunnel whose Local Port field is left empty
+  ssmLocalPortSameAsRemote: "same-as-remote",
+  ssmLocalPortFree: "free",
 
   // Contains Env for SSM on macOS
   ssmSourceFileDestination: ".freeleapp/ssm-env",

@@ -4,6 +4,7 @@ import { IdpUrl } from "./idp-url";
 import { constants } from "./constants";
 import * as uuid from "uuid";
 import { LeappNotification, LeappNotificationType } from "./notification";
+import { deserialize, serialize } from "class-transformer";
 
 jest.mock("uuid");
 
@@ -18,7 +19,8 @@ describe("Workspace Model", () => {
           '"_remoteWorkspacesSettingsMap":{},' +
           '"_notifications":[],"_pinned":[],"_folders":[],"_segments":[],"_ssmTunnels":[],' +
           '"_proxyConfiguration":{"proxyProtocol":"https","proxyPort":"8080"},' +
-          '"_credentialMethod":"credential-file-method","_samlRoleSessionDuration":3600,"_ssmRegionBehaviour":"No"}'
+          '"_credentialMethod":"credential-file-method","_samlRoleSessionDuration":3600,"_ssmRegionBehaviour":"No",' +
+          '"_ssmLocalPort":"same-as-remote"}'
       );
     } catch (err) {
       console.log(err);
@@ -124,7 +126,7 @@ describe("Workspace Model", () => {
   test("setNewWorkspaceVersion", () => {
     const workspace = new Workspace();
     workspace.setNewWorkspaceVersion();
-    expect((workspace as any)._workspaceVersion).toBe(10);
+    expect((workspace as any)._workspaceVersion).toBe(11);
   });
 
   test("get Sessions", () => {
@@ -281,6 +283,19 @@ describe("Workspace Model", () => {
     const mock = "any";
     workspace.ssmRegionBehaviour = mock;
     expect(mock).toStrictEqual((workspace as any)._ssmRegionBehaviour);
+  });
+
+  test("ssmLocalPort is the remote port by default, also for a workspace saved before the setting existed", () => {
+    expect(new Workspace().ssmLocalPort).toBe(constants.ssmLocalPortSameAsRemote);
+    const saved = JSON.parse(serialize(new Workspace()));
+    delete saved._ssmLocalPort;
+    expect(deserialize(Workspace, JSON.stringify(saved)).ssmLocalPort).toBe(constants.ssmLocalPortSameAsRemote);
+  });
+
+  test("set ssmLocalPort", () => {
+    const workspace = new Workspace();
+    workspace.ssmLocalPort = constants.ssmLocalPortFree;
+    expect((workspace as any)._ssmLocalPort).toBe(constants.ssmLocalPortFree);
   });
 
   test("get notifications", () => {

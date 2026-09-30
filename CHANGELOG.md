@@ -19,7 +19,9 @@ Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the
 - In the Tunnels views the search box filters tunnels by name, session, profile, target or port. The session filters, which do not apply to tunnels, are hidden there.
 - Saving, pinning or deleting a tunnel confirms it with a notification.
 - Esc closes every dialog like its Cancel or close button: create and edit session, Settings, SSM, tunnels, confirmations and the rest. With a dropdown or menu open, Esc closes that first; with a confirmation on top of another dialog, it closes only the confirmation.
-- View SSM Sessions remembers the region you used last for each session and shows the instances it already loaded right away, with when they were loaded. The refresh button next to the region loads them from AWS again.
+- View SSM Sessions opens on the region you used last for each session, else on the session's own region, and shows the instances it already loaded right away, with when they were loaded. The refresh button next to the region loads them from AWS again. The **Populate Region** setting, which left the region empty by default, is gone.
+- **Default Local Port** in Settings → SSM decides what a tunnel with an empty Local Port uses: the remote port (as before), or the remote port unless something on your Mac already listens on it, and then a free port.
+- The port forwarding form offers common remote ports in one click: PostgreSQL, MySQL, Redis, RabbitMQ and its management UI, SSH and RDP.
 - Buttons look the same everywhere: blue with white text, with the same hover and pressed states, in both color themes. Filter chips turn blue while they filter something. Action buttons explain what they do on hover.
 
 ### Removed

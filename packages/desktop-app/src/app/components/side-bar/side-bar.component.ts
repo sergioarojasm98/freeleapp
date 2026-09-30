@@ -26,8 +26,9 @@ export interface HighlightSettings {
   showAll: boolean;
   showPinned: boolean;
   selectedSegment?: number;
-  // The Tunnels view replaces the session list
+  // The Tunnels view replaces the session list; pinnedTunnels shows only the pinned ones
   showTunnels?: boolean;
+  pinnedTunnels?: boolean;
 }
 
 export const segmentFilter = new BehaviorSubject<Segment[]>([]);
@@ -45,6 +46,7 @@ export class SideBarComponent implements OnInit, OnDestroy {
   showAll: boolean;
   showPinned: boolean;
   showTunnels = false;
+  showPinnedTunnels = false;
   runningTunnels = 0;
   activeSessions = 0;
   modalRef: BsModalRef;
@@ -68,6 +70,7 @@ export class SideBarComponent implements OnInit, OnDestroy {
     const sidebarHighlightSubscription = sidebarHighlight.subscribe((value) => {
       this.highlightSelectedRow(value.showAll, value.showPinned, value.selectedSegment);
       this.showTunnels = !!value.showTunnels;
+      this.showPinnedTunnels = !!value.showTunnels && !!value.pinnedTunnels;
     });
     // Tunnel processes report outside Angular's zone
     const sessionsSubscription = this.behaviouralSubjectService.sessions$.subscribe(
@@ -99,7 +102,7 @@ export class SideBarComponent implements OnInit, OnDestroy {
   }
 
   showOnlyPinned(): void {
-    // Pinned is a view of its own, like All Sessions: clear a saved filter or search first, otherwise the list shows
+    // Pinned Sessions is a view of its own, like Sessions: clear a saved filter or search first, otherwise the list shows
     // only the pinned sessions that also match it (usually none)
     this.resetFilters();
     sidebarHighlight.next({ showAll: false, showPinned: true, selectedSegment: -1 });
@@ -114,9 +117,9 @@ export class SideBarComponent implements OnInit, OnDestroy {
     return count > 9 ? "9+" : `${count}`;
   }
 
-  showTunnelsView(): void {
+  showTunnelsView(pinnedOnly: boolean): void {
     this.behaviouralSubjectService.unselectSessions();
-    sidebarHighlight.next({ showAll: false, showPinned: false, selectedSegment: -1, showTunnels: true });
+    sidebarHighlight.next({ showAll: false, showPinned: false, selectedSegment: -1, showTunnels: true, pinnedTunnels: pinnedOnly });
   }
 
   applySegmentFilter(segment: Segment, event: any): void {

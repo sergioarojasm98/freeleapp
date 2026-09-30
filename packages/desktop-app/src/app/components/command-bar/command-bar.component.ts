@@ -1,4 +1,5 @@
 import { AfterContentChecked, Component, ElementRef, OnDestroy, OnInit, ViewChild } from "@angular/core";
+import { mainView, tunnelSearch } from "../../services/main-view";
 import { BsModalService } from "ngx-bootstrap/modal";
 import { OptionsDialogComponent } from "../dialogs/options-dialog/options-dialog.component";
 import { CreateDialogComponent } from "../dialogs/create-dialog/create-dialog.component";
@@ -70,6 +71,8 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   regions: { show: boolean; name: string; value: boolean }[];
 
   filterExtended: boolean;
+  // The main area shows tunnels: the search box filters them, and the session filters are hidden
+  tunnelsView = false;
   compactMode: boolean;
 
   eConstants = constants;
@@ -83,6 +86,8 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   private subscription3;
   private subscription4;
   private subscription5;
+  private viewSubscription;
+  private searchSubscription;
 
   private behaviouralSubjectService: BehaviouralSubjectService;
 
@@ -184,6 +189,19 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
       this.applyFiltersToSessions(actualFilterValues, sessions);
     });
 
+    this.viewSubscription = mainView.subscribe((view) => {
+      const tunnelsView = view !== "sessions";
+      if (tunnelsView && this.filterExtended) {
+        this.toggleFilters();
+      }
+      // Each view starts with an empty search
+      if (tunnelsView !== this.tunnelsView && this.filterForm.get("searchFilter").value) {
+        this.filterForm.get("searchFilter").setValue("");
+      }
+      this.tunnelsView = tunnelsView;
+    });
+    this.searchSubscription = this.filterForm.get("searchFilter").valueChanges.subscribe((text: string) => tunnelSearch.next(text ?? ""));
+
     this.subscription5 = globalSegmentFilter.subscribe((segment: Segment) => {
       if (segment) {
         const values = segment.filterGroup;
@@ -202,6 +220,8 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
     this.subscription3?.unsubscribe();
     this.subscription4?.unsubscribe();
     this.subscription5?.unsubscribe();
+    this.viewSubscription?.unsubscribe();
+    this.searchSubscription?.unsubscribe();
   }
 
   ngAfterContentChecked(): void {

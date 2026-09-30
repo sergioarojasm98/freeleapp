@@ -1,23 +1,18 @@
 <div class="sidebar-flex">
 <mat-list>
-  <mat-list-item class="workspace-menu">
-    <div mat-line class="workspace-menu-line">
-      <div class="workspace-icon-container local">
-        <i class="moon-Home"></i>
-      </div>
-      <span class="workspace-name">Local Workspace</span>
-    </div>
-  </mat-list-item>
   <mat-list-item (click)="resetFilters();" class="counted-item {{this.showAll ? 'selected-segment' : ''}}">
-    <div mat-line><i class="moon-Row"></i> <span>All Sessions</span>
+    <div mat-line><i class="moon-Row"></i> <span>Sessions</span>
       <span class="sidebar-count" *ngIf="activeSessions > 0" [matTooltip]="activeSessions + ' active ' + (activeSessions === 1 ? 'session' : 'sessions')">{{badge(activeSessions)}}</span></div>
   </mat-list-item>
   <mat-list-item (click)="showOnlyPinned();" class="{{this.showPinned ? 'selected-segment' : ''}}">
-    <div mat-line><i class="moon-Pin"></i> <span>Pinned</span></div>
+    <div mat-line><i class="moon-Pin"></i> <span>Pinned Sessions</span></div>
   </mat-list-item>
-  <mat-list-item (click)="showTunnelsView();" class="counted-item {{this.showTunnels ? 'selected-segment' : ''}}">
+  <mat-list-item (click)="showTunnelsView(false);" class="counted-item {{this.showTunnels && !this.showPinnedTunnels ? 'selected-segment' : ''}}">
     <div mat-line><i class="moon-Server"></i> <span>Tunnels</span>
       <span class="sidebar-count" *ngIf="runningTunnels > 0" [matTooltip]="runningTunnels + ' running ' + (runningTunnels === 1 ? 'tunnel' : 'tunnels')">{{badge(runningTunnels)}}</span></div>
+  </mat-list-item>
+  <mat-list-item (click)="showTunnelsView(true);" class="{{this.showPinnedTunnels ? 'selected-segment' : ''}}">
+    <div mat-line><i class="moon-Pin"></i> <span>Pinned Tunnels</span></div>
   </mat-list-item>
   <div class="space-between-mat-lists"></div>
   <app-integration-bar></app-integration-bar>

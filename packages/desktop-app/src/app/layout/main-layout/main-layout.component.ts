@@ -4,6 +4,7 @@ import { compactMode, sidebarCollapsed, sidebarToggleRequests } from "../../comp
 import { AppProviderService } from "../../services/app-provider.service";
 import { AppNativeService } from "../../services/app-native.service";
 import { sidebarHighlight } from "../../components/side-bar/side-bar.component";
+import { mainView } from "../../services/main-view";
 
 // Below this window width the sidebar hides itself so the session list keeps usable space
 export const sidebarAutoHideWidth = 900;
@@ -26,6 +27,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   sidebarOverlay = false;
   // Tunnels in the sidebar shows the tunnel list instead of the sessions
   showTunnels = false;
+  pinnedTunnelsOnly = false;
 
   private windowWidth$ = new BehaviorSubject<number>(window.innerWidth);
   private subscriptions: Subscription[] = [];
@@ -54,7 +56,16 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       })
     );
     this.subscriptions.push(sidebarToggleRequests.subscribe(() => this.toggleSidebar()));
-    this.subscriptions.push(sidebarHighlight.subscribe((highlight) => (this.showTunnels = !!highlight.showTunnels)));
+    this.subscriptions.push(
+      sidebarHighlight.subscribe((highlight) => {
+        this.showTunnels = !!highlight.showTunnels;
+        this.pinnedTunnelsOnly = this.showTunnels && !!highlight.pinnedTunnels;
+        const view = this.showTunnels ? (this.pinnedTunnelsOnly ? "pinnedTunnels" : "tunnels") : "sessions";
+        if (view !== mainView.value) {
+          mainView.next(view);
+        }
+      })
+    );
   }
 
   ngOnDestroy(): void {

@@ -1,4 +1,4 @@
-import { Component, NgZone, OnDestroy, OnInit } from "@angular/core";
+import { Component, Input, NgZone, OnChanges, OnDestroy, OnInit } from "@angular/core";
 import { Subscription } from "rxjs";
 import { BsModalService } from "ngx-bootstrap/modal";
 import { SsmTunnel, SsmTunnelState, SsmTunnelStatus } from "@noovolari/leapp-core/models/ssm-tunnel";
@@ -12,6 +12,7 @@ import { ConfirmationDialogComponent } from "../dialogs/confirmation-dialog/conf
 import { SsmTunnelDialogComponent } from "../dialogs/ssm-tunnel-dialog/ssm-tunnel-dialog.component";
 import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
 import { copiedCommandMessage } from "./tunnel-draft";
+import { tunnelSearch } from "../../services/main-view";
 
 const statusLabels: Record<SsmTunnelStatus, string> = {
   [SsmTunnelStatus.stopped]: "Stopped",
@@ -26,8 +27,14 @@ const statusLabels: Record<SsmTunnelStatus, string> = {
   templateUrl: "./ssm-tunnels.component.html",
   styleUrls: ["./ssm-tunnels.component.scss"],
 })
-export class SsmTunnelsComponent implements OnInit, OnDestroy {
+export class SsmTunnelsComponent implements OnInit, OnChanges, OnDestroy {
+  // Pinned Tunnels in the sidebar lists only the pinned ones
+  @Input() pinnedOnly = false;
+
   tunnels: SsmTunnel[] = [];
+  // Tunnels before the search box filters them
+  allTunnels: SsmTunnel[] = [];
+  searchText = "";
   states = new Map<string, SsmTunnelState>();
   now = Date.now();
 
@@ -51,6 +58,12 @@ export class SsmTunnelsComponent implements OnInit, OnDestroy {
     this.subscriptions.push(this.tunnelService.states$.subscribe((states) => this.ngZone.run(() => (this.states = states))));
     // Session names change, and deleted sessions take their tunnels with them
     this.subscriptions.push(this.appProviderService.behaviouralSubjectService.sessions$.subscribe(() => this.refresh()));
+    this.subscriptions.push(
+      tunnelSearch.subscribe((text) => {
+        this.searchText = text;
+        this.refresh();
+      })
+    );
     // Keeps "active for …" current
     this.clock = setInterval(() => (this.now = Date.now()), 30000);
   }
@@ -60,8 +73,27 @@ export class SsmTunnelsComponent implements OnInit, OnDestroy {
     clearInterval(this.clock);
   }
 
+  ngOnChanges(): void {
+    this.refresh();
+  }
+
   refresh(): void {
-    this.tunnels = [...this.appProviderService.repository.listSsmTunnels()].sort((a, b) => a.name.localeCompare(b.name));
+    this.allTunnels = this.appProviderService.repository
+      .listSsmTunnels()
+      .filter((tunnel) => !this.pinnedOnly || tunnel.pinned)
+      .sort((a, b) => (!!a.pinned === !!b.pinned ? a.name.localeCompare(b.name) : a.pinned ? -1 : 1));
+    const search = this.searchText.trim().toLowerCase();
+    this.tunnels = search ? this.allTunnels.filter((tunnel) => this.searchableText(tunnel).includes(search)) : this.allTunnels;
+  }
+
+  togglePin(tunnel: SsmTunnel): void {
+    this.appProviderService.repository.updateSsmTunnel({ ...tunnel, pinned: !tunnel.pinned });
+    this.refresh();
+    this.messageToasterService.toast(
+      tunnel.pinned ? `"${tunnel.name}" is no longer under Pinned Tunnels.` : `"${tunnel.name}" is now under Pinned Tunnels.`,
+      ToastLevel.success,
+      tunnel.pinned ? "Tunnel Unpinned" : "Tunnel Pinned"
+    );
   }
 
   trackById(_index: number, tunnel: SsmTunnel): string {
@@ -144,9 +176,28 @@ export class SsmTunnelsComponent implements OnInit, OnDestroy {
             this.tunnelService.stop(tunnel.id);
             this.appProviderService.repository.deleteSsmTunnel(tunnel.id);
             this.refresh();
+            this.messageToasterService.toast(`"${tunnel.name}" was deleted.`, ToastLevel.success, "Tunnel Deleted");
           }
         },
       },
     });
+  }
+
+  // Everything the search box matches: names, target, ports, region, session and profile
+  private searchableText(tunnel: SsmTunnel): string {
+    return [
+      tunnel.name,
+      tunnel.instanceName,
+      tunnel.instanceId,
+      tunnel.remoteHost,
+      tunnel.remotePort,
+      tunnel.localPort,
+      tunnel.region,
+      this.sessionName(tunnel),
+      this.profileName(tunnel),
+    ]
+      .filter((value) => value !== undefined && value !== null)
+      .join(" ")
+      .toLowerCase();
   }
 }

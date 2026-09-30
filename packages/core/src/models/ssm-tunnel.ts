@@ -13,6 +13,8 @@ export interface SsmTunnel {
   localPort: number;
   // Start the tunnel whenever its session starts
   autoStart: boolean;
+  // Listed under Pinned Tunnels
+  pinned?: boolean;
 }
 
 export enum SsmTunnelStatus {

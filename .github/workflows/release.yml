@@ -58,7 +58,7 @@ jobs:
 
           ### Install
 
-          Download \`Freeleapp-$VERSION-arm64.dmg\` (Apple Silicon), drag Freeleapp to Applications, then clear the quarantine flag once, since builds are not notarized yet:
+          With Homebrew: \`brew install --cask sergioarojasm98/tap/freeleapp\`. Or download \`Freeleapp-$VERSION-arm64.dmg\` (Apple Silicon) and drag Freeleapp to Applications. Either way, clear the quarantine flag once, since builds are not notarized yet:
 
           \`\`\`bash
           xattr -dr com.apple.quarantine /Applications/Freeleapp.app
@@ -77,3 +77,35 @@ jobs:
             --verify-tag \
             --title "Freeleapp $VERSION" \
             --notes-file notes.md
+
+  # Points the cask in sergioarojasm98/homebrew-tap at the new dmg; the tap's CI then installs it
+  homebrew:
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-files
+          path: dist
+
+      - uses: actions/checkout@v7
+        with:
+          repository: sergioarojasm98/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: tap
+
+      - name: Update the cask
+        working-directory: tap
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SHA256=$(sha256sum "../dist/Freeleapp-$VERSION-arm64.dmg" | cut -d' ' -f1)
+          sed -i -E "s/^  version \".*\"/  version \"$VERSION\"/; s/^  sha256 \".*\"/  sha256 \"$SHA256\"/" Casks/freeleapp.rb
+          git diff
+          if git diff --quiet; then
+            echo "The cask already points at $VERSION"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: freeleapp $VERSION"
+          git push

@@ -49,7 +49,11 @@ Download the `.dmg` from [Releases](https://github.com/sergioarojasm98/freeleapp
 xattr -dr com.apple.quarantine /Applications/Freeleapp.app
 ```
 
-A Homebrew tap is planned.
+Or install it with Homebrew (the same quarantine step applies):
+
+```bash
+brew install --cask sergioarojasm98/tap/freeleapp
+```
 
 ## Build
 

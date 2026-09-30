@@ -14,12 +14,17 @@ Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the
 - A named profile can only belong to one session. Choosing a profile that another session already uses shows which session has it, instead of silently stopping that session later. New sessions get `default` preselected only while no other session uses it.
 - **Tunnels**: SSM port forwarding that runs in the background. In View SSM Sessions, **Forward Port** on an instance saves a tunnel to a port on that instance, or through it to another host such as a database endpoint, and starts it without a terminal window. **Tunnels** in the sidebar lists them with their status and local address: start, stop, edit or delete them, copy `localhost:port`, or copy the equivalent `aws ssm start-session` command. A tunnel that drops reconnects with fresh credentials (up to three times), a busy local port is reported before starting, and a tunnel can start with its session. Tunnels stop when Freeleapp quits, and ones left by a crash are stopped on the next launch. They need the AWS CLI and the Session Manager plugin.
 - **Copy Command** next to each instance in View SSM Sessions copies the `aws ssm start-session` command with the session's named profile, to paste in any terminal.
-- **All Sessions** in the sidebar shows how many sessions are active, like **Tunnels** shows the running tunnels. Past 9 the badge reads *9+*; hover it for the exact number.
+- The sidebar reads **Sessions**, **Pinned Sessions**, **Tunnels** and **Pinned Tunnels**. **Sessions** shows how many sessions are active, like **Tunnels** shows the running tunnels. Past 9 the badge reads *9+*; hover it for the exact number.
+- Tunnels can be pinned from their menu and are then listed first and under **Pinned Tunnels**.
+- In the Tunnels views the search box filters tunnels by name, session, profile, target or port. The session filters, which do not apply to tunnels, are hidden there.
+- Saving, pinning or deleting a tunnel confirms it with a notification.
+- Esc closes every dialog like its Cancel or close button: create and edit session, Settings, SSM, tunnels, confirmations and the rest. With a dropdown or menu open, Esc closes that first; with a confirmation on top of another dialog, it closes only the confirmation.
 - View SSM Sessions remembers the region you used last for each session and shows the instances it already loaded right away, with when they were loaded. The refresh button next to the region loads them from AWS again.
 - Buttons look the same everywhere: blue with white text, with the same hover and pressed states, in both color themes. Filter chips turn blue while they filter something. Action buttons explain what they do on hover.
 
 ### Removed
 
+- The **Local Workspace** entry at the top of the sidebar. It was the workspace switcher of Leapp Team, which Freeleapp does not have, so it did nothing.
 - The plugin system, with its **Plugins** tab in Settings, the Plugins entry of the session menu and the `freeleapp://` links that installed plugins. Plugins were npm packages that ran with full access to your system and were no longer verified: the Leapp service that signed them is gone. SSM port forwarding, the most used plugin feature, is now built in. A leftover `~/.freeleapp/plugins` folder can be deleted.
 
 ### Bug Fixes

@@ -301,6 +301,26 @@ describe("Repository", () => {
     expect(repository.persistWorkspace).toHaveBeenCalledWith(workspace);
   });
 
+  test("deleteSession() - also removes the session's own profile, not a shared, custom or default one", () => {
+    const sso = (sessionId: string, profileId: string) =>
+      ({ sessionId, sessionName: "payments", roleArn: "arn:aws:iam::111/Admin", type: SessionType.awsSsoRole, profileId } as any);
+    const workspace: any = {
+      sessions: [sso("s1", "own"), sso("s2", "own-2"), sso("s3", "own-2"), sso("s4", "custom"), sso("s5", "default")],
+      profiles: [
+        { id: "own", name: "payments-Admin" },
+        { id: "own-2", name: "payments-Admin-2" },
+        { id: "custom", name: "team-payments" },
+        { id: "default", name: "default" },
+      ],
+    };
+    repository.persistWorkspace = jest.fn();
+    repository.getWorkspace = () => workspace;
+
+    ["s1", "s2", "s4", "s5"].forEach((sessionId) => repository.deleteSession(sessionId));
+
+    expect(workspace.profiles.map((p: any) => p.id)).toEqual(["own-2", "custom", "default"]);
+  });
+
   test("SSM tunnels - list, add, update and delete", () => {
     const workspace: any = {};
     repository.persistWorkspace = jest.fn();
@@ -609,7 +629,7 @@ describe("Repository", () => {
     expect(repository.getDefaultProfileId()).toStrictEqual(defaultProfile.id);
   });
 
-  test("getDefaultProfileId() - no default named profile found", () => {
+  test("getDefaultProfileId() - undefined once the default profile is deleted", () => {
     const workspace = new Workspace();
     mockedFileService.encryptText = jest.fn(() => JSON.stringify(workspace));
 
@@ -617,7 +637,7 @@ describe("Repository", () => {
     repository.persistWorkspace(workspace);
 
     workspace.profiles = [];
-    expect(() => repository.getDefaultProfileId()).toThrow("no default named profile found.");
+    expect(repository.getDefaultProfileId()).toBeUndefined();
   });
 
   test("addProfile() - add a new profile to the workspace", () => {

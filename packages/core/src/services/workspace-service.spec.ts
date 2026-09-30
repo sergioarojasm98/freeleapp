@@ -1,7 +1,6 @@
 import { jest, describe, expect, test } from "@jest/globals";
 import { WorkspaceService } from "./workspace-service";
 import { Workspace } from "../models/workspace";
-import { LoggedException, LogLevel } from "./log-service";
 
 describe("WorkspaceService", () => {
   test("getWorkspace - return an instance of the workspace model", () => {
@@ -45,20 +44,13 @@ describe("WorkspaceService", () => {
       { id: "3", name: "30" },
     ];
     const repository = {
-      getDefaultProfileId: jest.fn(() => {
-        const name = profiles.find((p) => p.name === "default")?.id;
-        if (name) {
-          return name;
-        } else {
-          throw new LoggedException(`no default named profile found.`, this, LogLevel.warn);
-        }
-      }),
+      getDefaultProfileId: jest.fn(() => profiles.find((p) => p.name === "default")?.id),
     } as any;
     const workspaceService = new WorkspaceService(repository);
     expect(workspaceService.getDefaultProfileId()).toBe("2");
 
     profiles.splice(1, 1);
-    expect(() => workspaceService.getDefaultProfileId()).toThrow(new LoggedException(`no default named profile found.`, this, LogLevel.warn));
+    expect(workspaceService.getDefaultProfileId()).toBeUndefined();
     expect(repository.getDefaultProfileId).toHaveBeenCalled();
   });
 

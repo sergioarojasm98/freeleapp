@@ -6,6 +6,7 @@ import { AwsSsoIntegration } from "../models/aws/aws-sso-integration";
 import { constants } from "../models/constants";
 import Segment from "../models/segment";
 import { SsmTunnel } from "../models/ssm-tunnel";
+import { isOwnProfile } from "./sso-role-profile";
 import { Session } from "../models/session";
 import { SessionStatus } from "../models/session-status";
 import { SessionType } from "../models/session-type";
@@ -127,9 +128,19 @@ export class Repository {
     const workspace = this.getWorkspace();
     const index = workspace.sessions.findIndex((sess) => sess.sessionId === sessionId);
     if (index > -1) {
-      workspace.sessions.splice(index, 1);
+      const [session] = workspace.sessions.splice(index, 1);
       // A tunnel cannot start without its session
       workspace.ssmTunnels = (workspace.ssmTunnels ?? []).filter((tunnel) => tunnel.sessionId !== sessionId);
+      // The session's own profile goes with it, unless another session uses it; custom profiles stay
+      const profile = (workspace.profiles ?? []).find((p) => p.id === (session as any).profileId);
+      if (
+        profile &&
+        profile.name !== constants.defaultAwsProfileName &&
+        isOwnProfile(profile.name, session as any) &&
+        !workspace.sessions.some((s) => (s as any).profileId === profile.id)
+      ) {
+        workspace.profiles = workspace.profiles.filter((p) => p.id !== profile.id);
+      }
       this.persistWorkspace(workspace);
     }
   }
@@ -258,13 +269,9 @@ export class Repository {
     return this.getWorkspace().profiles.find((profile) => profile.id === profileId) !== undefined;
   }
 
-  getDefaultProfileId(): string {
-    const workspace = this.getWorkspace();
-    const profileFiltered = workspace.profiles.find((profile) => profile.name === constants.defaultAwsProfileName);
-    if (profileFiltered === undefined) {
-      throw new LoggedException("no default named profile found.", this, LogLevel.warn);
-    }
-    return profileFiltered.id;
+  // The "default" profile, which aws commands use without --profile. It can be deleted, so it may not exist.
+  getDefaultProfileId(): string | undefined {
+    return this.getWorkspace().profiles.find((profile) => profile.name === constants.defaultAwsProfileName)?.id;
   }
 
   addProfile(profile: AwsNamedProfile): void {

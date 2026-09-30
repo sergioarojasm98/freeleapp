@@ -446,10 +446,7 @@ export class EditDialogComponent implements OnInit, AfterViewInit {
         const profile = this.leappCoreService.namedProfileService.createNamedProfile(this.selectedProfile.label);
         this.selectedProfile.value = profile.id;
       } else {
-        if (
-          validate.toString() !== "Profile already exists" &&
-          this.leappCoreService.workspaceService.getDefaultProfileId() !== this.selectedProfile.value
-        ) {
+        if (validate.toString() !== "Profile already exists") {
           throw new LeappParseError(this, validate.toString());
         }
       }

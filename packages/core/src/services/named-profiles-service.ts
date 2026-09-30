@@ -9,6 +9,7 @@ import { AwsSessionService } from "./session/aws/aws-session-service";
 import { BehaviouralSubjectService } from "./behavioural-subject-service";
 import { LeappBaseError } from "../errors/leapp-base-error";
 import { LogLevel } from "./log-service";
+import { customProfiles, ownProfileName, pickFreeProfile } from "./sso-role-profile";
 
 export class NamedProfilesService {
   constructor(private sessionFactory: SessionFactory, private repository: Repository, private behaviouralSubjectService: BehaviouralSubjectService) {}
@@ -16,6 +17,16 @@ export class NamedProfilesService {
   getNamedProfiles(excludingDefault: boolean = false): AwsNamedProfile[] {
     const excludedProfileId = excludingDefault ? this.repository.getDefaultProfileId() : null;
     return this.repository.getProfiles().filter((profile) => profile.id !== excludedProfileId);
+  }
+
+  // The profiles Settings lists: "default" and custom ones, not the profiles sessions have of their own
+  getCustomNamedProfiles(): AwsNamedProfile[] {
+    const profiles = customProfiles(this.repository.getProfiles(), this.repository.getSessions());
+    // "default" first, the rest in the order they were added
+    return [
+      ...profiles.filter((p) => p.name === constants.defaultAwsProfileName),
+      ...profiles.filter((p) => p.name !== constants.defaultAwsProfileName),
+    ];
   }
 
   getProfileName(profileId: string): string {
@@ -94,18 +105,21 @@ export class NamedProfilesService {
     }
   }
 
+  /**
+   * Delete a named profile. Its sessions move to a profile of their own ("<account>-<role>", or the session name),
+   * restarting the active ones.
+   */
   async deleteNamedProfile(id: string): Promise<void> {
-    const sessions = this.getSessionsWithNamedProfile(id);
-    const defaultNamedProfileId = this.repository.getDefaultProfileId();
-
-    for (const session of sessions) {
+    for (const session of this.getSessionsWithNamedProfile(id)) {
       const sessionService = this.sessionFactory.getSessionService(session.type);
       const wasActive = session.status === SessionStatus.active;
       if (wasActive) {
         await sessionService.stop(session.sessionId);
       }
 
-      (session as any).profileId = defaultNamedProfileId;
+      // The deleted profile still counts as taken, so its name is not picked again
+      const own = pickFreeProfile(ownProfileName(session as any), this.repository.getProfiles(), this.repository.getSessions());
+      (session as any).profileId = own.id ?? this.createNamedProfile(own.name).id;
       this.repository.updateSession(session.sessionId, session);
       this.behaviouralSubjectService.setSessions(this.repository.getSessions());
 
@@ -143,9 +157,6 @@ export class NamedProfilesService {
     const trimmedName = name.trim();
     if (trimmedName.length === 0) {
       return "Empty profile name";
-    }
-    if (trimmedName === constants.defaultAwsProfileName) {
-      return '"default" is not a valid profile name';
     }
     const namedProfilesNames = this.getNamedProfiles().map((namedProfile) => namedProfile.name);
     if (namedProfilesNames.includes(trimmedName)) {

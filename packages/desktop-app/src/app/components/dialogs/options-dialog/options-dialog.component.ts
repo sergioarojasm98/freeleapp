@@ -194,22 +194,12 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
       this.appService.closeModal();
       return;
     }
-    this.discardConfirmation = this.modalService.show(ConfirmationDialogComponent, {
-      animated: false,
-      class: "confirm-modal",
-      backdrop: "static",
-      keyboard: false,
-      initialState: {
-        message: "Discard the changes you made in Settings?",
-        confirmText: "Discard",
-        cancelText: "Keep Editing",
-        callback: (answer: string) => {
-          if (answer !== constants.confirmClosed) {
-            this.appService.closeModal();
-          }
-        },
-      },
-    });
+    this.discardConfirmation = this.confirmOverSettings(
+      "Discard the changes you made in Settings?",
+      "Discard",
+      () => this.appService.closeModal(),
+      "Keep Editing"
+    );
     this.discardConfirmation.onHidden.subscribe(() => (this.discardConfirmation = undefined));
   }
 
@@ -337,23 +327,18 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
       sessionsNames = ["<li><b>no sessions</b></li>"];
     }
 
-    // Ask for deletion
-    // eslint-disable-next-line max-len
-    this.windowService.confirmDialog(
+    this.confirmOverSettings(
       `Deleting this IdP URL will also remove these sessions: <br><ul>${sessionsNames.join("")}</ul>Do you want to proceed?`,
-      (res) => {
-        if (res !== constants.confirmClosed) {
-          this.appProviderService.logService.log(new LoggedEntry(`Removing idp url with id: ${id}`, this, LogLevel.info));
-
-          sessions.forEach((session) => {
-            this.appProviderService.sessionManagementService.deleteSession(session.sessionId);
-            this.appProviderService.behaviouralSubjectService.setSessions(this.appProviderService.sessionManagementService.getSessions());
-          });
-          this.appProviderService.idpUrlService.deleteIdpUrl(id);
-        }
-      },
       "Delete IdP URL",
-      "Cancel"
+      () => {
+        this.appProviderService.logService.log(new LoggedEntry(`Removing idp url with id: ${id}`, this, LogLevel.info));
+
+        sessions.forEach((session) => {
+          this.appProviderService.sessionManagementService.deleteSession(session.sessionId);
+          this.appProviderService.behaviouralSubjectService.setSessions(this.appProviderService.sessionManagementService.getSessions());
+        });
+        this.appProviderService.idpUrlService.deleteIdpUrl(id);
+      }
     );
   }
 
@@ -397,52 +382,19 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   deleteAwsProfile(id: string): void {
-    // With profile
-    const sessions = this.appProviderService.sessionManagementService.getSessions().filter((sess) => (sess as any).profileId === id);
-
-    // Get only names for display
-    let sessionsNames = sessions.map(
-      (s) =>
-        `<li><div class="removed-sessions"><b>${s.sessionName}</b> - <small>${
-          (s as AwsIamRoleFederatedSession).roleArn ? (s as AwsIamRoleFederatedSession).roleArn.split("/")[1] : ""
-        }</small></div></li>`
-    );
-    if (sessionsNames.length === 0) {
-      sessionsNames = ["<li><b>no sessions</b></li>"];
-    }
-
-    // Ask for deletion
-    // eslint-disable-next-line max-len
-    this.windowService.confirmDialog(
-      `Deleting this profile will set default to these sessions: <br><ul>${sessionsNames.join("")}</ul>Do you want to proceed?`,
-      async (res) => {
-        if (res !== constants.confirmClosed) {
-          this.appProviderService.logService.log(new LoggedEntry(`Reverting to default profile with id: ${id}`, this, LogLevel.info));
-
-          // Reverting all sessions to default profile
-          // eslint-disable-next-line @typescript-eslint/prefer-for-of
-          for (let i = 0; i < sessions.length; i++) {
-            this.sessionService = this.appProviderService.sessionFactory.getSessionService(sessions[i].type);
-
-            let wasActive = false;
-            if ((sessions[i] as any).status === SessionStatus.active) {
-              wasActive = true;
-              await this.sessionService.stop(sessions[i].sessionId);
-            }
-
-            (sessions[i] as any).profileId = this.appProviderService.workspaceService.getDefaultProfileId();
-            this.appProviderService.sessionManagementService.updateSession(sessions[i].sessionId, sessions[i]);
-            this.appProviderService.behaviouralSubjectService.setSessions(this.appProviderService.sessionManagementService.getSessions());
-            if (wasActive) {
-              this.sessionService.start(sessions[i].sessionId);
-            }
-          }
-
-          this.appProviderService.namedProfileService.deleteNamedProfile(id);
-        }
-      },
+    const namedProfileService = this.appProviderService.namedProfileService;
+    const profileName = namedProfileService.getProfileName(id);
+    const sessions = namedProfileService.getSessionsWithNamedProfile(id);
+    const sessionList = sessions.map((session) => `<li><b>${session.sessionName}</b></li>`).join("");
+    this.confirmOverSettings(
+      sessions.length === 0
+        ? `Delete the "${profileName}" profile? No session uses it.`
+        : `Delete the "${profileName}" profile? These sessions move to a profile of their own:<ul>${sessionList}</ul>`,
       "Delete Profile",
-      "Cancel"
+      async () => {
+        this.appProviderService.logService.log(new LoggedEntry(`Deleting named profile ${profileName}`, this, LogLevel.info));
+        await namedProfileService.deleteNamedProfile(id);
+      }
     );
   }
 
@@ -465,5 +417,25 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
       `${controls["sessionDuration"].value}`,
       ...["proxyProtocol", "proxyUrl", "proxyPort", "proxyUsername", "proxyPassword"].map((name) => controls[name].value ?? ""),
     ]);
+  }
+
+  // A confirmation on top of Settings. WindowService.confirmDialog closes every dialog first, Settings included.
+  private confirmOverSettings(message: string, confirmText: string, onConfirm: () => void | Promise<void>, cancelText = "Cancel"): BsModalRef {
+    return this.modalService.show(ConfirmationDialogComponent, {
+      animated: false,
+      class: "confirm-modal",
+      backdrop: "static",
+      keyboard: false,
+      initialState: {
+        message,
+        confirmText,
+        cancelText,
+        callback: async (answer: string) => {
+          if (answer !== constants.confirmClosed) {
+            await onConfirm();
+          }
+        },
+      },
+    });
   }
 }

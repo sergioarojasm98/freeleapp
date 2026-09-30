@@ -1,5 +1,6 @@
 import { describe, expect, test } from "@jest/globals";
-import { pickSsoRoleProfile, ssoRoleProfileName } from "./sso-role-profile";
+import { customProfiles, isOwnProfile, ownProfileName, pickSsoRoleProfile, ssoRoleProfileName } from "./sso-role-profile";
+import { SessionType } from "../models/session-type";
 
 describe("sso-role-profile", () => {
   const roleArn = "arn:aws:iam::123456789012/AdministratorAccess";
@@ -30,5 +31,35 @@ describe("sso-role-profile", () => {
     ];
     const sessions = [{ profileId: "p1" }, { profileId: "p2" }];
     expect(pickSsoRoleProfile("payments-prod", roleArn, profiles, sessions)).toEqual({ name: "payments-prod-AdministratorAccess-3" });
+  });
+
+  test("ownProfileName is <account>-<role> for an IAM Identity Center role, else the session name", () => {
+    expect(ownProfileName({ type: SessionType.awsSsoRole, sessionName: "payments prod", roleArn })).toBe("payments-prod-AdministratorAccess");
+    expect(ownProfileName({ type: SessionType.awsIamUser, sessionName: " ci [bot] " })).toBe("ci-bot");
+    expect(ownProfileName({ type: SessionType.awsIamUser, sessionName: "[ ]" })).toBe("session");
+  });
+
+  test("isOwnProfile accepts the session's own name and its -N variants only", () => {
+    const session = { type: SessionType.awsSsoRole, sessionName: "payments-prod", roleArn };
+    expect(isOwnProfile("payments-prod-AdministratorAccess", session)).toBe(true);
+    expect(isOwnProfile("payments-prod-AdministratorAccess-3", session)).toBe(true);
+    expect(isOwnProfile("payments-prod-AdministratorAccess-old", session)).toBe(false);
+    expect(isOwnProfile("team-payments", session)).toBe(false);
+  });
+
+  test("customProfiles hides the profiles sessions have of their own", () => {
+    const profiles = [
+      { id: "1", name: "default" },
+      { id: "2", name: "payments-prod-AdministratorAccess" },
+      { id: "3", name: "team-payments" },
+      // Nobody uses it: listed, so it can be deleted
+      { id: "4", name: "billing-prod-ReadOnly" },
+    ];
+    const sessions = [
+      { type: SessionType.awsSsoRole, sessionName: "payments-prod", roleArn, profileId: "2" },
+      { type: SessionType.awsSsoRole, sessionName: "payments-prod", roleArn: "arn:aws:iam::1/ReadOnly", profileId: "3" },
+      { type: SessionType.awsIamUser, sessionName: "default", profileId: "1" },
+    ];
+    expect(customProfiles(profiles, sessions).map((p) => p.id)).toEqual(["1", "3", "4"]);
   });
 });

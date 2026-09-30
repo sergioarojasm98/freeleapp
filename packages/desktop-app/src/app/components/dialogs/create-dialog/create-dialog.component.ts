@@ -167,12 +167,12 @@ export class CreateDialogComponent implements OnInit {
       // Select default values
       this.selectedRegion = workspace.defaultRegion || constants.defaultRegion || this.regions[0].region;
       this.selectedLocation = workspace.defaultLocation || constants.defaultLocation || this.locations[0].location;
-      // A named profile holds one session's credentials: suggest "default" only while no other session uses it
+      // A named profile holds one session's credentials: suggest "default", if it exists, only while no session uses it
+      const defaultProfileId = this.leappCoreService.namedProfileService.getDefaultProfileId();
       const defaultProfileIsFree =
-        this.leappCoreService.namedProfileService.getSessionsWithNamedProfile(this.leappCoreService.namedProfileService.getDefaultProfileId())
-          .length === 0;
+        defaultProfileId !== undefined && this.leappCoreService.namedProfileService.getSessionsWithNamedProfile(defaultProfileId).length === 0;
       this.selectedProfile = defaultProfileIsFree
-        ? workspace.profiles.filter((p) => p.name === "default").map((p) => ({ value: p.id, label: p.name }))[0]
+        ? workspace.profiles.filter((p) => p.id === defaultProfileId).map((p) => ({ value: p.id, label: p.name }))[0]
         : undefined;
 
       // if Shortcut apply default values
@@ -477,10 +477,7 @@ export class CreateDialogComponent implements OnInit {
       const profile = this.leappCoreService.namedProfileService.createNamedProfile(this.selectedProfile.label);
       this.selectedProfile.value = profile.id;
     } else {
-      if (
-        validate.toString() !== "Profile already exists" &&
-        this.leappCoreService.namedProfileService.getDefaultProfileId() !== this.selectedProfile.value
-      ) {
+      if (validate.toString() !== "Profile already exists") {
         throw new LeappParseError(this, validate.toString());
       }
     }

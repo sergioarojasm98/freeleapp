@@ -171,6 +171,8 @@
       </ng-template>
       <div class="no-padding no-margin panel fill-height">
         <h2>Named Profiles</h2>
+        <p class="profiles-help">Each session also has a profile of its own, such as <i>payments-prod-AdministratorAccess</i>. Those
+          are not listed here: they come and go with their session. Profiles you add here can be picked for any session.</p>
 
         <div class="form-group">
           <div class="form-field form-control-input-button max-width">
@@ -185,15 +187,15 @@
         <div class="form-group scrollable fill-list">
           <table class="table option-table">
             <tbody>
-            <ng-container *ngFor="let profile of appProviderService.namedProfileService.getNamedProfiles()">
+            <ng-container *ngFor="let profile of appProviderService.namedProfileService.getCustomNamedProfiles()">
               <tr *ngIf="profile">
-                <td>{{profile.name}}</td>
+                <td>{{profile.name}}
+                  <div class="profile-note" *ngIf="profile.name === 'default'">Used by aws commands run without <code>--profile</code></div>
+                </td>
                 <td>
-                  <ng-container *ngIf="profile.name !== 'default'">
-                    <button class="icon-button inline" type="button" (click)="editAwsProfile(profile.id);"><i class="moon-Edit"></i></button>
-                    <button class="icon-button inline" type="button" (click)="deleteAwsProfile(profile.id);"><i class="moon-Delete size-up"></i>
-                    </button>
-                  </ng-container>
+                  <button class="icon-button inline" type="button" (click)="editAwsProfile(profile.id);"><i class="moon-Edit"></i></button>
+                  <button class="icon-button inline" type="button" (click)="deleteAwsProfile(profile.id);"><i class="moon-Delete size-up"></i>
+                  </button>
                 </td>
               </tr>
             </ng-container>

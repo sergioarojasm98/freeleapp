@@ -36,7 +36,6 @@ export class WindowService implements IOpenExternalUrlService {
       title,
       webPreferences: {
         devTools: !environment.production,
-        worldSafeExecuteJavaScript: true,
         partition: `persist:leapp-${btoa(url)}`,
       },
     };

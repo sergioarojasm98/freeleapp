@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from "@angular/core";
+import { Component, NgZone, OnDestroy, OnInit } from "@angular/core";
 import {
   globalFilteredSessions,
   globalFilterGroup,
@@ -15,6 +15,7 @@ import { BehaviouralSubjectService } from "@noovolari/leapp-core/services/behavi
 import { AppProviderService } from "../../services/app-provider.service";
 import { constants } from "@noovolari/leapp-core/models/constants";
 import { integrationHighlight } from "../integration-bar/integration-bar.component";
+import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
 
 export interface SelectedSegment {
   name: string;
@@ -25,6 +26,9 @@ export interface HighlightSettings {
   showAll: boolean;
   showPinned: boolean;
   selectedSegment?: number;
+  // The Tunnels view replaces the session list; pinnedTunnels shows only the pinned ones
+  showTunnels?: boolean;
+  pinnedTunnels?: boolean;
 }
 
 export const segmentFilter = new BehaviorSubject<Segment[]>([]);
@@ -41,12 +45,16 @@ export class SideBarComponent implements OnInit, OnDestroy {
   selectedS: SelectedSegment[];
   showAll: boolean;
   showPinned: boolean;
+  showTunnels = false;
+  showPinnedTunnels = false;
+  runningTunnels = 0;
+  activeSessions = 0;
   modalRef: BsModalRef;
 
   private unsubscribe: () => void;
   private behaviouralSubjectService: BehaviouralSubjectService;
 
-  constructor(private bsModalService: BsModalService, private appProviderService: AppProviderService) {
+  constructor(private bsModalService: BsModalService, private appProviderService: AppProviderService, private ngZone: NgZone) {
     this.behaviouralSubjectService = appProviderService.behaviouralSubjectService;
     this.showAll = true;
     this.showPinned = false;
@@ -61,12 +69,23 @@ export class SideBarComponent implements OnInit, OnDestroy {
 
     const sidebarHighlightSubscription = sidebarHighlight.subscribe((value) => {
       this.highlightSelectedRow(value.showAll, value.showPinned, value.selectedSegment);
+      this.showTunnels = !!value.showTunnels;
+      this.showPinnedTunnels = !!value.showTunnels && !!value.pinnedTunnels;
     });
+    // Tunnel processes report outside Angular's zone
+    const sessionsSubscription = this.behaviouralSubjectService.sessions$.subscribe(
+      (sessions) => (this.activeSessions = sessions.filter((session) => session.status === SessionStatus.active).length)
+    );
+    const tunnelsSubscription = this.appProviderService.ssmTunnelService.states$.subscribe(() =>
+      this.ngZone.run(() => (this.runningTunnels = this.appProviderService.ssmTunnelService.runningCount))
+    );
     sidebarHighlight.next({ showAll: true, showPinned: false, selectedSegment: -1 });
 
     this.unsubscribe = () => {
       segmentFilterSubscription.unsubscribe();
       sidebarHighlightSubscription.unsubscribe();
+      tunnelsSubscription.unsubscribe();
+      sessionsSubscription.unsubscribe();
     };
   }
 
@@ -83,7 +102,7 @@ export class SideBarComponent implements OnInit, OnDestroy {
   }
 
   showOnlyPinned(): void {
-    // Pinned is a view of its own, like All Sessions: clear a saved filter or search first, otherwise the list shows
+    // Pinned Sessions is a view of its own, like Sessions: clear a saved filter or search first, otherwise the list shows
     // only the pinned sessions that also match it (usually none)
     this.resetFilters();
     sidebarHighlight.next({ showAll: false, showPinned: true, selectedSegment: -1 });
@@ -91,6 +110,16 @@ export class SideBarComponent implements OnInit, OnDestroy {
     globalFilters.integrationFilter = [];
     globalFilters.pinnedFilter = true;
     globalFilterGroup.next(globalFilters);
+  }
+
+  // Keeps the badge a small circle; its tooltip gives the exact number
+  badge(count: number): string {
+    return count > 9 ? "9+" : `${count}`;
+  }
+
+  showTunnelsView(pinnedOnly: boolean): void {
+    this.behaviouralSubjectService.unselectSessions();
+    sidebarHighlight.next({ showAll: false, showPinned: false, selectedSegment: -1, showTunnels: true, pinnedTunnels: pinnedOnly });
   }
 
   applySegmentFilter(segment: Segment, event: any): void {

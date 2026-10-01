@@ -1,0 +1,12 @@
+<app-dialog-escape (escape)="closeModal()"></app-dialog-escape>
+<a class="close-modal" (click)="closeModal();"><i class="moon-Close"></i></a>
+<h4>Edit Tunnel</h4>
+<h5>{{tunnel.instanceName}} ({{tunnel.instanceId}}), {{tunnel.region}}</h5>
+
+<form class="ssm-tunnel-form" (ngSubmit)="save()">
+  <app-port-forwarding-fields [draft]="draft" [suggestLocalPort]="suggestLocalPort" [freeLocalPortByDefault]="freeLocalPortByDefault"></app-port-forwarding-fields>
+  <p class="error" *ngIf="error">{{error}}</p>
+  <p class="hint">A running tunnel restarts when its host or ports change.</p>
+  <button type="submit" class="btn-control">Save Tunnel</button>
+  <a (click)="closeModal();">Cancel</a>
+</form>

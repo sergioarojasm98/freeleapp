@@ -144,7 +144,7 @@ export class AppAwsAuthenticationService implements IAwsSamlAuthenticationServic
           this.appService.restart();
         }, 3000);
       });
-      this.electronService.session.defaultSession.clearStorageData([], (_data) => {});
+      this.electronService.session.defaultSession.clearStorageData();
     } catch (err) {
       this.leappCoreService.logService.log(
         new LoggedEntry("Freeleapp has an error re-creating your configuration file and cache.", this, LogLevel.error, false, err.stack)

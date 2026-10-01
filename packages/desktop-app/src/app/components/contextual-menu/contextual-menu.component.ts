@@ -8,7 +8,6 @@ import { SessionType } from "@noovolari/leapp-core/models/session-type";
 import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
 import { constants } from "@noovolari/leapp-core/models/constants";
 import { OptionsService } from "../../services/options.service";
-import { AwsCredentialsPlugin } from "@noovolari/leapp-core/plugin-sdk/aws-credentials-plugin";
 import { SelectedSessionActionsService } from "../../services/selected-session-actions.service";
 import { Subscription } from "rxjs";
 
@@ -118,9 +117,5 @@ export class ContextualMenuComponent implements OnInit, OnDestroy {
 
   async copyAwsWebConsoleUrl(): Promise<void> {
     await this.selectedSessionActionsService.copyAwsWebConsoleUrl(this.selectedSession);
-  }
-
-  async applyPluginAction(plugin: AwsCredentialsPlugin): Promise<void> {
-    await this.selectedSessionActionsService.applyPluginAction(this.selectedSession, plugin);
   }
 }

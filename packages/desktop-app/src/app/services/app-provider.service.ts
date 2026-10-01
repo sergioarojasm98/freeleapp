@@ -1,6 +1,5 @@
-import { Injectable, NgZone } from "@angular/core";
+import { Injectable } from "@angular/core";
 import { AwsSamlAssertionExtractionService } from "@noovolari/leapp-core/services/aws-saml-assertion-extraction-service";
-import { RemoteProceduresServer } from "@noovolari/leapp-core/services/remote-procedures-server";
 import { AwsIamUserService } from "@noovolari/leapp-core/services/session/aws/aws-iam-user-service";
 import { FileService } from "@noovolari/leapp-core/services/file-service";
 import { AwsCoreService } from "@noovolari/leapp-core/services/aws-core-service";
@@ -28,6 +27,7 @@ import { AwsSsoIntegrationService } from "@noovolari/leapp-core/services/integra
 import { WebConsoleService } from "@noovolari/leapp-core/services/web-console-service";
 import { WindowService } from "./window.service";
 import { SsmService } from "@noovolari/leapp-core/services/ssm-service";
+import { SsmTunnelService } from "@noovolari/leapp-core/services/ssm-tunnel-service";
 import { IdpUrlsService } from "@noovolari/leapp-core/services/idp-urls-service";
 import { NamedProfilesService } from "@noovolari/leapp-core/services/named-profiles-service";
 import { SegmentService } from "@noovolari/leapp-core/services/segment-service";
@@ -38,9 +38,6 @@ import { MessageToasterService } from "./message-toaster.service";
 import { AzurePersistenceService } from "@noovolari/leapp-core/services/azure-persistence-service";
 import { AzureIntegrationService } from "@noovolari/leapp-core/services/integration/azure-integration-service";
 import { IntegrationIsOnlineStateRefreshService } from "@noovolari/leapp-core/services/integration/integration-is-online-state-refresh-service";
-import { PluginManagerService } from "@noovolari/leapp-core/plugin-sdk/plugin-manager-service";
-import { HttpClient } from "@angular/common/http";
-import { EnvironmentType, PluginEnvironment } from "@noovolari/leapp-core/plugin-sdk/plugin-environment";
 import { IntegrationFactory } from "@noovolari/leapp-core/services/integration-factory";
 import { AppKeychainService } from "./app-keychain-service";
 import { IKeychainService } from "@noovolari/leapp-core/interfaces/i-keychain-service";
@@ -87,44 +84,24 @@ export class AppProviderService {
   private azureCoreServiceInstance: AzureCoreService;
   private webConsoleServiceInstance: WebConsoleService;
   private ssmServiceInstance: SsmService;
+  private ssmTunnelServiceInstance: SsmTunnelService;
   private idpUrlServiceInstance: IdpUrlsService;
   private namedProfileInstance: NamedProfilesService;
-  private remoteProceduresServerInstance: RemoteProceduresServer;
   private segmentServiceInstance: SegmentService;
   private sessionManagementServiceInstance: SessionManagementService;
   private workspaceServiceInstance: WorkspaceService;
   private azurePersistenceServiceInstance: AzurePersistenceService;
   private integrationIsOnlineStateRefreshServiceInstance: IntegrationIsOnlineStateRefreshService;
-  private pluginManagerServiceInstance: PluginManagerService;
   private integrationFactoryInstance: IntegrationFactory;
   private notificationServiceInstance: NotificationService;
 
-  constructor(
-    private appNativeService: AppNativeService,
-    private messageToaster: MessageToasterService,
-    private ngZone: NgZone,
-    private http: HttpClient
-  ) {}
+  constructor(private appNativeService: AppNativeService, private messageToaster: MessageToasterService) {}
 
   public get notificationService(): NotificationService {
     if (!this.notificationServiceInstance) {
       this.notificationServiceInstance = new NotificationService(this.repository);
     }
     return this.notificationServiceInstance;
-  }
-
-  public get pluginManagerService(): PluginManagerService {
-    if (!this.pluginManagerServiceInstance) {
-      this.pluginManagerServiceInstance = new PluginManagerService(
-        new PluginEnvironment(EnvironmentType.desktopApp, this),
-        this.appNativeService,
-        this.logService,
-        this.repository,
-        this.sessionFactory,
-        this.http
-      );
-    }
-    return this.pluginManagerServiceInstance;
   }
 
   public get workspaceService(): WorkspaceService {
@@ -342,6 +319,19 @@ export class AppProviderService {
     return this.sessionFactoryInstance;
   }
 
+  public get ssmTunnelService(): SsmTunnelService {
+    if (!this.ssmTunnelServiceInstance) {
+      this.ssmTunnelServiceInstance = new SsmTunnelService(
+        this.repository,
+        this.sessionFactory,
+        this.appNativeService,
+        this.logService,
+        this.behaviouralSubjectService
+      );
+    }
+    return this.ssmTunnelServiceInstance;
+  }
+
   public get ssmService(): SsmService {
     if (!this.ssmServiceInstance) {
       this.ssmServiceInstance = new SsmService(this.logService, this.executeService, this.appNativeService, this.fileService);
@@ -448,24 +438,6 @@ export class AppProviderService {
       this.integrationFactoryInstance = new IntegrationFactory(this.awsSsoIntegrationService, this.azureIntegrationService);
     }
     return this.integrationFactoryInstance;
-  }
-
-  public get remoteProceduresServer(): RemoteProceduresServer {
-    if (!this.remoteProceduresServerInstance) {
-      this.remoteProceduresServerInstance = new RemoteProceduresServer(
-        this.keychainService,
-        this.appNativeService,
-        this.verificationWindowService,
-        this.awsAuthenticationService,
-        this.integrationFactory,
-        this.mfaCodePrompter,
-        this.repository,
-        this.behaviouralSubjectService,
-        this.workspaceService,
-        (uiSafeBlock) => this.ngZone.run(() => uiSafeBlock())
-      );
-    }
-    return this.remoteProceduresServerInstance;
   }
 
   public get integrationIsOnlineStateRefreshService(): IntegrationIsOnlineStateRefreshService {

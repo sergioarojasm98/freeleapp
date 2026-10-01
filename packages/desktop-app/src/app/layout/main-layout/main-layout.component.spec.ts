@@ -11,7 +11,10 @@ describe("MainLayoutComponent", () => {
     sidebarCollapsed.next(false);
     compactMode.next(false);
     ipcSend = jasmine.createSpy("send");
-    component = new MainLayoutComponent({ behaviouralSubjectService: { unselectSessions: () => {} } } as any, { ipcRenderer: { send: ipcSend } } as any);
+    component = new MainLayoutComponent(
+      { behaviouralSubjectService: { unselectSessions: () => {} } } as any,
+      { ipcRenderer: { send: ipcSend } } as any
+    );
     component.ngOnInit();
   });
 

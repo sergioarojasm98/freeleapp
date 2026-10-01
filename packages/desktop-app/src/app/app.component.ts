@@ -1,5 +1,4 @@
 import { Component, OnInit } from "@angular/core";
-import { RemoteProceduresServer } from "@noovolari/leapp-core/services/remote-procedures-server";
 import { environment } from "../environments/environment";
 import { AppService } from "./services/app.service";
 import { Router } from "@angular/router";
@@ -27,7 +26,6 @@ import { OptionsService } from "./services/options.service";
 import { IntegrationIsOnlineStateRefreshService } from "@noovolari/leapp-core/services/integration/integration-is-online-state-refresh-service";
 import { AzureSessionService } from "@noovolari/leapp-core/services/session/azure/azure-session-service";
 import { AzureCoreService } from "@noovolari/leapp-core/services/azure-core-service";
-import { PluginManagerService } from "@noovolari/leapp-core/plugin-sdk/plugin-manager-service";
 
 @Component({
   selector: "app-root",
@@ -47,11 +45,9 @@ export class AppComponent implements OnInit {
   private rotationService: RotationService;
   private awsSsoIntegrationService: AwsSsoIntegrationService;
   private awsSsoRoleService: AwsSsoRoleService;
-  private remoteProceduresServer: RemoteProceduresServer;
   private integrationIsOnlineStateRefreshService: IntegrationIsOnlineStateRefreshService;
   private azureSessionService: AzureSessionService;
   private azureCoreService: AzureCoreService;
-  private pluginManagerService: PluginManagerService;
 
   /* Main app file: launches the Angular framework inside Electron app */
   constructor(
@@ -81,11 +77,9 @@ export class AppComponent implements OnInit {
     this.rotationService = appProviderService.rotationService;
     this.awsSsoIntegrationService = appProviderService.awsSsoIntegrationService;
     this.awsSsoRoleService = appProviderService.awsSsoRoleService;
-    this.remoteProceduresServer = appProviderService.remoteProceduresServer;
     this.integrationIsOnlineStateRefreshService = appProviderService.integrationIsOnlineStateRefreshService;
     this.azureSessionService = appProviderService.azureSessionService;
     this.azureCoreService = appProviderService.azureCoreService;
-    this.pluginManagerService = appProviderService.pluginManagerService;
 
     this.setInitialColorSchema();
     this.setColorSchemaChangeEventListener();
@@ -142,39 +136,18 @@ export class AppComponent implements OnInit {
     // Start Global Timer
     this.timerService.start(() => this.timerFunction(this.rotationService, this.integrationIsOnlineStateRefreshService));
 
+    // Tunnels left running by a crash or a forced quit, then the auto-start tunnels of each session that becomes active
+    this.appProviderService.ssmTunnelService.stopOrphanTunnels().then(() => {});
+    this.appProviderService.ssmTunnelService.watchSessions();
+
     // Launch Auto Updater Routines
     this.manageAutoUpdate();
-
-    if (!constants.disablePluginSystem) {
-      this.appProviderService.pluginManagerService.verifyAndGeneratePluginFolderIfMissing();
-      await this.appProviderService.pluginManagerService.loadFromPluginDir();
-      this.loggingService.log(
-        new LoggedEntry(`Loaded plugins...\n\n${this.appProviderService.pluginManagerService.pluginContainers}`, this, LogLevel.info)
-      );
-    }
-
-    // Deep link with app closed
-    if (this.fileService.existsSync(this.appNativeService.path.join(this.appNativeService.os.homedir(), environment.deeplinkFile))) {
-      try {
-        const deepLink = this.fileService.readFileSync(this.appNativeService.path.join(this.appNativeService.os.homedir(), environment.deeplinkFile));
-        if (!constants.disablePluginSystem) {
-          await this.pluginManagerService.installPlugin(deepLink);
-          await this.pluginManagerService.loadFromPluginDir();
-        }
-      } catch (err) {
-        this.loggingService.log(new LoggedEntry(`Error in install plugin from file: ${err.toString()}`, this, LogLevel.info));
-      } finally {
-        this.appNativeService.fs.removeSync(this.appNativeService.path.join(this.appNativeService.os.homedir(), environment.deeplinkFile));
-      }
-    }
 
     this.behaviouralSubjectService.fetchingIntegrationState$.subscribe((fetchingState: string | undefined) => {
       this.fetchingState = fetchingState;
     });
 
     await this.router.navigate(["/dashboard"]);
-
-    (async (): Promise<void> => this.remoteProceduresServer.startServer())();
   }
 
   closeAllRightClickMenus(): void {
@@ -193,9 +166,8 @@ export class AppComponent implements OnInit {
     // Check if we are here
     this.loggingService.log(new LoggedEntry("Closing app with cleaning process...", this, LogLevel.info));
 
-    this.remoteProceduresServer.stopServer();
-
     // Stop all the sessions
+    this.appProviderService.ssmTunnelService.stopAll();
     await this.appProviderService.sessionManagementService.stopAllSessions();
 
     // Finally quit
@@ -261,12 +233,6 @@ export class AppComponent implements OnInit {
         this.updaterService.updateDialog();
         this.behaviouralSubjectService.sessions = [...this.behaviouralSubjectService.sessions];
         this.appProviderService.sessionManagementService.updateSessions(this.behaviouralSubjectService.sessions);
-      }
-    });
-
-    ipc.on("PLUGIN_URL", (_, url) => {
-      if (!constants.disablePluginSystem) {
-        this.pluginManagerService.installPlugin(url);
       }
     });
   }

@@ -1,3 +1,5 @@
+@import "../../../../assets/scss/mixins/palette";
+
 .ssm-tray-form {
   margin-top: 20px;
 
@@ -5,6 +7,47 @@
     display: inline-block;
     margin-left: 10px;
   }
+}
+
+// Takes the place the form layout gives a select (next to its 28% label), with the refresh button after it
+.form-field .region-row {
+  display: inline-flex;
+  position: absolute;
+  top: 3px;
+  width: 72%;
+  align-items: center;
+  gap: 8px;
+
+  ng-select {
+    position: static;
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+
+  .refresh-instances {
+    flex: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 18px;
+
+    &:hover:not(:disabled) {
+      background: rgba($main-color-light, 0.15);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+    }
+  }
+}
+
+.loaded-at {
+  margin: 4px 0 0;
+  padding: 0 20px;
+  color: $table-text;
+  font-size: 12px;
 }
 
 .loader {
@@ -16,14 +59,84 @@
 .ssm-ul {
   padding: 20px;
 
+  list-style: none;
+
   .ssm-card {
-    height: 40px;
+    padding: 6px 0;
 
     button {
+      flex-shrink: 0;
       padding: 5px 10px !important;
-      float: right;
+      white-space: nowrap;
     }
   }
+
+  .ssm-card-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .ssm-instance {
+      flex: 1 1 auto;
+      min-width: 0;
+
+      .instance-name {
+        font-weight: 600;
+      }
+
+      .instance-name,
+      small {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      small {
+        color: $table-text;
+        font-size: 12px;
+      }
+    }
+  }
+
+  .copy-command {
+    cursor: pointer;
+  }
+
+  .port-forwarding {
+    margin: 10px 0 6px;
+
+    .port-forwarding-message {
+      margin-bottom: 8px;
+      font-size: 13px;
+
+      &.error {
+        color: $danger-color;
+      }
+
+      a {
+        cursor: pointer;
+      }
+    }
+
+    .port-forwarding-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      a {
+        margin-left: 4px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+    }
+  }
+}
+
+// Wider than the other edit dialogs, so instance names fit next to their buttons
+::ng-deep .edit-modal.ssm-instances-modal {
+  max-width: 760px !important;
+  width: calc(100vw - 40px);
 }
 
 // Keep the dialog inside the window like the settings dialog: the modal never grows past the viewport

@@ -26,6 +26,9 @@ import { AwsSsoIntegrationCreationParams } from "../../models/aws/aws-sso-integr
 import { ThrottleService } from "../throttle-service";
 import { IKeychainService } from "../../interfaces/i-keychain-service";
 import { ConfiguredRetryStrategy } from "@aws-sdk/util-retry";
+import * as uuid from "uuid";
+import { AwsNamedProfile } from "../../models/aws/aws-named-profile";
+import { pickSsoRoleProfile } from "../sso-role-profile";
 
 const portalUrlValidationRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)/;
 
@@ -157,6 +160,9 @@ export class AwsSsoIntegrationService implements IIntegrationService {
 
     for (const ssoRoleSession of sessionsDiff.sessionsToAdd) {
       ssoRoleSession.awsSsoConfigurationId = integrationId;
+      if (!ssoRoleSession.profileId) {
+        ssoRoleSession.profileId = this.getRoleProfileId(ssoRoleSession);
+      }
       await this.awsSsoRoleService.create(ssoRoleSession);
     }
 
@@ -300,8 +306,10 @@ export class AwsSsoIntegrationService implements IIntegrationService {
 
   private async login(integrationId: string | number, region: string, portalUrl: string): Promise<LoginResponse> {
     const redirectClient = this.nativeService.followRedirects[this.getProtocol(portalUrl)];
-    portalUrl = await new Promise((resolve, _) => {
+    portalUrl = await new Promise((resolve, reject) => {
       const request = redirectClient.request(portalUrl, (response) => resolve(response.responseUrl));
+      // Without it a network or certificate error would leave the login waiting forever
+      request.on("error", reject);
       request.end();
     });
 
@@ -381,7 +389,8 @@ export class AwsSsoIntegrationService implements IIntegrationService {
         region: oldSession?.region || this.repository.getDefaultRegion() || constants.defaultRegion,
         roleArn: `arn:aws:iam::${accountInfo.accountId}/${accountRole.roleName}`,
         sessionName: accountInfo.accountName,
-        profileId: oldSession?.profileId || this.repository.getDefaultProfileId(),
+        // New roles get their own named profile when they are created (see syncSessions)
+        profileId: oldSession?.profileId,
         awsSsoConfigurationId: integrationId,
       };
 
@@ -415,6 +424,17 @@ export class AwsSsoIntegrationService implements IIntegrationService {
         }
       })
       .catch((error) => reject(error));
+  }
+
+  // Each role gets its own "<account>-<role>" named profile, so several roles can be active at the same time
+  private getRoleProfileId(session: SsoRoleSession): string {
+    const profile = pickSsoRoleProfile(session.sessionName, session.roleArn, this.repository.getProfiles(), this.repository.getSessions());
+    if (profile.id) {
+      return profile.id;
+    }
+    const namedProfile = new AwsNamedProfile(uuid.v4(), profile.name);
+    this.repository.addProfile(namedProfile);
+    return namedProfile.id;
   }
 
   private findOldSession(accountInfo: AccountInfo, accountRole: RoleInfo): { region: string; profileId: string } {

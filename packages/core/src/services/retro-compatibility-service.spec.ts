@@ -1,4 +1,5 @@
-import { beforeEach, describe, jest, expect, test } from "@jest/globals";
+import { SessionStatus } from "../models/session-status";
+import { afterEach, beforeEach, describe, jest, expect, test } from "@jest/globals";
 import { RetroCompatibilityService } from "./retro-compatibility-service";
 import { SessionType } from "../models/session-type";
 import { IntegrationType } from "../models/integration-type";
@@ -56,6 +57,9 @@ describe("RetroCompatibilityService", () => {
       (service as any).migration6 = jest.fn();
       (service as any).migration7 = jest.fn();
       (service as any).migration8 = jest.fn();
+      (service as any).migration9 = jest.fn();
+      (service as any).migration10 = jest.fn();
+      (service as any).migration11 = jest.fn();
 
       await service.applyWorkspaceMigrations();
 
@@ -69,6 +73,9 @@ describe("RetroCompatibilityService", () => {
       expect((service as any).migration6).toHaveBeenCalled();
       expect((service as any).migration7).toHaveBeenCalled();
       expect((service as any).migration8).toHaveBeenCalled();
+      expect((service as any).migration9).toHaveBeenCalled();
+      expect((service as any).migration10).toHaveBeenCalled();
+      expect((service as any).migration11).toHaveBeenCalled();
     });
 
     test("should try migrations, retropatch not necessary", async () => {
@@ -90,6 +97,9 @@ describe("RetroCompatibilityService", () => {
       (service as any).migration6 = jest.fn();
       (service as any).migration7 = jest.fn();
       (service as any).migration8 = jest.fn();
+      (service as any).migration9 = jest.fn();
+      (service as any).migration10 = jest.fn();
+      (service as any).migration11 = jest.fn();
 
       await service.applyWorkspaceMigrations();
 
@@ -103,6 +113,9 @@ describe("RetroCompatibilityService", () => {
       expect((service as any).migration6).toHaveBeenCalled();
       expect((service as any).migration7).toHaveBeenCalled();
       expect((service as any).migration8).toHaveBeenCalled();
+      expect((service as any).migration9).toHaveBeenCalled();
+      expect((service as any).migration10).toHaveBeenCalled();
+      expect((service as any).migration11).toHaveBeenCalled();
     });
 
     test("should try migrations, integrationpatch not necessary", async () => {
@@ -124,6 +137,9 @@ describe("RetroCompatibilityService", () => {
       (service as any).migration6 = jest.fn();
       (service as any).migration7 = jest.fn();
       (service as any).migration8 = jest.fn();
+      (service as any).migration9 = jest.fn();
+      (service as any).migration10 = jest.fn();
+      (service as any).migration11 = jest.fn();
 
       await service.applyWorkspaceMigrations();
 
@@ -137,6 +153,9 @@ describe("RetroCompatibilityService", () => {
       expect((service as any).migration6).toHaveBeenCalled();
       expect((service as any).migration7).toHaveBeenCalled();
       expect((service as any).migration8).toHaveBeenCalled();
+      expect((service as any).migration9).toHaveBeenCalled();
+      expect((service as any).migration10).toHaveBeenCalled();
+      expect((service as any).migration11).toHaveBeenCalled();
     });
   });
 
@@ -623,6 +642,101 @@ describe("RetroCompatibilityService", () => {
       expect(fileService.replaceWriteSync).not.toHaveBeenCalled();
       expect((service as any).persists).toHaveBeenCalledWith(workspace);
     });
+  });
+
+  describe("migration9", () => {
+    let repository: any;
+
+    beforeEach(() => {
+      repository = { reloadWorkspace: jest.fn() };
+      service = new RetroCompatibilityService(null, null, repository, null);
+      (service as any).persists = jest.fn();
+      let newIds = 0;
+      jest.spyOn(uuid, "v4").mockImplementation(() => `new-profile-${++newIds}`);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    const ssoRole = (sessionId: string, profileId: string, status = SessionStatus.inactive, roleName = "ReadOnly") => ({
+      sessionId,
+      type: SessionType.awsSsoRole,
+      sessionName: "payments prod",
+      roleArn: `arn:aws:iam::123456789012/${roleName}`,
+      profileId,
+      status,
+    });
+
+    test("not needed", () => {
+      (service as any).getWorkspace = jest.fn(() => ({ _workspaceVersion: 9 }));
+
+      (service as any).migration9();
+
+      expect((service as any).persists).not.toHaveBeenCalled();
+    });
+
+    test("gives inactive IAM Identity Center roles on the default profile their own account-role profile", () => {
+      const workspace = {
+        _workspaceVersion: 8,
+        _profiles: [
+          { id: "default-id", name: "default" },
+          { id: "custom-id", name: "payments" },
+          { id: "taken-id", name: "payments-prod-Admin" },
+        ],
+        _sessions: [
+          ssoRole("on-default", "default-id"),
+          ssoRole("custom", "custom-id"),
+          ssoRole("active-on-default", "default-id", SessionStatus.active),
+          ssoRole("admin-on-default", "default-id", SessionStatus.inactive, "Admin"),
+          ssoRole("admin-owner", "taken-id", SessionStatus.inactive, "Admin"),
+          { sessionId: "iam-user", type: SessionType.awsIamUser, profileId: "default-id", status: SessionStatus.inactive },
+        ],
+      };
+      (service as any).getWorkspace = jest.fn(() => workspace);
+
+      (service as any).migration9();
+
+      const profileOf = (sessionId: string) => workspace._sessions.find((session) => session.sessionId === sessionId).profileId;
+      const profileName = (profileId: string) => workspace._profiles.find((profile) => profile.id === profileId).name;
+      expect(workspace._workspaceVersion).toBe(9);
+      expect(profileName(profileOf("on-default"))).toBe("payments-prod-ReadOnly");
+      expect(profileName(profileOf("admin-on-default"))).toBe("payments-prod-Admin-2");
+      expect(profileOf("custom")).toBe("custom-id");
+      expect(profileOf("active-on-default")).toBe("default-id");
+      expect(profileOf("admin-owner")).toBe("taken-id");
+      expect(profileOf("iam-user")).toBe("default-id");
+      expect((service as any).persists).toHaveBeenCalledWith(workspace);
+      expect(repository.reloadWorkspace).toHaveBeenCalled();
+    });
+  });
+
+  test("migration10 adds an empty list of SSM tunnels", () => {
+    const repository = { reloadWorkspace: jest.fn() } as any;
+    service = new RetroCompatibilityService(null, null, repository, null);
+    (service as any).persists = jest.fn();
+    const workspace: any = { _workspaceVersion: 9 };
+    (service as any).getWorkspace = jest.fn(() => workspace);
+
+    (service as any).migration10();
+
+    expect(workspace).toEqual({ _workspaceVersion: 10, _ssmTunnels: [] });
+    expect((service as any).persists).toHaveBeenCalledWith(workspace);
+    expect(repository.reloadWorkspace).toHaveBeenCalled();
+  });
+
+  test("migration11 sets the Default Local Port setting to the remote port", () => {
+    const repository = { reloadWorkspace: jest.fn() } as any;
+    service = new RetroCompatibilityService(null, null, repository, null);
+    (service as any).persists = jest.fn();
+    const workspace: any = { _workspaceVersion: 10 };
+    (service as any).getWorkspace = jest.fn(() => workspace);
+
+    (service as any).migration11();
+
+    expect(workspace).toEqual({ _workspaceVersion: 11, _ssmLocalPort: constants.ssmLocalPortSameAsRemote });
+    expect((service as any).persists).toHaveBeenCalledWith(workspace);
+    expect(repository.reloadWorkspace).toHaveBeenCalled();
   });
 
   test("adaptIntegrations", async () => {

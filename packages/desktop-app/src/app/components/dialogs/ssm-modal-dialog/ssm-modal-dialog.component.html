@@ -1,3 +1,4 @@
+<app-dialog-escape (escape)="closeModal()"></app-dialog-escape>
 <a class="close-modal" (click)="closeModal();"><i class="moon-Close"></i></a>
 <h4>{{session.sessionName}}</h4>
 <h5>{{session | detail }}</h5>
@@ -9,9 +10,13 @@
       <div class="form-field">
         <div class="form-group">
           <label>Select a Region</label>
-          <ng-select bindLabel="region" bindValue="region" groupBy="group" [items]="awsRegions" [(ngModel)]="selectedSsmRegion"
-                     placeholder="Select a Region for Finding Instances" (change)="changeSsmRegion();"
-                     [appendTo]="'body'"></ng-select>
+          <div class="region-row">
+            <ng-select bindLabel="region" bindValue="region" groupBy="group" [items]="awsRegions" [(ngModel)]="selectedSsmRegion"
+                       placeholder="Select a Region for Finding Instances" (change)="changeSsmRegion();"
+                       [appendTo]="'body'"></ng-select>
+            <button type="button" class="icon-button refresh-instances" (click)="refreshInstances()" [disabled]="!selectedSsmRegion || ssmLoading"
+                    matTooltip="Load the instances from AWS again"><i class="moon-Refresh"></i></button>
+          </div>
         </div>
       </div>
     </div>
@@ -30,15 +35,40 @@
         </div>
       </ng-container>
 
+      <p class="loaded-at" *ngIf="instancesLoadedAt">
+        {{instancesNotFiltered.length}} running {{instancesNotFiltered.length === 1 ? 'instance' : 'instances'}}, loaded {{loadedAgo}}.
+        Use the refresh button next to the region to load them again.
+      </p>
       <ul class="ssm-ul" *ngIf="instances.length > 0">
         <li *ngFor="let instance of instances" class="ssm-card">
-          <div>
-            <span><b>{{instance.Name.length >= 24 ? instance.Name.substr(0, 21) + '...' : instance.Name}}</b> - {{instance.IPAddress}}</span>
-            <button class="btn-control btn-sm" (click)="startSsmSession(instance.InstanceId)">
+          <div class="ssm-card-row">
+            <div class="ssm-instance">
+              <span class="instance-name" [title]="instance.Name">{{instance.Name}}</span>
+              <small>{{instance.HasName ? instance.InstanceId + ' · ' : ''}}{{instance.IPAddress}}{{instance.PlatformName ? ' · ' + instance.PlatformName : ''}}</small>
+            </div>
+            <button class="btn-control btn-sm {{forwardingInstanceId === instance.InstanceId ? 'active' : ''}}"
+                    matTooltip="Forward a local port to this instance, or through it to another host"
+                    (click)="togglePortForwarding(instance.InstanceId)">Forward Port</button>
+            <a class="copy-command" (click)="copyCommand(instance.InstanceId, false)" matTooltip="Copy the Connect Command"><i class="moon-Copy"></i></a>
+            <button class="btn-control btn-sm" (click)="startSsmSession(instance.InstanceId)" matTooltip="Open a shell on this instance in your terminal app">
               <i class="fa fa-spinner fa-spin" *ngIf="instance.loading"></i>
               <span *ngIf="!instance.loading">Connect</span>
             </button>
           </div>
+
+          <form class="port-forwarding" *ngIf="forwardingInstanceId === instance.InstanceId" (ngSubmit)="startTunnel(instance)">
+            <app-port-forwarding-fields [draft]="forwarding" [suggestLocalPort]="suggestLocalPort" [freeLocalPortByDefault]="freeLocalPortByDefault"
+                                        [namePlaceholder]="'e.g. ' + instance.Name + ':5432'"></app-port-forwarding-fields>
+            <p class="port-forwarding-message {{forwardingMessage.error ? 'error' : ''}}" *ngIf="forwardingMessage">
+              {{forwardingMessage.text}} <a *ngIf="forwardingMessage.showTunnels" (click)="showTunnels()">Show Tunnels</a>
+            </p>
+            <div class="port-forwarding-actions">
+              <button type="submit" class="btn-control btn-sm" matTooltip="Save the tunnel and run it in the background">Start Tunnel</button>
+              <button type="button" class="btn-control btn-sm" (click)="copyCommand(instance.InstanceId, true)"
+                      matTooltip="Copy the aws ssm start-session command, with the session's named profile">Copy Command</button>
+              <a (click)="openInTerminal(instance.InstanceId)" matTooltip="Run it in your terminal app instead, without saving a tunnel">Open in Terminal</a>
+            </div>
+          </form>
         </li>
       </ul>
     </div>

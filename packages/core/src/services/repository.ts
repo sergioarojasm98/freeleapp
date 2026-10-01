@@ -5,6 +5,8 @@ import { AwsNamedProfile } from "../models/aws/aws-named-profile";
 import { AwsSsoIntegration } from "../models/aws/aws-sso-integration";
 import { constants } from "../models/constants";
 import Segment from "../models/segment";
+import { SsmTunnel } from "../models/ssm-tunnel";
+import { isOwnProfile } from "./sso-role-profile";
 import { Session } from "../models/session";
 import { SessionStatus } from "../models/session-status";
 import { SessionType } from "../models/session-type";
@@ -15,7 +17,6 @@ import * as uuid from "uuid";
 import Folder from "../models/folder";
 import { LoggedException, LogLevel } from "./log-service";
 import { AzureIntegration } from "../models/azure/azure-integration";
-import PluginStatus from "../models/plugin-status";
 import { WorkspaceConsistencyService } from "./workspace-consistency-service";
 import { LeappNotification } from "../models/notification";
 import { GlobalSettings } from "../interfaces/i-global-settings";
@@ -127,9 +128,43 @@ export class Repository {
     const workspace = this.getWorkspace();
     const index = workspace.sessions.findIndex((sess) => sess.sessionId === sessionId);
     if (index > -1) {
-      workspace.sessions.splice(index, 1);
+      const [session] = workspace.sessions.splice(index, 1);
+      // A tunnel cannot start without its session
+      workspace.ssmTunnels = (workspace.ssmTunnels ?? []).filter((tunnel) => tunnel.sessionId !== sessionId);
+      // The session's own profile goes with it, unless another session uses it; custom profiles stay
+      const profile = (workspace.profiles ?? []).find((p) => p.id === (session as any).profileId);
+      if (
+        profile &&
+        profile.name !== constants.defaultAwsProfileName &&
+        isOwnProfile(profile.name, session as any) &&
+        !workspace.sessions.some((s) => (s as any).profileId === profile.id)
+      ) {
+        workspace.profiles = workspace.profiles.filter((p) => p.id !== profile.id);
+      }
       this.persistWorkspace(workspace);
     }
+  }
+
+  listSsmTunnels(): SsmTunnel[] {
+    return this.getWorkspace().ssmTunnels ?? [];
+  }
+
+  addSsmTunnel(tunnel: SsmTunnel): void {
+    const workspace = this.getWorkspace();
+    workspace.ssmTunnels = [...(workspace.ssmTunnels ?? []), tunnel];
+    this.persistWorkspace(workspace);
+  }
+
+  updateSsmTunnel(tunnel: SsmTunnel): void {
+    const workspace = this.getWorkspace();
+    workspace.ssmTunnels = (workspace.ssmTunnels ?? []).map((t) => (t.id === tunnel.id ? tunnel : t));
+    this.persistWorkspace(workspace);
+  }
+
+  deleteSsmTunnel(tunnelId: string): void {
+    const workspace = this.getWorkspace();
+    workspace.ssmTunnels = (workspace.ssmTunnels ?? []).filter((tunnel) => tunnel.id !== tunnelId);
+    this.persistWorkspace(workspace);
   }
 
   listPending(): Session[] {
@@ -158,18 +193,6 @@ export class Repository {
       childSession = childSession.filter((session) => (session as AwsIamRoleChainedSession).parentSessionId === parentSession.sessionId);
     }
     return childSession;
-  }
-
-  createPluginStatus(pluginId: string): void {
-    this._workspace.pluginsStatus.push({ id: pluginId, active: true });
-  }
-
-  getPluginStatus(pluginId: string): PluginStatus {
-    return this._workspace.pluginsStatus.find((pluginStatus) => pluginStatus.id === pluginId);
-  }
-
-  setPluginStatus(pluginId: string, newStatus: PluginStatus): void {
-    this._workspace.pluginsStatus = this._workspace.pluginsStatus.map((pluginStatus) => (pluginStatus.id === pluginId ? newStatus : pluginStatus));
   }
 
   // REGION AND LOCATION
@@ -246,13 +269,9 @@ export class Repository {
     return this.getWorkspace().profiles.find((profile) => profile.id === profileId) !== undefined;
   }
 
-  getDefaultProfileId(): string {
-    const workspace = this.getWorkspace();
-    const profileFiltered = workspace.profiles.find((profile) => profile.name === constants.defaultAwsProfileName);
-    if (profileFiltered === undefined) {
-      throw new LoggedException("no default named profile found.", this, LogLevel.warn);
-    }
-    return profileFiltered.id;
+  // The "default" profile, which aws commands use without --profile. It can be deleted, so it may not exist.
+  getDefaultProfileId(): string | undefined {
+    return this.getWorkspace().profiles.find((profile) => profile.name === constants.defaultAwsProfileName)?.id;
   }
 
   addProfile(profile: AwsNamedProfile): void {
@@ -467,7 +486,6 @@ export class Repository {
       defaultLocation: workspace.defaultLocation,
       defaultRegion: workspace.defaultRegion,
       macOsTerminal: workspace.macOsTerminal,
-      pluginsStatus: workspace.pluginsStatus,
       samlRoleSessionDuration: workspace.samlRoleSessionDuration,
       pinned: workspace.pinned,
       segments: workspace.segments,
@@ -486,7 +504,6 @@ export class Repository {
     workspace.defaultLocation = globalSettingsInput.defaultLocation;
     workspace.defaultRegion = globalSettingsInput.defaultRegion;
     workspace.macOsTerminal = globalSettingsInput.macOsTerminal;
-    workspace.pluginsStatus = globalSettingsInput.pluginsStatus;
     workspace.samlRoleSessionDuration = globalSettingsInput.samlRoleSessionDuration;
     workspace.pinned = globalSettingsInput.pinned;
     workspace.segments = globalSettingsInput.segments;

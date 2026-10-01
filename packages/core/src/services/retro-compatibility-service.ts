@@ -14,6 +14,8 @@ import { AzureIntegration } from "../models/azure/azure-integration";
 import { IKeychainService } from "../interfaces/i-keychain-service";
 import { IntegrationType } from "../models/integration-type";
 import { LeappNotification } from "../models/notification";
+import { SessionStatus } from "../models/session-status";
+import { pickSsoRoleProfile } from "./sso-role-profile";
 
 export class RetroCompatibilityService {
   constructor(
@@ -39,6 +41,9 @@ export class RetroCompatibilityService {
       this.migration6();
       this.migration7();
       this.migration8();
+      this.migration9();
+      this.migration10();
+      this.migration11();
       // When adding new migrations remember to increase constants.workspaceLastVersion
     }
   }
@@ -302,6 +307,56 @@ export class RetroCompatibilityService {
       workspace._credentialMethod = constants.credentialFile;
       this.removeLeappCredentialProcessProfiles();
     }
+    this.persists(workspace);
+    this.repository.reloadWorkspace();
+  }
+
+  // IAM Identity Center roles used to share the "default" profile, so only one of them could be active. Give each of
+  // those roles its own "<account>-<role>" profile. Roles with a profile the user chose keep it, and so do active ones:
+  // their credentials sit under [default] and are removed from there when the app stops them at startup.
+  private migration9(): void {
+    const workspace = this.getWorkspace();
+    if (!this.checkMigration(workspace, 8, 9)) {
+      return;
+    }
+
+    const profiles = workspace._profiles ?? [];
+    const sessions = workspace._sessions ?? [];
+    const defaultProfileId = profiles.find((profile) => profile.name === constants.defaultAwsProfileName)?.id;
+    const rolesOnDefault = sessions.filter(
+      (session) => session.type === SessionType.awsSsoRole && session.profileId === defaultProfileId && session.status === SessionStatus.inactive
+    );
+    for (const session of rolesOnDefault) {
+      const profile = pickSsoRoleProfile(session.sessionName, session.roleArn, profiles, sessions);
+      if (!profile.id) {
+        profile.id = uuid.v4();
+        profiles.push({ id: profile.id, name: profile.name });
+      }
+      session.profileId = profile.id;
+    }
+    workspace._profiles = profiles;
+    this.persists(workspace);
+    this.repository.reloadWorkspace();
+  }
+
+  // Saved SSM tunnels (port forwarding) are stored in the workspace
+  private migration10(): void {
+    const workspace = this.getWorkspace();
+    if (!this.checkMigration(workspace, 9, 10)) {
+      return;
+    }
+    workspace._ssmTunnels = workspace._ssmTunnels ?? [];
+    this.persists(workspace);
+    this.repository.reloadWorkspace();
+  }
+
+  // Freeleapp 1.1: the Default Local Port setting of tunnels
+  private migration11(): void {
+    const workspace = this.getWorkspace();
+    if (!this.checkMigration(workspace, 10, 11)) {
+      return;
+    }
+    workspace._ssmLocalPort = workspace._ssmLocalPort ?? constants.ssmLocalPortSameAsRemote;
     this.persists(workspace);
     this.repository.reloadWorkspace();
   }

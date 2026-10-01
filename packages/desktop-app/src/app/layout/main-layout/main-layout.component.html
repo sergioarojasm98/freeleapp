@@ -7,6 +7,7 @@
 </div>
 <div class="sidebar-backdrop {{sidebarOverlay ? 'visible' : ''}}" (click)="closeSidebarOverlay();"></div>
 <div class="sessions {{sidebarVisible ? '' : 'full-width'}} {{compactMode ? 'compact' : ''}}">
-  <app-session></app-session>
+  <app-session *ngIf="!showTunnels"></app-session>
+  <app-ssm-tunnels *ngIf="showTunnels" [pinnedOnly]="pinnedTunnelsOnly"></app-ssm-tunnels>
 </div>
 <div class="clear"></div>

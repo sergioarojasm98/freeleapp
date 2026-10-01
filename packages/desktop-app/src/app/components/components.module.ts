@@ -58,6 +58,11 @@ import { InfoDialogComponent } from "./dialogs/info-dialog/info-dialog.component
 import { OverlayModule } from "@angular/cdk/overlay";
 import { CheckIconSvgComponent } from "./check-icon-svg/check-icon-svg.component";
 import { AuthorizationDialogComponent } from "./dialogs/authorization-dialog/authorization-dialog.component";
+import { SsmTunnelsComponent } from "./ssm-tunnels/ssm-tunnels.component";
+import { PortForwardingFieldsComponent } from "./ssm-tunnels/port-forwarding-fields/port-forwarding-fields.component";
+import { SsmTunnelDialogComponent } from "./dialogs/ssm-tunnel-dialog/ssm-tunnel-dialog.component";
+import { DialogEscapeComponent } from "./dialogs/dialog-escape/dialog-escape.component";
+import { MODAL_CONFIG_DEFAULT_OVERRIDE } from "ngx-bootstrap/modal";
 
 @NgModule({
   declarations: [
@@ -89,6 +94,10 @@ import { AuthorizationDialogComponent } from "./dialogs/authorization-dialog/aut
     BottomBarComponent,
     InfoDialogComponent,
     CheckIconSvgComponent,
+    SsmTunnelsComponent,
+    PortForwardingFieldsComponent,
+    SsmTunnelDialogComponent,
+    DialogEscapeComponent,
   ],
   imports: [
     CommonModule,
@@ -128,6 +137,8 @@ import { AuthorizationDialogComponent } from "./dialogs/authorization-dialog/aut
     MatLegacyTabsModule,
     MatLegacyButtonModule,
   ],
+  // Dialogs close on Escape through app-dialog-escape, which runs their own Cancel (callbacks included)
+  providers: [{ provide: MODAL_CONFIG_DEFAULT_OVERRIDE, useValue: { keyboard: false } }],
   exports: [
     ConfirmationDialogComponent,
     AuthorizationDialogComponent,
@@ -135,6 +146,7 @@ import { AuthorizationDialogComponent } from "./dialogs/authorization-dialog/aut
     CommandBarComponent,
     SideBarComponent,
     SessionsComponent,
+    SsmTunnelsComponent,
   ],
 })
 export class ComponentsModule {}

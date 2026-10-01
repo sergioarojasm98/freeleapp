@@ -7,6 +7,9 @@ import { SessionFactory } from "./session-factory";
 import { SessionStatus } from "../models/session-status";
 import { AwsSessionService } from "./session/aws/aws-session-service";
 import { BehaviouralSubjectService } from "./behavioural-subject-service";
+import { LeappBaseError } from "../errors/leapp-base-error";
+import { LogLevel } from "./log-service";
+import { customProfiles, ownProfileName, pickFreeProfile } from "./sso-role-profile";
 
 export class NamedProfilesService {
   constructor(private sessionFactory: SessionFactory, private repository: Repository, private behaviouralSubjectService: BehaviouralSubjectService) {}
@@ -14,6 +17,16 @@ export class NamedProfilesService {
   getNamedProfiles(excludingDefault: boolean = false): AwsNamedProfile[] {
     const excludedProfileId = excludingDefault ? this.repository.getDefaultProfileId() : null;
     return this.repository.getProfiles().filter((profile) => profile.id !== excludedProfileId);
+  }
+
+  // The profiles Settings lists: "default" and custom ones, not the profiles sessions have of their own
+  getCustomNamedProfiles(): AwsNamedProfile[] {
+    const profiles = customProfiles(this.repository.getProfiles(), this.repository.getSessions());
+    // "default" first, the rest in the order they were added
+    return [
+      ...profiles.filter((p) => p.name === constants.defaultAwsProfileName),
+      ...profiles.filter((p) => p.name !== constants.defaultAwsProfileName),
+    ];
   }
 
   getProfileName(profileId: string): string {
@@ -46,6 +59,25 @@ export class NamedProfilesService {
     return this.repository.getSessions().filter((session) => (session as any).profileId === id);
   }
 
+  /**
+   * A named profile holds the credentials of one session at a time, so it cannot be assigned to a second session
+   *
+   * @param profileId the profile to assign
+   * @param sessionId the session it is assigned to (none for a session that is being created)
+   */
+  checkProfileIsFree(profileId: string, sessionId?: string): void {
+    const otherSession = this.getSessionsWithNamedProfile(profileId).find((session) => session.sessionId !== sessionId);
+    if (otherSession) {
+      const profileName = this.repository.getProfileName(profileId);
+      throw new LeappBaseError(
+        "Named profile already in use",
+        this,
+        LogLevel.warn,
+        `The named profile "${profileName}" is already used by ${otherSession.sessionName}. Choose another one or type a new name.`
+      );
+    }
+  }
+
   createNamedProfile(name: string): AwsNamedProfile {
     const namedProfile = new AwsNamedProfile(this.getNewId(), name.trim());
     this.repository.addProfile(namedProfile);
@@ -73,18 +105,21 @@ export class NamedProfilesService {
     }
   }
 
+  /**
+   * Delete a named profile. Its sessions move to a profile of their own ("<account>-<role>", or the session name),
+   * restarting the active ones.
+   */
   async deleteNamedProfile(id: string): Promise<void> {
-    const sessions = this.getSessionsWithNamedProfile(id);
-    const defaultNamedProfileId = this.repository.getDefaultProfileId();
-
-    for (const session of sessions) {
+    for (const session of this.getSessionsWithNamedProfile(id)) {
       const sessionService = this.sessionFactory.getSessionService(session.type);
       const wasActive = session.status === SessionStatus.active;
       if (wasActive) {
         await sessionService.stop(session.sessionId);
       }
 
-      (session as any).profileId = defaultNamedProfileId;
+      // The deleted profile still counts as taken, so its name is not picked again
+      const own = pickFreeProfile(ownProfileName(session as any), this.repository.getProfiles(), this.repository.getSessions());
+      (session as any).profileId = own.id ?? this.createNamedProfile(own.name).id;
       this.repository.updateSession(session.sessionId, session);
       this.behaviouralSubjectService.setSessions(this.repository.getSessions());
 
@@ -98,6 +133,7 @@ export class NamedProfilesService {
   async changeNamedProfile(session: Session, newNamedProfileId: string): Promise<void> {
     const sessionService = this.sessionFactory.getSessionService(session.type);
     if (sessionService instanceof AwsSessionService) {
+      this.checkProfileIsFree(newNamedProfileId, session.sessionId);
       const wasActive = session.status === SessionStatus.active;
       if (wasActive) {
         await sessionService.stop(session.sessionId);
@@ -121,9 +157,6 @@ export class NamedProfilesService {
     const trimmedName = name.trim();
     if (trimmedName.length === 0) {
       return "Empty profile name";
-    }
-    if (trimmedName === constants.defaultAwsProfileName) {
-      return '"default" is not a valid profile name';
     }
     const namedProfilesNames = this.getNamedProfiles().map((namedProfile) => namedProfile.name);
     if (namedProfilesNames.includes(trimmedName)) {

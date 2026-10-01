@@ -67,9 +67,6 @@ describe("CommandBarComponent", () => {
     (component as any).subscription5 = {
       unsubscribe: () => {},
     };
-    (component as any).subscription6 = {
-      unsubscribe: () => {},
-    };
     (component as any).userSubscription = {
       unsubscribe: () => {},
     };

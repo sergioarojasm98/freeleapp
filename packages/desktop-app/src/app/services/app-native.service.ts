@@ -15,6 +15,8 @@ export class AppNativeService implements INativeService {
   app: any;
   dialog: any;
   exec: any;
+  spawn: any;
+  net: any;
   session: any;
   unzip: any;
   copydir: any;
@@ -34,24 +36,22 @@ export class AppNativeService implements INativeService {
   httpsProxyAgent: any;
   nativeTheme: any;
   notification: any;
-  nodeIpc: any;
   process: any;
   msalEncryptionService: IMsalEncryptionService;
-  hashElement: any;
-  requireModule: any;
-  crypto: any;
-  tar: any;
   fetch: any;
 
   constructor() {
     if (this.isElectron) {
       this.log = window.require("electron-log");
+      this.trustSystemCertificates();
       this.fs = window.require("fs-extra");
       this.rimraf = window.require("rimraf");
       this.os = window.require("os");
       this.ini = window.require("js-ini");
       this.path = window.require("path");
       this.exec = window.require("child_process").exec;
+      this.spawn = window.require("child_process").spawn;
+      this.net = window.require("net");
       this.url = window.require("url");
       this.unzip = window.require("extract-zip");
       this.copydir = window.require("copy-dir");
@@ -73,18 +73,27 @@ export class AppNativeService implements INativeService {
       this.ipcRenderer = window.require("electron").ipcRenderer;
       this.nativeTheme = window.require("@electron/remote").nativeTheme;
       this.notification = window.require("@electron/remote").Notification;
-      this.nodeIpc = window.require("node-ipc");
       this.process = (window as any).process;
-      this.msalEncryptionService = new MsalEncryptionService(window.require("@noovolari/dpapi-addon"));
-      this.requireModule = window.require("require-module");
-      this.hashElement = window.require("folder-hash");
-      this.crypto = window.require("crypto");
-      this.tar = window.require("tar");
+      // DPAPI only exists on Windows, the only platform that encrypts the MSAL cache
+      this.msalEncryptionService = new MsalEncryptionService(
+        this.process.platform === "win32" ? window.require("@noovolari/dpapi-addon") : undefined
+      );
       this.fetch = window.fetch.bind(window);
     }
   }
 
   get isElectron(): boolean {
     return !!(window && window.process && (window.process as any).type);
+  }
+
+  // Node requests (e.g. follow-redirects) only trust the CAs bundled with Node, while Chromium requests use the
+  // OS store: add the certificates the OS trusts, such as the root CA of a TLS-inspecting corporate proxy
+  private trustSystemCertificates(): void {
+    try {
+      const tls = window.require("tls");
+      tls.setDefaultCACertificates([...tls.getCACertificates("default"), ...tls.getCACertificates("system")]);
+    } catch (error) {
+      this.log.warn(`Could not load the system certificates: ${error.message}`);
+    }
   }
 }

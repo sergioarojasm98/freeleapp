@@ -1,4 +1,3 @@
-import * as ipc from "node-ipc";
 import { IMsalEncryptionService } from "./i-msal-encryption-service";
 
 export interface INativeService {
@@ -8,6 +7,8 @@ export interface INativeService {
   os: any;
   ini: any;
   exec: any;
+  spawn: any;
+  net: any;
   unzip: any;
   copydir: any;
   sudo: any;
@@ -19,11 +20,6 @@ export interface INativeService {
   httpProxyAgent: any;
   httpsProxyAgent: any;
   process: any;
-  nodeIpc: typeof ipc;
   msalEncryptionService: IMsalEncryptionService;
-  hashElement: any;
-  requireModule: any;
-  crypto: any;
-  tar: any;
   fetch: any;
 }

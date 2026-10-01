@@ -52,30 +52,43 @@
 }
 
 .option-table {
+  // Name and buttons on one line, centered in the row
+  tr {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+  }
+
+  // The row's bottom border, drawn by every cell at the row's full height
   td {
-    padding-left: 10px !important;
-    padding-right: 10px !important;
-    display: inline-block;
+    display: block;
+    align-self: stretch;
+    height: auto !important;
+    padding: 8px 10px !important;
+    border-top: none;
   }
 
   td:nth-child(1) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
     font-size: 13px;
     font-weight: 400;
     color: $text-black;
-    width: 83%;
     overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   td:nth-child(2) {
-    width: 80px;
-    position: relative;
-    top: calc(50% - 10px);
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 
     button {
       display: inline-block !important;
-      margin-left: 10px;
-      position: relative;
-      top: calc(50% - 10px);
     }
   }
 }
@@ -99,7 +112,7 @@
   max-height: 200px;
 }
 
-// Tabs built around one list (IdP URLs, Named Profiles, Plugins): the list takes the rest of the tab's height and
+// Tabs built around one list (IdP URLs, Named Profiles): the list takes the rest of the tab's height and
 // scrolls on its own, instead of a fixed height that leaves tall windows half empty
 .panel.fill-height {
   display: flex;
@@ -159,47 +172,6 @@
   }
 }
 
-.plugin-table {
-  th {
-    height: 42px !important;
-    z-index: 2;
-  }
-
-  th:nth-child(1),
-  td:nth-child(1) {
-    width: 40%;
-  }
-
-  th:nth-child(3),
-  td:nth-child(3) {
-    text-align: center;
-  }
-
-  th:nth-child(5),
-  td:nth-child(5) {
-    text-align: right;
-  }
-
-  i.fa-apple, i.fa-windows, i.fa-linux {
-    color: $dark-main-background;
-  }
-}
-
-.bw {
-  filter: grayscale(1) !important;
-}
-
-.borderless-button {
-  margin: 0 0 0 15px;
-  padding: 0;
-  background-color: unset !important;
-}
-
-.centered-column {
-  display: inline-block;
-  padding-bottom: 10px;
-}
-
 .touch-id-enable-checkbox {
   position: relative;
   top: 3px;
@@ -223,4 +195,30 @@
 
 .form-field button {
   padding: 2px 5px;
+}
+
+.setting-help {
+  // Under the field, past the 28% label column (form.scss)
+  margin: 10px 0 0 28%;
+  font-size: 12px;
+  line-height: 16px;
+  color: $table-text;
+}
+
+.profile-note {
+  margin-top: 2px;
+  font-size: 12px;
+  color: $table-text;
+
+  code {
+    color: inherit;
+    font-size: 11px;
+  }
+}
+
+.profiles-help {
+  margin: -4px 0 12px;
+  font-size: 12px;
+  line-height: 16px;
+  color: $table-text;
 }

@@ -1,0 +1,72 @@
+<div class="ssm-tunnels">
+  <div class="tunnels-header">
+    <h3>{{pinnedOnly ? 'Pinned Tunnels' : 'Tunnels'}}</h3>
+    <span>SSM port forwardings that run in the background, with fresh credentials from their session.</span>
+  </div>
+
+  <div class="tunnels-empty" *ngIf="tunnels.length === 0">
+    <i class="{{pinnedOnly && !searchText ? 'moon-Pin' : 'moon-Server'}}"></i>
+    <p *ngIf="searchText && allTunnels.length > 0">No tunnels match "{{searchText}}".</p>
+    <p *ngIf="!(searchText && allTunnels.length > 0) && pinnedOnly">No pinned tunnels yet. Pin one from its <b>…</b> menu in <b>Tunnels</b>.</p>
+    <p *ngIf="!(searchText && allTunnels.length > 0) && !pinnedOnly">No tunnels yet. On a session, open <b>View SSM Sessions</b>, pick an instance and use <b>Forward Port</b>.</p>
+  </div>
+
+  <table class="table tunnels-table" *ngIf="tunnels.length > 0">
+    <colgroup>
+      <col class="col-tunnel"/>
+      <col class="col-target"/>
+      <col class="col-local"/>
+      <col class="col-status"/>
+      <col class="col-actions"/>
+    </colgroup>
+    <thead>
+    <tr>
+      <th>Tunnel</th>
+      <th>Target</th>
+      <th>Local Address</th>
+      <th>Status</th>
+      <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr *ngFor="let tunnel of tunnels; trackBy: trackById" class="status-{{state(tunnel).status}}">
+      <td>
+        <span class="primary" [title]="tunnel.name">
+          <span class="tunnel-name">{{tunnel.name}}</span>
+          <i class="moon-Pin pinned" *ngIf="tunnel.pinned" matTooltip="Pinned"></i>
+          <i class="moon-Play auto-start" *ngIf="tunnel.autoStart" matTooltip="Starts whenever its session starts"></i>
+        </span>
+        <span class="secondary" [title]="sessionName(tunnel) + (profileName(tunnel) ? ' · ' + profileName(tunnel) : '')">
+          {{sessionName(tunnel)}}<ng-container *ngIf="profileName(tunnel)"> · {{profileName(tunnel)}}</ng-container>
+        </span>
+      </td>
+      <td>
+        <span class="primary" [title]="(tunnel.remoteHost || tunnel.instanceName) + ':' + tunnel.remotePort">{{tunnel.remoteHost || tunnel.instanceName}}:{{tunnel.remotePort}}</span>
+        <span class="secondary" [title]="(tunnel.remoteHost ? 'through ' + tunnel.instanceName + ', ' : '') + tunnel.region">
+          {{tunnel.remoteHost ? 'through ' + tunnel.instanceName + ', ' : ''}}{{tunnel.region}}
+        </span>
+      </td>
+      <td>
+        <a class="primary local-address" (click)="copyLocalAddress(tunnel)" matTooltip="Copy the address">localhost:{{tunnel.localPort}} <i class="moon-Copy"></i></a>
+        <span class="secondary">{{tunnel.remoteHost ? 'to a remote host' : 'to the instance'}}</span>
+      </td>
+      <td>
+        <span class="primary status"><i class="fa fa-circle"></i> {{statusLabel(tunnel)}}</span>
+        <span class="secondary status-message" *ngIf="state(tunnel).message" [title]="state(tunnel).message">{{state(tunnel).message}}</span>
+        <span class="secondary" *ngIf="!state(tunnel).message && activeFor(tunnel)">for {{activeFor(tunnel)}}</span>
+      </td>
+      <td class="actions">
+        <button class="btn-control btn-sm tunnel-toggle" (click)="toggle(tunnel)"
+                [matTooltip]="isRunning(tunnel) ? 'Stop the tunnel and free the local port' : 'Start the tunnel in the background'">{{isRunning(tunnel) ? 'Stop' : 'Start'}}</button>
+        <a class="more" [matMenuTriggerFor]="tunnelMenu" matTooltip="More actions"><i class="moon-More"></i></a>
+        <mat-menu #tunnelMenu>
+          <button mat-menu-item (click)="copyCommand(tunnel)"><i class="moon-Terminal"></i>&nbsp;<span>Copy Command</span></button>
+          <button mat-menu-item (click)="togglePin(tunnel)"><i class="moon-Pin"></i>&nbsp;<span>{{tunnel.pinned ? 'Unpin Tunnel' : 'Pin Tunnel'}}</span></button>
+          <button mat-menu-item (click)="edit(tunnel)"><i class="moon-Edit"></i>&nbsp;<span>Edit Tunnel</span></button>
+          <button mat-menu-item (click)="delete(tunnel)"><i class="moon-Delete"></i>&nbsp;<span>Delete Tunnel</span></button>
+        </mat-menu>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</div>

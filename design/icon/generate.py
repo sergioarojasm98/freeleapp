@@ -189,7 +189,7 @@ def export_app_assets(desktop_app):
         body.save(folder / "Leapp.png")
         full.save(folder / "Leapp.icns")
         full.save(folder / "Leapp.ico", sizes=ico_sizes)
-    # macOS 26+ Liquid Glass icon, compiled to Assets.car with actool by CI (see desktop-app-build.yml)
+    # macOS 26+ Liquid Glass icon, compiled to Assets.car by electron-builder (mac.icon in package.json)
     target = desktop_app / "build/Freeleapp.icon"
     shutil.rmtree(target, ignore_errors=True)
     shutil.copytree(OUT / f"Freeleapp-{APP_ICON_VARIANT}.icon", target)

@@ -18,11 +18,6 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      # node-gyp bundled with npm 8 still needs distutils (removed in Python 3.12)
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.11"
-
       - name: Install root dependencies
         run: npm install
 
@@ -51,20 +46,13 @@ jobs:
           -c.mac.notarize=false
           -c.mac.hardenedRuntime=false
 
-      # macOS 26+ renders the Icon Composer icon (Liquid Glass) from Assets.car;
-      # older versions keep using the icns. Must happen before signing.
-      - name: Add Liquid Glass icon
-        working-directory: packages/desktop-app
+      # electron-builder compiles mac.icon (Icon Composer) into Assets.car for the macOS 26+ Liquid Glass icon
+      - name: Check Liquid Glass icon
+        working-directory: packages/desktop-app/release/mac-arm64/Freeleapp.app/Contents
         run: |
-          mkdir -p build/icon-assets
-          xcrun actool build/Freeleapp.icon --compile build/icon-assets --platform macosx \
-            --minimum-deployment-target 11.0 --app-icon Freeleapp \
-            --output-partial-info-plist build/icon-assets/partial.plist
-          cp build/icon-assets/Assets.car release/mac-arm64/Freeleapp.app/Contents/Resources/
-          PLIST=release/mac-arm64/Freeleapp.app/Contents/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleIconName Freeleapp" "$PLIST" 2>/dev/null \
-            || /usr/libexec/PlistBuddy -c "Add :CFBundleIconName string Freeleapp" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$PLIST"
+          test -f Resources/Assets.car
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIconName" Info.plist
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIconFile" Info.plist
 
       - name: Ad-hoc sign app bundle
         working-directory: packages/desktop-app/release/mac-arm64

@@ -288,6 +288,54 @@ describe("Repository", () => {
     expect(repository.persistWorkspace).not.toHaveBeenCalled();
   });
 
+  test("deleteSession() - also removes the session's SSM tunnels", () => {
+    const tunnel = (id: string, sessionId: string) => ({ id, sessionId } as any);
+    const workspace: any = { sessions: [{ sessionId: "s1" }, { sessionId: "s2" }], ssmTunnels: [tunnel("t1", "s1"), tunnel("t2", "s2")] };
+    repository.persistWorkspace = jest.fn();
+    repository.getWorkspace = () => workspace;
+
+    repository.deleteSession("s1");
+
+    expect(workspace.sessions).toEqual([{ sessionId: "s2" }]);
+    expect(workspace.ssmTunnels).toEqual([tunnel("t2", "s2")]);
+    expect(repository.persistWorkspace).toHaveBeenCalledWith(workspace);
+  });
+
+  test("deleteSession() - also removes the session's own profile, not a shared, custom or default one", () => {
+    const sso = (sessionId: string, profileId: string) =>
+      ({ sessionId, sessionName: "payments", roleArn: "arn:aws:iam::111/Admin", type: SessionType.awsSsoRole, profileId } as any);
+    const workspace: any = {
+      sessions: [sso("s1", "own"), sso("s2", "own-2"), sso("s3", "own-2"), sso("s4", "custom"), sso("s5", "default")],
+      profiles: [
+        { id: "own", name: "payments-Admin" },
+        { id: "own-2", name: "payments-Admin-2" },
+        { id: "custom", name: "team-payments" },
+        { id: "default", name: "default" },
+      ],
+    };
+    repository.persistWorkspace = jest.fn();
+    repository.getWorkspace = () => workspace;
+
+    ["s1", "s2", "s4", "s5"].forEach((sessionId) => repository.deleteSession(sessionId));
+
+    expect(workspace.profiles.map((p: any) => p.id)).toEqual(["own-2", "custom", "default"]);
+  });
+
+  test("SSM tunnels - list, add, update and delete", () => {
+    const workspace: any = {};
+    repository.persistWorkspace = jest.fn();
+    repository.getWorkspace = () => workspace;
+
+    expect(repository.listSsmTunnels()).toEqual([]);
+    repository.addSsmTunnel({ id: "t1", name: "db", localPort: 15432 } as any);
+    repository.addSsmTunnel({ id: "t2", name: "mq", localPort: 17007 } as any);
+    repository.updateSsmTunnel({ id: "t1", name: "database", localPort: 15433 } as any);
+    repository.deleteSsmTunnel("t2");
+
+    expect(repository.listSsmTunnels()).toEqual([{ id: "t1", name: "database", localPort: 15433 }]);
+    expect(repository.persistWorkspace).toHaveBeenCalledTimes(4);
+  });
+
   test("listPending() - list sessions in pending state", () => {
     mockedSession.status = SessionStatus.pending;
     const workspace = new Workspace();
@@ -581,7 +629,7 @@ describe("Repository", () => {
     expect(repository.getDefaultProfileId()).toStrictEqual(defaultProfile.id);
   });
 
-  test("getDefaultProfileId() - no default named profile found", () => {
+  test("getDefaultProfileId() - undefined once the default profile is deleted", () => {
     const workspace = new Workspace();
     mockedFileService.encryptText = jest.fn(() => JSON.stringify(workspace));
 
@@ -589,7 +637,7 @@ describe("Repository", () => {
     repository.persistWorkspace(workspace);
 
     workspace.profiles = [];
-    expect(() => repository.getDefaultProfileId()).toThrow("no default named profile found.");
+    expect(repository.getDefaultProfileId()).toBeUndefined();
   });
 
   test("addProfile() - add a new profile to the workspace", () => {
@@ -1282,30 +1330,6 @@ describe("Repository", () => {
     expect(repository.getColorTheme()).toBe(constants.darkTheme);
   });
 
-  test("createPluginStatus() - creates a new pluginStatus", () => {
-    (repository as any)._workspace = {
-      pluginsStatus: [],
-    };
-    repository.createPluginStatus("pluginId");
-    expect((repository as any)._workspace.pluginsStatus).toStrictEqual([{ id: "pluginId", active: true }]);
-  });
-
-  test("getPluginStatus() - get the pluginStatus from a pluginId", () => {
-    (repository as any)._workspace = {
-      pluginsStatus: [{ id: "id1" }, { id: "id2" }],
-    };
-    const result = repository.getPluginStatus("id1");
-    expect(result).toStrictEqual({ id: "id1" });
-  });
-
-  test("setPluginStatus() - set the newStatus of a pluginStatus from a pluginId", () => {
-    (repository as any)._workspace = {
-      pluginsStatus: [{ id: "id1" }, { id: "id2" }],
-    };
-    repository.setPluginStatus("id1", "new-status");
-    expect((repository as any)._workspace.pluginsStatus).toStrictEqual(["new-status", { id: "id2" }]);
-  });
-
   test("writeFile", () => {
     const data = "data-mock";
     repository.nativeService = { fs: { writeFileSync: jest.fn() } };
@@ -1319,7 +1343,6 @@ describe("Repository", () => {
     mockedWorkspace.defaultLocation = "mock-default-location";
     mockedWorkspace.defaultRegion = "mock-default-region";
     mockedWorkspace.macOsTerminal = "mock-terminal";
-    mockedWorkspace.pluginsStatus = "mock-plugin-status";
     mockedWorkspace.samlRoleSessionDuration = "mock-saml-role-session-duration";
     mockedWorkspace.pinned = "mock-pinned";
     mockedWorkspace.segments = "mock-segments";
@@ -1335,7 +1358,6 @@ describe("Repository", () => {
       defaultRegion: "mock-default-region",
       macOsTerminal: "mock-terminal",
       notifications: mockedNotifications,
-      pluginsStatus: "mock-plugin-status",
       remoteWorkspacesSettingsMap: {},
       requirePassword: undefined,
       samlRoleSessionDuration: "mock-saml-role-session-duration",
@@ -1353,7 +1375,6 @@ describe("Repository", () => {
       defaultLocation: "mock-default-location",
       defaultRegion: "mock-default-region",
       macOsTerminal: "mock-terminal",
-      pluginsStatus: "mock-plugin-status",
       samlRoleSessionDuration: "mock-saml-role-session-duration",
       pinned: "mock-pinned",
       segments: "mock-segments",
@@ -1370,7 +1391,6 @@ describe("Repository", () => {
     expect(mockedWorkspace.defaultLocation).toEqual("mock-default-location");
     expect(mockedWorkspace.defaultRegion).toEqual("mock-default-region");
     expect(mockedWorkspace.macOsTerminal).toEqual("mock-terminal");
-    expect(mockedWorkspace.pluginsStatus).toEqual("mock-plugin-status");
     expect(mockedWorkspace.samlRoleSessionDuration).toEqual("mock-saml-role-session-duration");
     expect(mockedWorkspace.pinned).toEqual("mock-pinned");
     expect(mockedWorkspace.segments).toEqual("mock-segments");

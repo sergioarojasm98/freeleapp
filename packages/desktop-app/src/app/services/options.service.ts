@@ -105,14 +105,14 @@ export class OptionsService {
     }
   }
 
-  get ssmRegionBehaviour(): string {
+  get ssmLocalPort(): string {
     const workspace = this.workspaceService.getWorkspace();
-    return workspace.ssmRegionBehaviour;
+    return workspace.ssmLocalPort;
   }
 
-  set ssmRegionBehaviour(ssmRegionBehaviour: string) {
+  set ssmLocalPort(ssmLocalPort: string) {
     const workspace = this.workspaceService.getWorkspace();
-    workspace.ssmRegionBehaviour = ssmRegionBehaviour;
+    workspace.ssmLocalPort = ssmLocalPort;
     this.workspaceService.persistWorkspace(workspace);
   }
 

@@ -1,0 +1,144 @@
+@import "mixins/palette";
+
+// One look for every button in the app, in both themes. Loaded last from styles.scss, and !important because
+// component styles and the dark theme used to give each button its own colors.
+
+$button-radius: 8px;
+$button-pressed: #245d96;
+
+// Action buttons: Done, Save, Connect, Start Tunnel, Copy Command...
+.btn-control {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 7px 16px !important;
+  border: 1px solid transparent !important;
+  border-radius: $button-radius !important;
+  background: $main-color-light !important;
+  color: $white-text-color !important;
+  font-size: 14px !important;
+  font-weight: 500;
+  line-height: 20px !important;
+  white-space: nowrap;
+  opacity: 1 !important;
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+
+  i,
+  span {
+    color: $white-text-color !important;
+  }
+
+  &:hover {
+    background: $hover-color !important;
+  }
+
+  // Pressed, and a button whose panel is open (e.g. Forward Port)
+  &:active,
+  &.active {
+    background: $button-pressed !important;
+  }
+
+  &:focus-visible {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba($main-color-light, 0.35);
+  }
+
+  &:disabled,
+  &.mat-button-disabled {
+    background: $silver-dark !important;
+    color: $white-text-color !important;
+    cursor: default;
+  }
+
+  // Smaller, for rows and toolbars
+  &.btn-sm {
+    min-height: 30px;
+    padding: 4px 12px !important;
+    font-size: 13px !important;
+  }
+
+  // A negative or optional choice next to an action, e.g. Remind Me Later
+  &.btn-secondary {
+    border-color: $main-color-light !important;
+    background: transparent !important;
+    color: $main-color-light !important;
+
+    &:hover {
+      background: rgba($main-color-light, 0.12) !important;
+    }
+
+    &:active {
+      background: rgba($main-color-light, 0.22) !important;
+    }
+  }
+}
+
+// Filter chips: outlined while off, blue while on
+.toggle-button.filter-button {
+  border: 1px solid $silver-dark !important;
+  border-radius: $button-radius !important;
+  background: transparent !important;
+  color: $text-color !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  i {
+    color: inherit !important;
+  }
+
+  &:hover {
+    border-color: $main-color-light !important;
+    background: rgba($main-color-light, 0.12) !important;
+  }
+
+  &.toggled,
+  &.toggled:hover {
+    border-color: $main-color-light !important;
+    background: $main-color-light !important;
+    color: $white-text-color !important;
+  }
+}
+
+body.dark-theme .toggle-button.filter-button:not(.toggled) {
+  border-color: $dark-input-form-border !important;
+  color: $dark-main-text-color !important;
+}
+
+// Common port choices under the port forwarding fields
+.port-chip {
+  padding: 2px 7px;
+  border: 1px solid $silver-dark;
+  border-radius: 12px;
+  background: transparent;
+  color: $text-color;
+  font-size: 12px;
+  line-height: 18px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  span {
+    opacity: 0.65;
+  }
+
+  &:hover {
+    border-color: $main-color-light;
+    background: rgba($main-color-light, 0.12);
+  }
+
+  &.selected {
+    border-color: $main-color-light;
+    background: $main-color-light;
+    color: $white-text-color;
+
+    span {
+      opacity: 0.85;
+    }
+  }
+}
+
+body.dark-theme .port-chip:not(.selected) {
+  border-color: $dark-input-form-border;
+  color: $dark-main-text-color;
+}

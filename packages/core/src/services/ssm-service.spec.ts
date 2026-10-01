@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
-import { SsmService } from "./ssm-service";
+import { portForwardingCommand, ssmCommandForProfile, SsmService, validatePortForwarding } from "./ssm-service";
 import { ExecuteService } from "./execute-service";
 import { CredentialsInfo } from "../models/credentials-info";
 import { INativeService } from "../interfaces/i-native-service";
@@ -123,6 +123,83 @@ describe("SsmService", () => {
       done();
       expect(logService.log).not.toHaveBeenCalled();
     }, 100);
+  });
+
+  test("startPortForwardingSession - opens a terminal with the port forwarding command", (done) => {
+    const logService = new LogService({ log: jest.fn() } as any);
+    ssmService = new SsmService(logService as any, executeService, nativeService, null);
+
+    ssmService.startPortForwardingSession(credentialInfo, "i-096cb506adb838c72", "us-east-1", { remotePort: 15672, localPort: 17007 });
+
+    setTimeout(() => {
+      expect(executeService.openTerminal).toHaveBeenCalledWith(
+        "aws ssm start-session --region us-east-1 --target i-096cb506adb838c72 --document-name AWS-StartPortForwardingSession" +
+          " --parameters portNumber=15672,localPortNumber=17007",
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        { AWS_ACCESS_KEY_ID: "123", AWS_SECRET_ACCESS_KEY: "345", AWS_SESSION_TOKEN: "678" },
+        undefined
+      );
+      done();
+    }, 100);
+  });
+
+  test("portForwardingCommand - to a remote host through the instance", () => {
+    expect(
+      portForwardingCommand("i-0c6bb0d9296e3cc2e", "us-west-2", {
+        remoteHost: "batchengine-psql.clykg60eg5sn.us-west-2.rds.amazonaws.com",
+        remotePort: 5432,
+        localPort: 15454,
+      })
+    ).toBe(
+      "aws ssm start-session --region us-west-2 --target i-0c6bb0d9296e3cc2e --document-name AWS-StartPortForwardingSessionToRemoteHost" +
+        " --parameters host=batchengine-psql.clykg60eg5sn.us-west-2.rds.amazonaws.com,portNumber=5432,localPortNumber=15454"
+    );
+  });
+
+  test("portForwardingCommand - rejects values that are not plain hosts and ports", () => {
+    expect(() => portForwardingCommand("i-1", "us-east-1", { remoteHost: "db.local; rm -rf ~", remotePort: 5432, localPort: 5432 })).toThrow(
+      "The remote host must be a host name or an IP address."
+    );
+  });
+
+  test("ssmCommandForProfile - commands to paste in a terminal use the session's named profile", () => {
+    expect(ssmCommandForProfile("i-0aa1", "us-east-1", "cogs-jo-prd")).toBe(
+      "aws ssm start-session --region us-east-1 --target i-0aa1 --profile cogs-jo-prd"
+    );
+    expect(ssmCommandForProfile("i-0aa1", "us-east-1", "cogs-jo-prd", { remotePort: 15672, localPort: 17007 })).toBe(
+      "aws ssm start-session --region us-east-1 --target i-0aa1 --document-name AWS-StartPortForwardingSession" +
+        " --parameters portNumber=15672,localPortNumber=17007 --profile cogs-jo-prd"
+    );
+    expect(ssmCommandForProfile("i-0aa1", "us-east-1", "my profile's")).toBe(
+      "aws ssm start-session --region us-east-1 --target i-0aa1 --profile 'my profile'\\''s'"
+    );
+  });
+
+  test("caches instances per session and region, and remembers each session's last region", () => {
+    ssmService = new SsmService({ log: jest.fn() } as any, executeService, nativeService, null);
+    const instances = [{ ["InstanceId"]: "i-1" }];
+
+    expect(ssmService.getCachedInstances("s1", "us-east-1")).toBeUndefined();
+    ssmService.cacheInstances("s1", "us-east-1", instances);
+    expect(ssmService.getCachedInstances("s1", "us-east-1").instances).toBe(instances);
+    expect(ssmService.getCachedInstances("s1", "us-east-1").loadedAt).toBeInstanceOf(Date);
+    expect(ssmService.getCachedInstances("s1", "eu-west-1")).toBeUndefined();
+    expect(ssmService.getCachedInstances("s2", "us-east-1")).toBeUndefined();
+
+    expect(ssmService.getLastRegion("s1")).toBeUndefined();
+    ssmService.rememberRegion("s1", "us-west-2");
+    expect(ssmService.getLastRegion("s1")).toBe("us-west-2");
+  });
+
+  test("validatePortForwarding", () => {
+    expect(validatePortForwarding({ remotePort: 22, localPort: 2222 })).toBeUndefined();
+    expect(validatePortForwarding({ remoteHost: "10.0.1.25", remotePort: 3306, localPort: 13306 })).toBeUndefined();
+    expect(validatePortForwarding({ remoteHost: "-bad", remotePort: 22, localPort: 2222 })).toBe(
+      "The remote host must be a host name or an IP address."
+    );
+    expect(validatePortForwarding({ remotePort: 0, localPort: 2222 })).toBe("The remote port must be a number from 1 to 65535.");
+    expect(validatePortForwarding({ remotePort: 22, localPort: 70000 })).toBe("The local port must be a number from 1 to 65535.");
+    expect(validatePortForwarding({ remotePort: 22.5, localPort: 2222 })).toBe("The remote port must be a number from 1 to 65535.");
   });
 
   test("startSession - on macOS, should create the env file, start an ssm session, and then remove the file", (done) => {
@@ -264,8 +341,6 @@ describe("SsmService", () => {
 
     const resultObject = {
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      ComputerName: undefined,
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       Name: undefined,
       fakeInstanceId: "fake-id-2",
       // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -306,139 +381,58 @@ describe("SsmService", () => {
     }).rejects.toThrow(new Error("No instances are accessible by this Role."));
   });
 
-  test("applyEc2MetadataInformation", async () => {
-    const mockedInstances = [
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      { id: 1, Name: "fake-instance-ip-address" },
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      { id: 2, Name: "found-id" },
+  test("applyEc2MetadataInformation - names, running state and order from EC2", async () => {
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const ssmInstances = [
+      { InstanceId: "i-3", Name: "i-3", IPAddress: "10.0.0.3" },
+      { InstanceId: "i-1", Name: "i-1", IPAddress: "10.0.0.1" },
+      { InstanceId: "i-2", Name: "i-2", IPAddress: "10.0.0.2" },
+      { InstanceId: "i-stopped", Name: "i-stopped" },
+      { InstanceId: "mi-onprem", Name: "mi-onprem" },
     ];
-    let reservations = {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      Reservations: [
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          Instances: [
-            {
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              InstanceId: "found-id",
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              Tags: [{ Key: "Name", Value: "Mocked Name" }],
-            },
-          ],
-        },
-      ],
-    };
+    const pages = [
+      {
+        Reservations: [
+          {
+            // Launched together: every instance of the reservation must be named, not just the first one
+            Instances: [
+              { InstanceId: "i-1", State: { Name: "running" }, Tags: [{ Key: "Name", Value: "rabbitmq" }] },
+              { InstanceId: "i-2", State: { Name: "running" }, Tags: [{ Key: "Name", Value: "api" }] },
+            ],
+          },
+        ],
+        NextToken: "page-2",
+      },
+      {
+        Reservations: [
+          { Instances: [{ InstanceId: "i-3", State: { Name: "running" } }] },
+          { Instances: [{ InstanceId: "i-stopped", State: { Name: "stopped" }, Tags: [{ Key: "Name", Value: "old" }] }] },
+        ],
+      },
+    ];
+    /* eslint-enable @typescript-eslint/naming-convention */
+    ssmService = new SsmService({ log: jest.fn() } as any, executeService, nativeService, null);
+    (ssmService as any).ec2Client = { send: jest.fn(async () => pages.shift()) };
 
-    let ec2Client = {
-      send: jest.fn(async () => Promise.resolve(reservations)),
-    };
+    const result = await (ssmService as any).applyEc2MetadataInformation(ssmInstances);
 
-    const logService: any = {
-      log: jest.fn(),
-    };
-
-    ssmService = new SsmService(logService, executeService, nativeService, null);
-    (ssmService as any).ec2Client = ec2Client;
-    let result = await (ssmService as any).applyEc2MetadataInformation(mockedInstances);
-    expect(result).toStrictEqual(mockedInstances);
-
-    reservations = {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      Reservations: [
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          Instances: [
-            {
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              InstanceId: "not-found-id",
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              Tags: [{ Key: "Name", Value: "Mocked Name" }],
-            },
-          ],
-        },
-      ],
-    };
-    ec2Client = {
-      send: jest.fn(async () => Promise.resolve(reservations)),
-    };
-    (ssmService as any).ec2Client = ec2Client;
-    result = await (ssmService as any).applyEc2MetadataInformation(mockedInstances);
-    expect(result).toStrictEqual(mockedInstances);
-
-    reservations = {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      Reservations: [
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          Instances: [
-            {
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              InstanceId: "found-id",
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              Tags: [{ Key: "Not-Name", Value: "Not Mocked Name" }],
-            },
-          ],
-        },
-      ],
-    };
-    ec2Client = {
-      send: jest.fn(async () => Promise.resolve(reservations)),
-    };
-    (ssmService as any).ec2Client = ec2Client;
-    result = await (ssmService as any).applyEc2MetadataInformation(mockedInstances);
-    expect(result).toStrictEqual(mockedInstances);
-    expect(mockedInstances[1].Name).not.toStrictEqual("Not Mocked Name");
-
-    ec2Client.send = jest.fn(async () => Promise.reject({ message: "Error" }));
-
-    await expect(async () => {
-      await (ssmService as any).applyEc2MetadataInformation(mockedInstances);
-    }).rejects.toThrow(new LoggedException("Error", this, LogLevel.warn));
+    expect(result.map((instance) => [instance.InstanceId, instance.Name, instance.HasName])).toEqual([
+      ["i-2", "api", true],
+      ["i-1", "rabbitmq", true],
+      ["i-3", "i-3", false],
+      ["mi-onprem", "mi-onprem", false],
+    ]);
   });
 
-  test("applyEc2MetadataInformation - no found names", async () => {
-    const mockedInstances = [
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      { id: 1, Name: "fake-instance-ip-address" },
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      { id: 2, Name: "found-id" },
-    ];
-    const reservations = {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      Reservations: [
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          Instances: [
-            {
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              InstanceId: "found-id",
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              Tags: [{ Key: "Not-Name", Value: "Mocked Name" }],
-            },
-          ],
-        },
-      ],
-    };
-
-    const logService: any = {
-      log: jest.fn(),
-    };
-
-    ssmService = new SsmService(logService, executeService, nativeService, null);
+  test("applyEc2MetadataInformation - EC2 errors are reported", async () => {
+    ssmService = new SsmService({ log: jest.fn() } as any, executeService, nativeService, null);
     (ssmService as any).ec2Client = {
-      send: jest.fn(async () => Promise.resolve(reservations)),
+      send: jest.fn(async () => {
+        throw new Error("UnauthorizedOperation");
+      }),
     };
 
-    const result = await (ssmService as any).applyEc2MetadataInformation(mockedInstances);
-    expect(result).toStrictEqual(mockedInstances);
-
-    const result2 = await (ssmService as any).applyEc2MetadataInformation([]);
-    expect(result2).toStrictEqual([]);
+    await expect((ssmService as any).applyEc2MetadataInformation([])).rejects.toThrow("UnauthorizedOperation");
   });
 
   test("log service completion - must be done here because it seems that for jest --coverage the file is tied here...", () => {

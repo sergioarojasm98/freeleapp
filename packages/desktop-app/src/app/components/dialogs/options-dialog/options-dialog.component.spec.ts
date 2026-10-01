@@ -15,7 +15,6 @@ describe("OptionsDialogComponent", () => {
         awsCoreService: { getRegions: () => [{ region: "us-east-1" }, { region: "eu-west-1" }] },
         azureCoreService: { getLocations: () => [] },
         repository: { getSessions: () => [] },
-        pluginManagerService: { pluginContainers: [] },
       } as any,
       { closeModal, isDarkMode: () => false, validateAllFormFields: () => {} } as any,
       options,
@@ -85,16 +84,17 @@ describe("OptionsDialogComponent", () => {
     expect(closeModal).not.toHaveBeenCalled();
   });
 
-  it("treats Esc like Cancel, and closes only the confirmation while it is open", async () => {
+  it("treats Esc like Cancel, and leaves Esc to the confirmation while it is open", async () => {
     const dialog = await createDialog();
     dialog.setColorTheme(constants.darkTheme);
 
-    dialog.onEscape(new KeyboardEvent("keydown", { key: "Escape" }));
+    dialog.onEscape();
     expect(modalService.show).toHaveBeenCalledTimes(1);
 
-    dialog.onEscape(new KeyboardEvent("keydown", { key: "Escape" }));
-    expect(confirmation.hide).toHaveBeenCalled();
+    // The confirmation handles this one itself
+    dialog.onEscape();
     expect(modalService.show).toHaveBeenCalledTimes(1);
+    expect(closeModal).not.toHaveBeenCalled();
   });
 
   it("puts the previous theme back when closed without Done", async () => {

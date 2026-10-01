@@ -881,7 +881,15 @@ tr:hover .moon-hover-session {
   margin-top: 3px;
 }
 
-.blackery {
-  color: $text-color;
+
+// Checked MDC checkboxes use the app's blue instead of the pink accent of the prebuilt Material theme
+.mat-mdc-checkbox .mdc-checkbox .mdc-checkbox__native-control:enabled:checked ~ .mdc-checkbox__background,
+.mat-mdc-checkbox .mdc-checkbox .mdc-checkbox__native-control:enabled:indeterminate ~ .mdc-checkbox__background {
+  border-color: $main-color-light !important;
+  background-color: $main-color-light !important;
 }
 
+.mat-mdc-checkbox .mdc-checkbox .mdc-checkbox__ripple,
+.mat-mdc-checkbox .mat-mdc-checkbox-ripple .mat-ripple-element {
+  background-color: $main-color-light !important;
+}

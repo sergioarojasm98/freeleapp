@@ -16,7 +16,6 @@ import { SessionService } from "@noovolari/leapp-core/services/session/session-s
 import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
 import { OperatingSystem } from "@noovolari/leapp-core/models/operating-system";
 import { AppNativeService } from "../../../services/app-native.service";
-import { PluginContainer } from "@noovolari/leapp-core/plugin-sdk/plugin-manager-service";
 import { colorThemeSubject } from "../../check-icon-svg/check-icon-svg.component";
 import { withRecentRegions } from "../../../services/region-options";
 
@@ -58,10 +57,11 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   colorTheme: string;
   selectedColorTheme: string;
 
-  pluginList: PluginContainer[];
-  fetchingPlugins: boolean;
-
-  selectedSsmRegionBehaviour: string;
+  selectedSsmLocalPort: string;
+  readonly ssmLocalPortOptions = [
+    { value: constants.ssmLocalPortSameAsRemote, label: "Same as the remote port" },
+    { value: constants.ssmLocalPortFree, label: "The remote port, or a free one if it is taken" },
+  ];
 
   form = new FormGroup({
     idpUrl: new FormControl(""),
@@ -78,8 +78,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     terminalSelect: new FormControl(""),
     colorThemeSelect: new FormControl(""),
     sessionDuration: new FormControl(""),
-    pluginDeepLink: new FormControl(""),
-    ssmRegionBehaviourSelect: new FormControl(""),
+    ssmLocalPortSelect: new FormControl(""),
   });
 
   webConsoleSessionDuration: number;
@@ -112,17 +111,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     this.selectedColorTheme = this.colorTheme;
     this.initialColorTheme = this.colorTheme;
 
-    this.selectedSsmRegionBehaviour = this.optionsService.ssmRegionBehaviour || constants.ssmRegionNo;
-  }
-
-  // The modal is opened with keyboard and backdrop closing turned off (command bar), so both go through cancel()
-  @HostListener("document:keydown.escape", ["$event"])
-  onEscape(event: KeyboardEvent): void {
-    if (this.discardConfirmation) {
-      this.discardConfirmation.hide();
-    } else if (!event.defaultPrevented && this.modalService.getModalsCount() <= 1) {
-      this.cancel();
-    }
+    this.selectedSsmLocalPort = this.optionsService.ssmLocalPort || constants.ssmLocalPortSameAsRemote;
   }
 
   @HostListener("document:mousedown", ["$event"])
@@ -140,8 +129,15 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     }
   }
 
+  // Escape (app-dialog-escape) and a click around the dialog both go through cancel(). A discard confirmation on top
+  // handles Escape itself.
+  onEscape(): void {
+    if (!this.discardConfirmation) {
+      this.cancel();
+    }
+  }
+
   async ngOnInit(): Promise<void> {
-    this.fetchingPlugins = false;
     this.idpUrlValue = "";
     this.proxyProtocol = this.optionsService.proxyConfiguration.proxyProtocol;
     this.proxyUrl = this.optionsService.proxyConfiguration.proxyUrl;
@@ -172,9 +168,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
 
     this.appService.validateAllFormFields(this.form);
 
-    this.pluginList = this.appProviderService.pluginManagerService.pluginContainers;
-
-    this.selectedSsmRegionBehaviour = this.optionsService.ssmRegionBehaviour || constants.ssmRegionNo;
+    this.selectedSsmLocalPort = this.optionsService.ssmLocalPort || constants.ssmLocalPortSameAsRemote;
     this.initialSettings = this.pendingSettings();
   }
 
@@ -186,7 +180,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
 
   /**
    * Cancel, Esc and a click outside all close the dialog without saving: the fields applied by Done are dropped and a
-   * previewed color theme is reverted. List actions (IdP URLs, profiles, plugins) and the credential method keep
+   * previewed color theme is reverted. List actions (IdP URLs, profiles) and the credential method keep
    * applying immediately, each with its own confirmation.
    */
   ngOnDestroy(): void {
@@ -200,22 +194,12 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
       this.appService.closeModal();
       return;
     }
-    this.discardConfirmation = this.modalService.show(ConfirmationDialogComponent, {
-      animated: false,
-      class: "confirm-modal",
-      backdrop: "static",
-      keyboard: false,
-      initialState: {
-        message: "Discard the changes you made in Settings?",
-        confirmText: "Discard",
-        cancelText: "Keep Editing",
-        callback: (answer: string) => {
-          if (answer !== constants.confirmClosed) {
-            this.appService.closeModal();
-          }
-        },
-      },
-    });
+    this.discardConfirmation = this.confirmOverSettings(
+      "Discard the changes you made in Settings?",
+      "Discard",
+      () => this.appService.closeModal(),
+      "Keep Editing"
+    );
     this.discardConfirmation.onHidden.subscribe(() => (this.discardConfirmation = undefined));
   }
 
@@ -254,7 +238,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
       this.optionsService.macOsTerminal = this.selectedTerminal;
       this.optionsService.samlRoleSessionDuration = parseInt(this.form.controls["sessionDuration"].value, 10);
 
-      this.optionsService.ssmRegionBehaviour = this.selectedSsmRegionBehaviour;
+      this.optionsService.ssmLocalPort = this.selectedSsmLocalPort;
 
       if (this.checkIfNeedDialogBox()) {
         // eslint-disable-next-line max-len
@@ -343,23 +327,18 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
       sessionsNames = ["<li><b>no sessions</b></li>"];
     }
 
-    // Ask for deletion
-    // eslint-disable-next-line max-len
-    this.windowService.confirmDialog(
+    this.confirmOverSettings(
       `Deleting this IdP URL will also remove these sessions: <br><ul>${sessionsNames.join("")}</ul>Do you want to proceed?`,
-      (res) => {
-        if (res !== constants.confirmClosed) {
-          this.appProviderService.logService.log(new LoggedEntry(`Removing idp url with id: ${id}`, this, LogLevel.info));
-
-          sessions.forEach((session) => {
-            this.appProviderService.sessionManagementService.deleteSession(session.sessionId);
-            this.appProviderService.behaviouralSubjectService.setSessions(this.appProviderService.sessionManagementService.getSessions());
-          });
-          this.appProviderService.idpUrlService.deleteIdpUrl(id);
-        }
-      },
       "Delete IdP URL",
-      "Cancel"
+      () => {
+        this.appProviderService.logService.log(new LoggedEntry(`Removing idp url with id: ${id}`, this, LogLevel.info));
+
+        sessions.forEach((session) => {
+          this.appProviderService.sessionManagementService.deleteSession(session.sessionId);
+          this.appProviderService.behaviouralSubjectService.setSessions(this.appProviderService.sessionManagementService.getSessions());
+        });
+        this.appProviderService.idpUrlService.deleteIdpUrl(id);
+      }
     );
   }
 
@@ -403,111 +382,25 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   deleteAwsProfile(id: string): void {
-    // With profile
-    const sessions = this.appProviderService.sessionManagementService.getSessions().filter((sess) => (sess as any).profileId === id);
-
-    // Get only names for display
-    let sessionsNames = sessions.map(
-      (s) =>
-        `<li><div class="removed-sessions"><b>${s.sessionName}</b> - <small>${
-          (s as AwsIamRoleFederatedSession).roleArn ? (s as AwsIamRoleFederatedSession).roleArn.split("/")[1] : ""
-        }</small></div></li>`
-    );
-    if (sessionsNames.length === 0) {
-      sessionsNames = ["<li><b>no sessions</b></li>"];
-    }
-
-    // Ask for deletion
-    // eslint-disable-next-line max-len
-    this.windowService.confirmDialog(
-      `Deleting this profile will set default to these sessions: <br><ul>${sessionsNames.join("")}</ul>Do you want to proceed?`,
-      async (res) => {
-        if (res !== constants.confirmClosed) {
-          this.appProviderService.logService.log(new LoggedEntry(`Reverting to default profile with id: ${id}`, this, LogLevel.info));
-
-          // Reverting all sessions to default profile
-          // eslint-disable-next-line @typescript-eslint/prefer-for-of
-          for (let i = 0; i < sessions.length; i++) {
-            this.sessionService = this.appProviderService.sessionFactory.getSessionService(sessions[i].type);
-
-            let wasActive = false;
-            if ((sessions[i] as any).status === SessionStatus.active) {
-              wasActive = true;
-              await this.sessionService.stop(sessions[i].sessionId);
-            }
-
-            (sessions[i] as any).profileId = this.appProviderService.workspaceService.getDefaultProfileId();
-            this.appProviderService.sessionManagementService.updateSession(sessions[i].sessionId, sessions[i]);
-            this.appProviderService.behaviouralSubjectService.setSessions(this.appProviderService.sessionManagementService.getSessions());
-            if (wasActive) {
-              this.sessionService.start(sessions[i].sessionId);
-            }
-          }
-
-          this.appProviderService.namedProfileService.deleteNamedProfile(id);
-        }
-      },
+    const namedProfileService = this.appProviderService.namedProfileService;
+    const profileName = namedProfileService.getProfileName(id);
+    const sessions = namedProfileService.getSessionsWithNamedProfile(id);
+    const sessionList = sessions.map((session) => `<li><b>${session.sessionName}</b></li>`).join("");
+    this.confirmOverSettings(
+      sessions.length === 0
+        ? `Delete the "${profileName}" profile? No session uses it.`
+        : `Delete the "${profileName}" profile? These sessions move to a profile of their own:<ul>${sessionList}</ul>`,
       "Delete Profile",
-      "Cancel"
+      async () => {
+        this.appProviderService.logService.log(new LoggedEntry(`Deleting named profile ${profileName}`, this, LogLevel.info));
+        await namedProfileService.deleteNamedProfile(id);
+      }
     );
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   openBrowser(url: string) {
     this.windowService.openExternalUrl(url);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-  async installPlugin(): Promise<void> {
-    this.fetchingPlugins = true;
-    if (this.form.controls.pluginDeepLink.value) {
-      try {
-        await this.appProviderService.pluginManagerService.installPlugin(this.form.controls.pluginDeepLink.value);
-        await this.refreshPluginList();
-      } catch (error) {
-        this.appProviderService.logService.log(new LoggedEntry(error.message, this, LogLevel.error, true));
-      }
-    }
-    this.fetchingPlugins = false;
-  }
-
-  async refreshPluginList(isRefreshingFromAction?: boolean): Promise<void> {
-    this.fetchingPlugins = true;
-    this.appProviderService.pluginManagerService.verifyAndGeneratePluginFolderIfMissing();
-    await this.appProviderService.pluginManagerService.loadFromPluginDir();
-    this.pluginList = this.appProviderService.pluginManagerService.pluginContainers;
-    if (isRefreshingFromAction) {
-      this.appProviderService.logService.log(new LoggedEntry("Plugins Refreshed", this, LogLevel.info, true));
-    }
-    this.fetchingPlugins = false;
-  }
-
-  togglePluginActivation(plugin: PluginContainer): void {
-    plugin.metadata.active = !plugin.metadata.active;
-    const status = this.appProviderService.repository.getPluginStatus(plugin.metadata.uniqueName);
-    status.active = plugin.metadata.active;
-    this.appProviderService.repository.setPluginStatus(plugin.metadata.uniqueName, status);
-  }
-
-  getPluginExtraInfo(plugin: PluginContainer): string {
-    return `Author: ${plugin.metadata.author}
-    Description: ${plugin.metadata.description}
-    Supported Sessions: ${plugin.metadata.supportedSessions.join(",")}`;
-  }
-
-  getSupportedOsIcons(plugin: PluginContainer): string {
-    const supportedOS = plugin.metadata.supportedOS;
-    const icon1 = `<i class="fa fa-apple ${supportedOS.includes(OperatingSystem.mac) ? "" : "bw"}"></i>`;
-    const icon2 = `<i class="fa fa-windows ${supportedOS.includes(OperatingSystem.windows) ? "" : "bw"}"></i>`;
-    const icon3 = `<i class="fa fa-linux ${supportedOS.includes(OperatingSystem.linux) ? "" : "bw"}"></i>`;
-    return `${icon1}&nbsp;${icon2}&nbsp;${icon3}`;
-  }
-
-  openPluginFolder(): void {
-    this.appProviderService.pluginManagerService.verifyAndGeneratePluginFolderIfMissing();
-    this.appNativeService.shell.showItemInFolder(
-      this.appNativeService.path.join(this.appNativeService.os.homedir(), constants.appDataDir, "plugins")
-    );
   }
 
   /**
@@ -520,9 +413,29 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
       this.selectedLocation,
       this.selectedTerminal,
       this.colorTheme,
-      this.selectedSsmRegionBehaviour,
+      this.selectedSsmLocalPort,
       `${controls["sessionDuration"].value}`,
       ...["proxyProtocol", "proxyUrl", "proxyPort", "proxyUsername", "proxyPassword"].map((name) => controls[name].value ?? ""),
     ]);
+  }
+
+  // A confirmation on top of Settings. WindowService.confirmDialog closes every dialog first, Settings included.
+  private confirmOverSettings(message: string, confirmText: string, onConfirm: () => void | Promise<void>, cancelText = "Cancel"): BsModalRef {
+    return this.modalService.show(ConfirmationDialogComponent, {
+      animated: false,
+      class: "confirm-modal",
+      backdrop: "static",
+      keyboard: false,
+      initialState: {
+        message,
+        confirmText,
+        cancelText,
+        callback: async (answer: string) => {
+          if (answer !== constants.confirmClosed) {
+            await onConfirm();
+          }
+        },
+      },
+    });
   }
 }

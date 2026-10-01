@@ -1,4 +1,4 @@
-<button class="toggle-button filter-button" #matMenuTrigger="matMenuTrigger" [matMenuTriggerFor]="matMenu"><i class="{{icon}}"></i> {{dataLabel()}}<a class="cancel-tag" *ngIf="dataActive();" (click)="resetData($event, form);"><i class="moon-Close"></i></a></button>
+<button class="toggle-button filter-button {{dataActive() ? 'toggled' : ''}}" #matMenuTrigger="matMenuTrigger" [matMenuTriggerFor]="matMenu"><i class="{{icon}}"></i> {{dataLabel()}}<a class="cancel-tag" *ngIf="dataActive();" (click)="resetData($event, form);"><i class="moon-Close"></i></a></button>
 <mat-menu #matMenu="matMenu">
   <div class="search-bar" (click)="$event.preventDefault(); $event.stopPropagation();" *ngIf="searchable">
     <div class="icon"><i class="moon-Search"></i></div>

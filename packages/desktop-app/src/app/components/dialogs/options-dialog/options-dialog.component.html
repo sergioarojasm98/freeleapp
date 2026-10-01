@@ -1,3 +1,4 @@
+<app-dialog-escape (escape)="onEscape()"></app-dialog-escape>
 <form spellcheck="false" [formGroup]="form" class="form center-vertical text-left" (submit)="saveOptions();">
 
   <mat-tab-group [animationDuration]="'0ms'" #tabs>
@@ -170,6 +171,8 @@
       </ng-template>
       <div class="no-padding no-margin panel fill-height">
         <h2>Named Profiles</h2>
+        <p class="profiles-help">Each session also has a profile of its own, such as <i>payments-prod-AdministratorAccess</i>. Those
+          are not listed here: they come and go with their session. Profiles you add here can be picked for any session.</p>
 
         <div class="form-group">
           <div class="form-field form-control-input-button max-width">
@@ -184,15 +187,15 @@
         <div class="form-group scrollable fill-list">
           <table class="table option-table">
             <tbody>
-            <ng-container *ngFor="let profile of appProviderService.namedProfileService.getNamedProfiles()">
+            <ng-container *ngFor="let profile of appProviderService.namedProfileService.getCustomNamedProfiles()">
               <tr *ngIf="profile">
-                <td>{{profile.name}}</td>
+                <td>{{profile.name}}
+                  <div class="profile-note" *ngIf="profile.name === 'default'">Used by aws commands run without <code>--profile</code></div>
+                </td>
                 <td>
-                  <ng-container *ngIf="profile.name !== 'default'">
-                    <button class="icon-button inline" type="button" (click)="editAwsProfile(profile.id);"><i class="moon-Edit"></i></button>
-                    <button class="icon-button inline" type="button" (click)="deleteAwsProfile(profile.id);"><i class="moon-Delete size-up"></i>
-                    </button>
-                  </ng-container>
+                  <button class="icon-button inline" type="button" (click)="editAwsProfile(profile.id);"><i class="moon-Edit"></i></button>
+                  <button class="icon-button inline" type="button" (click)="deleteAwsProfile(profile.id);"><i class="moon-Delete size-up"></i>
+                  </button>
                 </td>
               </tr>
             </ng-container>
@@ -209,20 +212,21 @@
       </ng-template>
 
       <ng-container>
-        <h2>AWS SSM Dialog Behaviour</h2>
+        <h2>Tunnels</h2>
         <div class="form-container">
           <div class="form-group">
             <div class="form-field">
-              <label>Populate Region</label>
-              <ng-select formControlName="ssmRegionBehaviourSelect"
-                         bindLabel="ssmRegionBehaviour"
-                         bindValue="ssmRegionBehaviour"
+              <label>Default Local Port</label>
+              <ng-select formControlName="ssmLocalPortSelect"
+                         bindLabel="label"
+                         bindValue="value"
                          [clearable]="false"
                          [searchable]="false"
-                         [items]="[{ssmRegionBehaviour: eConstants.ssmRegionNo}, {ssmRegionBehaviour: eConstants.ssmRegionDefault}]"
-                         [(ngModel)]="selectedSsmRegionBehaviour"
+                         [items]="ssmLocalPortOptions"
+                         [(ngModel)]="selectedSsmLocalPort"
                          [appendTo]="'body'">
               </ng-select>
+              <p class="setting-help">Used when a tunnel's Local Port is left empty. A port is taken when something on this Mac already listens on it, such as a local database.</p>
             </div>
           </div>
         </div>
@@ -230,61 +234,8 @@
 
     </mat-tab>
 
-    <mat-tab *ngIf=!eConstants.disablePluginSystem>
-      <ng-template mat-tab-label>
-        <i class="mat-tab-icon moon-Puzzle"></i>
-        <span class="mat-tab-label-text">Plugins</span>
-      </ng-template>
-      <div class="no-padding no-margin panel fill-height">
-        <h2>Download Plugin Manually</h2>
-
-        <div class="form-group fill-column">
-          <div class="form-field form-control-input-button max-width">
-            <input spellcheck="false" formControlName="pluginDeepLink" type="text" class="form-control max-width"
-                   placeholder="Insert an npm Package Name"
-                   (keydown.enter)="$event.preventDefault(); installPlugin();">
-            <button [disabled]="fetchingPlugins" class="button" type="button" (click)="installPlugin();"><i class="moon-Add"></i></button>
-          </div>
-
-          <h4> Installed Plugins
-            <button class="borderless-button pull-right" (click)="$event.preventDefault(); openPluginFolder()"><i class="fas fa-folder-open blackery"
-                                                                                                                  matTooltip="Open Plugin Folder"></i>
-            </button>
-            <button [disabled]="fetchingPlugins" class="borderless-button pull-right" (click)="$event.preventDefault(); refreshPluginList(true)"><i
-              class="fa fa-refresh blackery" matTooltip="Refresh Plugin List"></i></button>
-          </h4>
-
-          <div class="form-group scrollable fill-list tableFixHead">
-            <table class="table plugin-table">
-              <thead>
-              <th><span class="centered-column">Name</span></th>
-              <th><span class="centered-column">Version</span></th>
-              <th><span class="centered-column">Supported OS</span></th>
-              <th><span class="centered-column">Enabled</span></th>
-              </thead>
-              <tbody>
-              <ng-container *ngFor="let plugin of pluginList">
-                <tr>
-                  <td><i class="fa fa-info-circle blackery" matTooltipClass="allow-cr"
-                         [matTooltip]="getPluginExtraInfo(plugin)"></i>&nbsp;{{plugin.metadata.uniqueName}}</td>
-                  <td>{{plugin.metadata.version}}</td>
-                  <td [innerHTML]="getSupportedOsIcons(plugin)"></td>
-                  <td>
-                    <mat-slide-toggle class="inline toggleColoredCorrectly" (toggleChange)="togglePluginActivation(plugin)"
-                                      [checked]="plugin.metadata.active"></mat-slide-toggle>
-                  </td>
-                </tr>
-              </ng-container>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
-    </mat-tab>
-
   </mat-tab-group>
 
-  <button type="button" (click)="saveOptions();" [disabled]="!form.valid" class="margin-fix">Done</button>
+  <button type="button" (click)="saveOptions();" [disabled]="!form.valid" class="btn-control margin-fix">Done</button>
   <a (click)="cancel();" class="cancel">Cancel</a>
 </form>

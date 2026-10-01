@@ -1,3 +1,4 @@
+<app-dialog-escape (escape)="close()"></app-dialog-escape>
 <div class="mat-tab-labels updater-header">
   <div class="modal-title">
     <div class="modal-title-message">
@@ -19,7 +20,7 @@
 
   <!-- Only notifications with a link need an action; the X and Esc already close the dialog -->
   <div class="button-equalizer" *ngIf="link">
-    <button type="button" (click)="closeAndOpenLink();" class="enabled">{{buttonName ?? 'Open'}}</button>
+    <button type="button" (click)="closeAndOpenLink();" class="btn-control enabled">{{buttonName ?? 'Open'}}</button>
   </div>
 
 </div>

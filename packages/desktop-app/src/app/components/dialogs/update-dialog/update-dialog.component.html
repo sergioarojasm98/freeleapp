@@ -1,3 +1,4 @@
+<app-dialog-escape (escape)="close()"></app-dialog-escape>
 <div class="mat-tab-labels updater-header">
   <div class="modal-title">
     <div class="modal-title-message">
@@ -19,8 +20,8 @@
   <br>
 
   <div class="button-equalizer">
-    <button type="button" (click)="goToDownloadPage();" class="enabled">Download Update</button>
-    <button type="button" (click)="remindMeLater();" class="disabled">Remind Me Later</button>
+    <button type="button" (click)="goToDownloadPage();" class="btn-control enabled">Download Update</button>
+    <button type="button" (click)="remindMeLater();" class="btn-control btn-secondary disabled">Remind Me Later</button>
   </div>
 
 </div>

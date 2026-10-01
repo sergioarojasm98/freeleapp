@@ -1,0 +1,21 @@
+@import "../../../../assets/scss/mixins/palette";
+
+.ssm-tunnel-form {
+  margin-top: 20px;
+
+  a {
+    display: inline-block;
+    margin-left: 10px;
+    cursor: pointer;
+  }
+
+  .error {
+    color: $danger-color;
+    font-size: 13px;
+  }
+
+  .hint {
+    color: $table-text;
+    font-size: 12px;
+  }
+}

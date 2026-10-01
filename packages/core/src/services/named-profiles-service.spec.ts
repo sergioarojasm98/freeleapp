@@ -1,6 +1,7 @@
 import { expect, describe, test, jest } from "@jest/globals";
 import { NamedProfilesService } from "./named-profiles-service";
 import { SessionStatus } from "../models/session-status";
+import { SessionType } from "../models/session-type";
 import { constants } from "../models/constants";
 import { AwsNamedProfile } from "../models/aws/aws-named-profile";
 import { AwsSessionService } from "./session/aws/aws-session-service";
@@ -122,50 +123,60 @@ describe("NamedProfilesService", () => {
     expect(sessionService.start).toHaveBeenCalledWith("3");
   });
 
-  test("deleteNamedProfile", async () => {
+  test("deleteNamedProfile moves its sessions to profiles of their own, restarting the active ones", async () => {
     let sessionIsRunning = true;
     const sessionService = {
       stop: jest.fn(async () => (sessionIsRunning = false)),
       start: jest.fn(async () => (sessionIsRunning = true)),
     };
-    const sessionFactory = {
-      getSessionService: jest.fn(() => sessionService),
-    };
-    const behaviouralSubjectService = {
-      setSessions: jest.fn(),
-    };
+    const sessionFactory = { getSessionService: jest.fn(() => sessionService) };
+    const behaviouralSubjectService = { setSessions: jest.fn() };
 
-    const sessions = [
-      { sessionId: "1", status: SessionStatus.pending, type: "type1" },
-      { sessionId: "2", status: SessionStatus.inactive, type: "type2" },
-      { sessionId: "3", status: SessionStatus.active, type: "type3" },
+    const profiles = [
+      { id: "shared", name: "shared" },
+      // Free: reused
+      { id: "free", name: "billing-prod" },
+      // Taken by another session
+      { id: "taken", name: "payments-Admin" },
+    ];
+    const sessions: any[] = [
+      {
+        sessionId: "1",
+        sessionName: "payments",
+        roleArn: "arn:aws:iam::111/Admin",
+        type: SessionType.awsSsoRole,
+        status: SessionStatus.active,
+        profileId: "shared",
+      },
+      { sessionId: "2", sessionName: "billing prod", type: SessionType.awsIamUser, status: SessionStatus.inactive, profileId: "shared" },
+      { sessionId: "3", sessionName: "shared", type: SessionType.awsIamUser, status: SessionStatus.inactive, profileId: "shared" },
+      { sessionId: "4", sessionName: "other", type: SessionType.awsIamUser, status: SessionStatus.inactive, profileId: "taken" },
     ];
     const repository = {
-      getDefaultProfileId: () => "defaultProfileId",
+      getProfiles: () => profiles,
       getSessions: jest.fn(() => sessions),
-      updateSession: jest.fn((sessionId, session) => {
-        expect((session as any).profileId).toBe("defaultProfileId");
-        expect(sessionId === "3" && sessionIsRunning).toBe(false);
-      }),
+      addProfile: jest.fn((profile: any) => profiles.push(profile)),
+      updateSession: jest.fn((sessionId: string) => expect(sessionId === "1" && sessionIsRunning).toBe(false)),
       removeProfile: jest.fn(),
     };
 
     const namedProfileService = new NamedProfilesService(sessionFactory as any, repository as any, behaviouralSubjectService as any);
-    namedProfileService.getSessionsWithNamedProfile = jest.fn(() => sessions) as any;
+    let newId = 0;
+    namedProfileService.getNewId = () => `new-${++newId}`;
 
-    await namedProfileService.deleteNamedProfile("profileId");
+    await namedProfileService.deleteNamedProfile("shared");
 
+    const profileName = (sessionId: string) => profiles.find((p) => p.id === sessions.find((s) => s.sessionId === sessionId).profileId).name;
+    expect(profileName("1")).toBe("payments-Admin-2");
+    expect(sessions[1].profileId).toBe("free");
+    // The deleted profile's own name is not picked again
+    expect(profileName("3")).toBe("shared-2");
+    expect(sessions[3].profileId).toBe("taken");
+    expect(sessionService.stop).toHaveBeenCalledWith("1");
+    expect(sessionService.start).toHaveBeenCalledWith("1");
     expect(sessionIsRunning).toBe(true);
-    expect(sessionFactory.getSessionService).toHaveBeenNthCalledWith(1, "type1");
-    expect(sessionFactory.getSessionService).toHaveBeenNthCalledWith(2, "type2");
-    expect(sessionFactory.getSessionService).toHaveBeenNthCalledWith(3, "type3");
-    expect(sessionService.stop).toHaveBeenCalledWith("3");
-    expect(repository.updateSession).toHaveBeenCalledWith("1", sessions[0]);
-    expect(repository.updateSession).toHaveBeenCalledWith("2", sessions[1]);
-    expect(repository.updateSession).toHaveBeenCalledWith("3", sessions[2]);
     expect(behaviouralSubjectService.setSessions).toHaveBeenCalledTimes(3);
-    expect(sessionService.start).toHaveBeenCalledWith("3");
-    expect(repository.removeProfile).toHaveBeenCalledWith("profileId");
+    expect(repository.removeProfile).toHaveBeenCalledWith("shared");
   });
 
   test("changeNamedProfile - AwsSessionService type, active", async () => {
@@ -183,7 +194,7 @@ describe("NamedProfilesService", () => {
     } as any;
     const repository = {
       updateSession: jest.fn(),
-      getSessions: jest.fn(),
+      getSessions: jest.fn(() => [session]),
     } as any;
     const behaviouralSubjectService = {
       setSessions: jest.fn(),
@@ -230,6 +241,40 @@ describe("NamedProfilesService", () => {
     expect(repository.updateSession).toHaveBeenCalledWith(session.sessionId, session);
     expect(behaviouralSubjectService.setSessions).toHaveBeenCalled();
     expect(sessionService.start).toHaveBeenCalledTimes(0);
+  });
+
+  test("changeNamedProfile - profile used by another session", async () => {
+    const session = { sessionId: "sessionId", status: SessionStatus.active, type: "type", profileId: "profileId" } as any;
+    const otherSession = { sessionId: "other", sessionName: "payments-prod", profileId: "newProfileId" } as any;
+    const sessionService = new (AwsSessionService as any)(null, null, null, null);
+    sessionService.stop = jest.fn();
+    const sessionFactory = { getSessionService: jest.fn(() => sessionService) } as any;
+    const repository = {
+      updateSession: jest.fn(),
+      getSessions: jest.fn(() => [session, otherSession]),
+      getProfileName: jest.fn(() => "payments"),
+    } as any;
+
+    const namedProfileService = new NamedProfilesService(sessionFactory, repository, null);
+
+    await expect(namedProfileService.changeNamedProfile(session, "newProfileId")).rejects.toThrow(
+      'The named profile "payments" is already used by payments-prod. Choose another one or type a new name.'
+    );
+    expect(sessionService.stop).not.toHaveBeenCalled();
+    expect(repository.updateSession).not.toHaveBeenCalled();
+  });
+
+  test("checkProfileIsFree", () => {
+    const repository = {
+      getSessions: jest.fn(() => [{ sessionId: "a", sessionName: "A", profileId: "p1" }]),
+      getProfileName: jest.fn(() => "p1-name"),
+    } as any;
+    const namedProfileService = new NamedProfilesService(null, repository, null);
+
+    expect(() => namedProfileService.checkProfileIsFree("p1", "a")).not.toThrow();
+    expect(() => namedProfileService.checkProfileIsFree("p2")).not.toThrow();
+    expect(() => namedProfileService.checkProfileIsFree("p1")).toThrow('The named profile "p1-name" is already used by A.');
+    expect(() => namedProfileService.checkProfileIsFree("p1", "b")).toThrow("already used by A");
   });
 
   test("changeNamedProfile - not AwsSessionService type", async () => {
@@ -292,11 +337,13 @@ describe("NamedProfilesService", () => {
     expect(emptyNewProfileName).toBe("Empty profile name");
   });
 
-  test("validateNewProfileName, default name", () => {
-    const namedProfileService = new NamedProfilesService(null, null, null);
-    const defaultNewProfileName = namedProfileService.validateNewProfileName(constants.defaultAwsProfileName);
+  test("validateNewProfileName accepts default like any other name", () => {
+    const profiles = [{ id: "1", name: "payments-Admin" }];
+    const namedProfileService = new NamedProfilesService(null, { getProfiles: () => profiles } as any, null);
+    expect(namedProfileService.validateNewProfileName(constants.defaultAwsProfileName)).toBe(true);
 
-    expect(defaultNewProfileName).toBe('"default" is not a valid profile name');
+    profiles.push({ id: "2", name: constants.defaultAwsProfileName });
+    expect(namedProfileService.validateNewProfileName(constants.defaultAwsProfileName)).toBe("Profile already exists");
   });
 
   test("validateNewProfileName, existent name", () => {
@@ -338,20 +385,13 @@ describe("NamedProfilesService", () => {
       { id: "3", name: "30" },
     ];
     const repository = {
-      getDefaultProfileId: jest.fn(() => {
-        const name = profiles.find((p) => p.name === "default")?.id;
-        if (name) {
-          return name;
-        } else {
-          throw new LoggedException(`no default named profile found.`, this, LogLevel.warn);
-        }
-      }),
+      getDefaultProfileId: jest.fn(() => profiles.find((p) => p.name === "default")?.id),
     } as any;
     const namedProfileService = new NamedProfilesService(null, repository, null);
     expect(namedProfileService.getDefaultProfileId()).toBe("2");
 
     profiles.splice(1, 1);
-    expect(() => namedProfileService.getDefaultProfileId()).toThrow(new LoggedException(`no default named profile found.`, this, LogLevel.warn));
+    expect(namedProfileService.getDefaultProfileId()).toBeUndefined();
     expect(repository.getDefaultProfileId).toHaveBeenCalled();
   });
 });

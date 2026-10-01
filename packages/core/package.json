@@ -6,11 +6,6 @@
     "email": "info@noovolari.com"
   },
   "description": "Leapp's core module",
-  "dependencies": {
-    "folder-hash": "^4.0.2",
-    "require-module": "^0.1.0",
-    "tsoa": "^4.1.0"
-  },
   "peerDependencies": {
     "@aws-sdk/client-ec2": "3.525.1",
     "@aws-sdk/client-ssm": "3.525.0",
@@ -24,7 +19,6 @@
     "@babel/plugin-proposal-decorators": "^7.16.5",
     "@smithy/fetch-http-handler": "2.4.2",
     "@types/node": "20.10.0",
-    "@types/node-ipc": "9.2.0",
     "@types/uuid": "^8.3.0",
     "assert": "2.0.0",
     "axios": "1.11.0",
@@ -45,7 +39,6 @@
     "jwt-decode": "~3.1.2",
     "keytar": "7.9.0",
     "ms": "^2.1.3",
-    "node-ipc": "9.2.1",
     "node-log-rotate": "~0.1.5",
     "node-machine-id": "~1.1.12",
     "reflect-metadata": "^0.1.13",
@@ -55,7 +48,6 @@
     "semver": "7.7.2",
     "standard-version": "^9.3.0",
     "sudo-prompt": "~9.2.1",
-    "tar": "6.2.1",
     "tslib": "^2.3.1",
     "uuid": "~8.3.2",
     "wait-on": "8.0.3"
@@ -99,9 +91,7 @@
     "setup": "gushio ../../gushio/clean-and-bootstrap.js core",
     "clean": "gushio gushio/target-clean.js",
     "build": "gushio gushio/target-build.js",
-    "test": "jest --coverage",
-    "release": "gushio gushio/target-release.js",
-    "nightly": "gushio gushio/target-nightly.js"
+    "test": "jest --coverage"
   },
   "repository": {
     "type": "git",

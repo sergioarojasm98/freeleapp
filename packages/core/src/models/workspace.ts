@@ -7,9 +7,9 @@ import { Type } from "class-transformer";
 import { constants } from "./constants";
 import Folder from "./folder";
 import Segment from "./segment";
+import { SsmTunnel } from "./ssm-tunnel";
 import { AwsSsoIntegration } from "./aws/aws-sso-integration";
 import { AzureIntegration } from "./azure/azure-integration";
-import PluginStatus from "./plugin-status";
 import { LeappNotification } from "./notification";
 import { RemoteWorkspacesSettingsMap } from "./remote-workspace-settings-map";
 
@@ -30,11 +30,10 @@ export class Workspace {
 
   private _notifications: LeappNotification[];
 
-  private _pluginsStatus: PluginStatus[];
-
   private _pinned: string[];
   private _folders: Folder[];
   private _segments: Segment[];
+  private _ssmTunnels: SsmTunnel[];
 
   private _colorTheme: string;
 
@@ -53,6 +52,7 @@ export class Workspace {
   private _samlRoleSessionDuration: number;
 
   private _ssmRegionBehaviour: string;
+  private _ssmLocalPort: string;
 
   private _workspaceVersion: number;
 
@@ -61,13 +61,13 @@ export class Workspace {
     this._sessions = [];
     this._folders = [];
     this._segments = [];
+    this._ssmTunnels = [];
     this._defaultRegion = constants.defaultRegion;
     this._defaultLocation = constants.defaultLocation;
     this._macOsTerminal = constants.macOsTerminal;
     this._idpUrls = [];
     this._profiles = [{ id: uuid.v4(), name: constants.defaultAwsProfileName }];
     this._remoteWorkspacesSettingsMap = {};
-    this._pluginsStatus = [];
 
     this._awsSsoIntegrations = [];
     this._azureIntegrations = [];
@@ -86,6 +86,7 @@ export class Workspace {
     this._samlRoleSessionDuration = constants.samlRoleSessionDuration;
 
     this._ssmRegionBehaviour = constants.ssmRegionNo;
+    this._ssmLocalPort = constants.ssmLocalPortSameAsRemote;
   }
 
   setNewWorkspaceVersion(): void {
@@ -200,6 +201,14 @@ export class Workspace {
     this._segments = segments;
   }
 
+  get ssmTunnels(): SsmTunnel[] {
+    return this._ssmTunnels;
+  }
+
+  set ssmTunnels(ssmTunnels: SsmTunnel[]) {
+    this._ssmTunnels = ssmTunnels;
+  }
+
   get colorTheme(): string {
     return this._colorTheme;
   }
@@ -216,20 +225,20 @@ export class Workspace {
     this._credentialMethod = credentialMethod;
   }
 
-  get pluginsStatus(): PluginStatus[] {
-    return this._pluginsStatus;
-  }
-
-  set pluginsStatus(newPlugins: PluginStatus[]) {
-    this._pluginsStatus = newPlugins;
-  }
-
   get ssmRegionBehaviour(): string {
     return this._ssmRegionBehaviour;
   }
 
   set ssmRegionBehaviour(ssmRegionBehaviour: string) {
     this._ssmRegionBehaviour = ssmRegionBehaviour;
+  }
+
+  get ssmLocalPort(): string {
+    return this._ssmLocalPort;
+  }
+
+  set ssmLocalPort(ssmLocalPort: string) {
+    this._ssmLocalPort = ssmLocalPort;
   }
 
   get samlRoleSessionDuration(): number {

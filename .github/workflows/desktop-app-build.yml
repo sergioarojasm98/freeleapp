@@ -36,8 +36,6 @@ jobs:
       # Native modules and the Electron binary are not needed for the Angular unit tests
       - name: Install desktop app dependencies
         working-directory: packages/desktop-app
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
         run: npm install --ignore-scripts
 
       - name: Test desktop app

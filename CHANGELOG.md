@@ -4,7 +4,7 @@ All notable changes to Freeleapp are documented here. Versions follow [Semantic 
 
 Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the [Leapp changelog](https://github.com/Noovolari/leapp/blob/v0.26.1/CHANGELOG.md).
 
-## Unreleased
+## 1.1.0 (2026-10-01)
 
 ### Features
 
@@ -23,6 +23,7 @@ Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the
 - View SSM Sessions opens on the region you used last for each session, else on the session's own region, and shows the instances it already loaded right away, with when they were loaded. The refresh button next to the region loads them from AWS again. The **Populate Region** setting, which left the region empty by default, is gone.
 - **Default Local Port** in Settings → SSM decides what a tunnel with an empty Local Port uses: the remote port (as before), or the remote port unless something on your Mac already listens on it, and then a free port.
 - The port forwarding form offers common remote ports in one click: PostgreSQL, MySQL, Redis, RabbitMQ and its management UI, SSH and RDP.
+- Freeleapp can be installed and updated with Homebrew: `brew install --cask sergioarojasm98/tap/freeleapp`.
 - Buttons look the same everywhere: blue with white text, with the same hover and pressed states, in both color themes. Filter chips turn blue while they filter something. Action buttons explain what they do on hover.
 
 ### Removed

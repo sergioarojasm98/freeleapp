@@ -43,17 +43,13 @@ The core library (`packages/core`) holds the session logic and the desktop app i
 
 ## Install
 
-Download the `.dmg` from [Releases](https://github.com/sergioarojasm98/freeleapp/releases) (Apple Silicon, macOS 13 Ventura or later). Builds are ad-hoc signed until notarization is set up, so clear the quarantine flag after copying the app:
-
-```bash
-xattr -dr com.apple.quarantine /Applications/Freeleapp.app
-```
-
-Or install it with Homebrew (the same quarantine step applies):
+Install it with Homebrew:
 
 ```bash
 brew install --cask sergioarojasm98/tap/freeleapp
 ```
+
+Or download the `.dmg` from [Releases](https://github.com/sergioarojasm98/freeleapp/releases) and drag Freeleapp to Applications (Apple Silicon, macOS 13 Ventura or later). Builds are signed with a Developer ID and notarized by Apple, and the app updates itself.
 
 ## Build
 
@@ -63,8 +59,10 @@ npm install
 cd packages/core && npm install && npm run build
 cd ../desktop-app && npm install
 npx gushio gushio/target-build.js 'configuration production'
-npx electron-builder build --mac dir --arm64 --publish never   # Xcode 26 compiles the Liquid Glass icon
+npx electron-builder build --mac dir --arm64 --publish never -c.mac.identity=null   # Xcode 26 compiles the Liquid Glass icon
 ```
+
+Without `-c.mac.identity=null`, electron-builder signs with a Developer ID certificate from the keychain (or `CSC_LINK`). Release builds are signed and notarized in GitHub Actions.
 
 Tests: `npx jest` in `packages/core`, and `npm test -- --watch=false --browsers=ChromeHeadless` in `packages/desktop-app`.
 

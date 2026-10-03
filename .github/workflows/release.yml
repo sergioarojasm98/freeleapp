@@ -32,6 +32,9 @@ jobs:
   build:
     needs: verify
     uses: ./.github/workflows/build-macos.yml
+    with:
+      notarize: true
+    secrets: inherit
 
   publish:
     needs: build
@@ -58,11 +61,7 @@ jobs:
 
           ### Install
 
-          With Homebrew: \`brew install --cask sergioarojasm98/tap/freeleapp\`. Or download \`Freeleapp-$VERSION-arm64.dmg\` (Apple Silicon) and drag Freeleapp to Applications. Either way, clear the quarantine flag once, since builds are not notarized yet:
-
-          \`\`\`bash
-          xattr -dr com.apple.quarantine /Applications/Freeleapp.app
-          \`\`\`
+          With Homebrew: \`brew install --cask sergioarojasm98/tap/freeleapp\`. Or download \`Freeleapp-$VERSION-arm64.dmg\` (Apple Silicon) and drag Freeleapp to Applications. The app is signed with a Developer ID and notarized by Apple, and it updates itself.
 
           Full documentation: https://freeleapp.com
           EOF

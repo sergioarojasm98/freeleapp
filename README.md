@@ -49,7 +49,9 @@ Install it with Homebrew:
 brew install --cask sergioarojasm98/tap/freeleapp
 ```
 
-Or download the `.dmg` from [Releases](https://github.com/sergioarojasm98/freeleapp/releases) and drag Freeleapp to Applications (Apple Silicon, macOS 13 Ventura or later). Builds are signed with a Developer ID and notarized by Apple, and the app updates itself.
+Or add the tap once (`brew tap sergioarojasm98/tap`) and use the short name: `brew install --cask freeleapp`.
+
+Without Homebrew, download the `.dmg` from [Releases](https://github.com/sergioarojasm98/freeleapp/releases) and drag Freeleapp to Applications (Apple Silicon, macOS 13 Ventura or later). Builds are signed with a Developer ID and notarized by Apple, and the app updates itself.
 
 ## Build
 

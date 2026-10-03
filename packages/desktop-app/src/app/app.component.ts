@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, NgZone, OnInit } from "@angular/core";
 import { environment } from "../environments/environment";
 import { AppService } from "./services/app.service";
 import { Router } from "@angular/router";
@@ -60,7 +60,8 @@ export class AppComponent implements OnInit {
     private optionsService: OptionsService,
     private updaterService: UpdaterService,
     private windowService: WindowService,
-    private appNativeService: AppNativeService
+    private appNativeService: AppNativeService,
+    private ngZone: NgZone
   ) {
     appProviderService.mfaCodePrompter = mfaCodePrompter;
     appProviderService.awsAuthenticationService = awsAuthenticationService;
@@ -235,6 +236,11 @@ export class AppComponent implements OnInit {
         this.appProviderService.sessionManagementService.updateSessions(this.behaviouralSubjectService.sessions);
       }
     });
+    // With Automatically Download Updates on, the main process downloads the update instead of sending UPDATE_AVAILABLE
+    ipc.on("UPDATE_DOWNLOADED", (_, info) => {
+      this.ngZone.run(() => (this.updaterService.downloadedVersion = info.version));
+    });
+    this.updaterService.sendSettings(this.optionsService.autoDownloadUpdates);
   }
 
   private setInitialColorSchema() {

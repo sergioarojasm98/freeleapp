@@ -18,6 +18,7 @@ import { OperatingSystem } from "@noovolari/leapp-core/models/operating-system";
 import { AppNativeService } from "../../../services/app-native.service";
 import { colorThemeSubject } from "../../check-icon-svg/check-icon-svg.component";
 import { withRecentRegions } from "../../../services/region-options";
+import { UpdaterService } from "../../../services/updater.service";
 
 @Component({
   selector: "app-options-dialog",
@@ -58,6 +59,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
   selectedColorTheme: string;
 
   selectedSsmLocalPort: string;
+  autoDownloadUpdates: boolean;
   readonly ssmLocalPortOptions = [
     { value: constants.ssmLocalPortSameAsRemote, label: "Same as the remote port" },
     { value: constants.ssmLocalPortFree, label: "The remote port, or a free one if it is taken" },
@@ -79,6 +81,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     colorThemeSelect: new FormControl(""),
     sessionDuration: new FormControl(""),
     ssmLocalPortSelect: new FormControl(""),
+    autoDownloadUpdates: new FormControl(""),
   });
 
   webConsoleSessionDuration: number;
@@ -103,7 +106,8 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     private toasterService: MessageToasterService,
     private modalService: BsModalService,
     private router: Router,
-    private elementRef: ElementRef
+    private elementRef: ElementRef,
+    private updaterService: UpdaterService
   ) {
     this.selectedTerminal = this.optionsService.macOsTerminal || constants.macOsTerminal;
 
@@ -169,6 +173,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
     this.appService.validateAllFormFields(this.form);
 
     this.selectedSsmLocalPort = this.optionsService.ssmLocalPort || constants.ssmLocalPortSameAsRemote;
+    this.autoDownloadUpdates = this.optionsService.autoDownloadUpdates;
     this.initialSettings = this.pendingSettings();
   }
 
@@ -239,6 +244,11 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
       this.optionsService.samlRoleSessionDuration = parseInt(this.form.controls["sessionDuration"].value, 10);
 
       this.optionsService.ssmLocalPort = this.selectedSsmLocalPort;
+
+      if (this.autoDownloadUpdates !== this.optionsService.autoDownloadUpdates) {
+        this.optionsService.autoDownloadUpdates = this.autoDownloadUpdates;
+        this.updaterService.sendSettings(this.autoDownloadUpdates);
+      }
 
       if (this.checkIfNeedDialogBox()) {
         // eslint-disable-next-line max-len
@@ -414,6 +424,7 @@ export class OptionsDialogComponent implements OnInit, AfterViewInit, OnDestroy 
       this.selectedTerminal,
       this.colorTheme,
       this.selectedSsmLocalPort,
+      this.autoDownloadUpdates,
       `${controls["sessionDuration"].value}`,
       ...["proxyProtocol", "proxyUrl", "proxyPort", "proxyUsername", "proxyPassword"].map((name) => controls[name].value ?? ""),
     ]);

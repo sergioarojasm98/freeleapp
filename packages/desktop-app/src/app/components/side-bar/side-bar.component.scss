@@ -142,6 +142,18 @@ div.space-between-mat-lists {
   justify-content: space-between;
 }
 
+// Bottom-left corner, also when the saved filters make the sidebar scroll
+.sidebar-flex > button.update-button {
+  position: sticky;
+  bottom: 16px;
+  flex-shrink: 0;
+  margin: 12px 0 16px 16px;
+
+  i {
+    font-size: 16px;
+  }
+}
+
 ::ng-deep {
   .mat-expansion-indicator {
     display: none;

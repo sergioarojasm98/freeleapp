@@ -5,6 +5,11 @@ on:
     branches: ["**"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      notarize:
+        description: Notarize the app, as a release does
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -46,3 +51,7 @@ jobs:
     # Branches of this repository are already built on push; only pull requests from forks run here
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     uses: ./.github/workflows/build-macos.yml
+    with:
+      notarize: ${{ inputs.notarize == true }}
+    # Developer ID signature; GitHub passes no secrets to pull requests from forks, which get an ad-hoc build
+    secrets: inherit

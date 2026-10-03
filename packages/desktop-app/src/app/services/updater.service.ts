@@ -18,6 +18,8 @@ export class UpdaterService {
   releaseName: string;
   releaseDate: string;
   releaseNotes: string;
+  // Downloaded in the background (Automatically Download Updates), installed by the Update button in the sidebar
+  downloadedVersion: string;
   bsModalRef: BsModalRef;
   markdown: any;
 
@@ -89,6 +91,20 @@ export class UpdaterService {
         initialState: { version: this.version, releaseDate: this.releaseDate, releaseNotes: this.releaseNotes, callback },
       });
     }
+  }
+
+  /**
+   * Tells the main process whether to download updates as soon as they are found. The first call starts the update checks.
+   */
+  sendSettings(autoDownload: boolean): void {
+    this.electronService.ipcRenderer.send("UPDATER_SETTINGS", { autoDownload });
+  }
+
+  /**
+   * Quits, installs the downloaded update and opens the app again
+   */
+  installUpdate(): void {
+    this.electronService.ipcRenderer.send("INSTALL_UPDATE");
   }
 
   updateVersionJson(version: string): void {

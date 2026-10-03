@@ -7,6 +7,7 @@ describe("OptionsDialogComponent", () => {
   let closeModal: jasmine.Spy;
   let modalService: any;
   let confirmation: any;
+  let updater: any;
 
   const createDialog = async () => {
     const dialog = new OptionsDialogComponent(
@@ -23,7 +24,8 @@ describe("OptionsDialogComponent", () => {
       { toast: () => {} } as any,
       modalService,
       null,
-      { nativeElement: document.createElement("div") } as any
+      { nativeElement: document.createElement("div") } as any,
+      updater
     );
     await dialog.ngOnInit();
     return dialog;
@@ -36,8 +38,10 @@ describe("OptionsDialogComponent", () => {
       defaultRegion: "us-east-1",
       proxyConfiguration: { proxyProtocol: "https", proxyPort: "8080" },
       updateProxyConfiguration: () => {},
+      autoDownloadUpdates: true,
     };
     closeModal = jasmine.createSpy("closeModal");
+    updater = { sendSettings: jasmine.createSpy("sendSettings") };
     confirmation = undefined;
     modalService = {
       getModalsCount: () => 1,
@@ -120,5 +124,28 @@ describe("OptionsDialogComponent", () => {
     expect(modalService.show).not.toHaveBeenCalled();
     expect(options.colorTheme).toBe(constants.darkTheme);
     expect(options.defaultRegion).toBe("eu-west-1");
+  });
+
+  it("asks before discarding a changed Automatically Download Updates", async () => {
+    const dialog = await createDialog();
+    dialog.autoDownloadUpdates = false;
+
+    dialog.cancel();
+
+    expect(confirmation.component).toBe(ConfirmationDialogComponent);
+    expect(closeModal).not.toHaveBeenCalled();
+  });
+
+  it("saves Automatically Download Updates and tells the main process only when it changed", async () => {
+    const unchanged = await createDialog();
+    await unchanged.saveOptions();
+    expect(updater.sendSettings).not.toHaveBeenCalled();
+
+    const dialog = await createDialog();
+    dialog.autoDownloadUpdates = false;
+    await dialog.saveOptions();
+
+    expect(options.autoDownloadUpdates).toBe(false);
+    expect(updater.sendSettings).toHaveBeenCalledOnceWith(false);
   });
 });

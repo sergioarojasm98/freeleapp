@@ -44,6 +44,7 @@ export class RetroCompatibilityService {
       this.migration9();
       this.migration10();
       this.migration11();
+      this.migration12();
       // When adding new migrations remember to increase constants.workspaceLastVersion
     }
   }
@@ -357,6 +358,17 @@ export class RetroCompatibilityService {
       return;
     }
     workspace._ssmLocalPort = workspace._ssmLocalPort ?? constants.ssmLocalPortSameAsRemote;
+    this.persists(workspace);
+    this.repository.reloadWorkspace();
+  }
+
+  // Freeleapp 1.2: the Automatically Download Updates setting, on by default
+  private migration12(): void {
+    const workspace = this.getWorkspace();
+    if (!this.checkMigration(workspace, 11, 12)) {
+      return;
+    }
+    workspace._autoDownloadUpdates = workspace._autoDownloadUpdates ?? true;
     this.persists(workspace);
     this.repository.reloadWorkspace();
   }

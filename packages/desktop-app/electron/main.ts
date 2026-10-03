@@ -57,11 +57,15 @@ if (process.platform === "darwin") {
   windowDefaultConfig.browserWindow["trafficLightPosition"] = { x: 20, y: 20 };
 }
 
+// Set by the Update button: the window closes for real (sessions are stopped first) and the updater quits the app
+let installingUpdate = false;
+
 const buildAutoUpdater = (win: any): void => {
   autoUpdater.allowDowngrade = false;
   autoUpdater.allowPrerelease = false;
+  // Downloads start below, depending on the Automatically Download Updates setting sent by the renderer
   autoUpdater.autoDownload = false;
-  
+
   // Force dev update config for testing auto-updater in development
   if (!environment.production) {
     autoUpdater.forceDevUpdateConfig = true;
@@ -77,22 +81,68 @@ const buildAutoUpdater = (win: any): void => {
   };
   autoUpdater.setFeedURL(data);
 
-  autoUpdater.checkForUpdates().then((_) => {
-    console.log("[AUTO-UPDATER] Initial update check completed");
-  }).catch((error) => {
-    console.log("[AUTO-UPDATER] Initial update check failed:", error);
-  });
-  setInterval(() => {
+  let autoDownload: boolean | undefined;
+  let availableVersion: string | undefined;
+  let downloadedVersion: string | undefined;
+  let downloading = false;
+
+  const checkForUpdates = (label: string) => {
     autoUpdater.checkForUpdates().then((_) => {
-      console.log("[AUTO-UPDATER] Periodic update check completed");
+      console.log(`[AUTO-UPDATER] ${label} update check completed`);
     }).catch((error) => {
-      console.log("[AUTO-UPDATER] Periodic update check failed:", error);
+      console.log(`[AUTO-UPDATER] ${label} update check failed:`, error);
     });
-  }, 1000 * 60 * minutes);
+  };
+
+  const downloadUpdate = () => {
+    if (downloading || !availableVersion || availableVersion === downloadedVersion) {
+      return;
+    }
+    downloading = true;
+    autoUpdater.downloadUpdate().catch((error) => {
+      console.log("[AUTO-UPDATER] Download failed:", error);
+    }).finally(() => {
+      downloading = false;
+    });
+  };
+
+  // Sent once the workspace is loaded and again when the setting changes; the first one starts the checks
+  ipc.on("UPDATER_SETTINGS", (_, settings) => {
+    const firstSettings = autoDownload === undefined;
+    autoDownload = !!settings?.autoDownload;
+    if (firstSettings) {
+      checkForUpdates("Initial");
+      setInterval(() => checkForUpdates("Periodic"), 1000 * 60 * minutes);
+    } else if (autoDownload) {
+      downloadUpdate();
+    }
+  });
+
+  ipc.on("INSTALL_UPDATE", () => {
+    if (!downloadedVersion) {
+      return;
+    }
+    console.log("[AUTO-UPDATER] Installing", downloadedVersion);
+    installingUpdate = true;
+    autoUpdater.quitAndInstall();
+  });
 
   autoUpdater.on("update-available", (info) => {
     console.log("[AUTO-UPDATER] Update available:", info);
-    win.webContents.send("UPDATE_AVAILABLE", info);
+    availableVersion = info.version;
+    if (autoDownload) {
+      downloadUpdate();
+    } else {
+      win.webContents.send("UPDATE_AVAILABLE", info);
+    }
+  });
+
+  autoUpdater.on("update-downloaded", (info) => {
+    console.log("[AUTO-UPDATER] Update downloaded:", info.version);
+    if (info.version !== downloadedVersion) {
+      downloadedVersion = info.version;
+      win.webContents.send("UPDATE_DOWNLOADED", { version: info.version });
+    }
   });
 
   autoUpdater.on("update-not-available", (info) => {
@@ -140,7 +190,7 @@ const generateMainWindow = () => {
 
     win.on("close", (event) => {
       event.preventDefault();
-      if (!forceQuit) {
+      if (!forceQuit && !installingUpdate) {
         win.hide();
       } else {
         win.webContents.send("app-close");
@@ -167,6 +217,11 @@ const generateMainWindow = () => {
 
     ipc.on("closed", () => {
       win.destroy();
+      if (installingUpdate) {
+        // quitAndInstall continues once every window is closed; quit anyway if it never does
+        setTimeout(() => app.quit(), 15000);
+        return;
+      }
       app.quit();
     });
 

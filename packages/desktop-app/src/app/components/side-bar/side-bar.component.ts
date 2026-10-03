@@ -16,6 +16,7 @@ import { AppProviderService } from "../../services/app-provider.service";
 import { constants } from "@noovolari/leapp-core/models/constants";
 import { integrationHighlight } from "../integration-bar/integration-bar.component";
 import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
+import { UpdaterService } from "../../services/updater.service";
 
 export interface SelectedSegment {
   name: string;
@@ -54,7 +55,12 @@ export class SideBarComponent implements OnInit, OnDestroy {
   private unsubscribe: () => void;
   private behaviouralSubjectService: BehaviouralSubjectService;
 
-  constructor(private bsModalService: BsModalService, private appProviderService: AppProviderService, private ngZone: NgZone) {
+  constructor(
+    private bsModalService: BsModalService,
+    private appProviderService: AppProviderService,
+    private ngZone: NgZone,
+    public updaterService: UpdaterService
+  ) {
     this.behaviouralSubjectService = appProviderService.behaviouralSubjectService;
     this.showAll = true;
     this.showPinned = false;

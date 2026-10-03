@@ -94,6 +94,8 @@ describe("AppComponent", () => {
     (app as any).updaterService.updateVersionJson = jasmine.createSpy().and.returnValue("");
     (app as any).updaterService.isUpdateNeeded = jasmine.createSpy().and.returnValue(true);
     (app as any).updaterService.updateDialog = jasmine.createSpy().and.returnValue("");
+    (app as any).updaterService.sendSettings = jasmine.createSpy();
+    (app as any).optionsService = { autoDownloadUpdates: true };
 
     const mockedCallback1 = () => {
       const releaseNote = (app as any).updaterService.getReleaseNote();
@@ -105,10 +107,13 @@ describe("AppComponent", () => {
       }
     };
 
+    let updateDownloaded: (event: any, info: any) => void;
     (app as any).appNativeService.ipcRenderer = {
       on: (_string, _callback) => {
         if (_string === "UPDATE_AVAILABLE") {
           mockedCallback1();
+        } else if (_string === "UPDATE_DOWNLOADED" && _callback) {
+          updateDownloaded = _callback;
         }
       },
     };
@@ -123,6 +128,10 @@ describe("AppComponent", () => {
     expect((app as any).updaterService.isUpdateNeeded).toHaveBeenCalled();
     expect((app as any).updaterService.updateDialog).toHaveBeenCalled();
     expect((app as any).appProviderService.sessionManagementService.updateSessions).toHaveBeenCalled();
+
+    expect((app as any).updaterService.sendSettings).toHaveBeenCalledWith(true);
+    updateDownloaded(null, { version: "9.9.9" });
+    expect((app as any).updaterService.downloadedVersion).toBe("9.9.9");
   });
 
   it("beforeCloseInstructions", async () => {

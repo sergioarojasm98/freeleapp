@@ -63,6 +63,18 @@
           </div>
         </div>
 
+        <h2>Updates</h2>
+        <div class="form-container">
+          <div class="form-group">
+            <div class="form-field">
+              <mat-checkbox formControlName="autoDownloadUpdates" [(ngModel)]="autoDownloadUpdates"></mat-checkbox>
+              Automatically Download Updates
+              <i class="moon-Help fix-top"
+                 matTooltip="New versions download in the background and an Update button appears in the bottom-left corner. Turned off, you are notified and download them yourself."></i>
+            </div>
+          </div>
+        </div>
+
         <h2>Default Web Console Duration</h2>
         <div class="form-container">
           <div class="form-group">

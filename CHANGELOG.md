@@ -4,6 +4,13 @@ All notable changes to Freeleapp are documented here. Versions follow [Semantic 
 
 Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the [Leapp changelog](https://github.com/Noovolari/leapp/blob/v0.26.1/CHANGELOG.md).
 
+## Unreleased
+
+### Features
+
+- Freeleapp is signed with an Apple Developer ID and notarized by Apple. macOS opens it without clearing the quarantine flag, and the keychain no longer asks you to allow Freeleapp again after every update. After updating from 1.1.0 or earlier, macOS asks one last time; choose **Always Allow**.
+- **Automatically Download Updates** in Settings → General, on by default. A new version downloads in the background and an **Update** button appears in the bottom-left corner of the sidebar; click it to restart into the new version. Quitting Freeleapp also installs a downloaded update. Turned off, Freeleapp tells you about new versions as before and you download them yourself.
+
 ## 1.1.0 (2026-10-01)
 
 ### Features

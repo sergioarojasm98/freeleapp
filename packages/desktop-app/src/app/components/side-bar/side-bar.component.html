@@ -35,4 +35,6 @@
     </mat-expansion-panel>
   </mat-accordion>
 </mat-list>
+<button *ngIf="updaterService.downloadedVersion" class="btn-control btn-sm update-button" (click)="updaterService.installUpdate();"
+        [matTooltip]="'Restart and update to Freeleapp ' + updaterService.downloadedVersion"><i class="moon-Refresh"></i><span>Update</span></button>
 </div>

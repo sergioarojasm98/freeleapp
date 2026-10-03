@@ -20,7 +20,7 @@ describe("Workspace Model", () => {
           '"_notifications":[],"_pinned":[],"_folders":[],"_segments":[],"_ssmTunnels":[],' +
           '"_proxyConfiguration":{"proxyProtocol":"https","proxyPort":"8080"},' +
           '"_credentialMethod":"credential-file-method","_samlRoleSessionDuration":3600,"_ssmRegionBehaviour":"No",' +
-          '"_ssmLocalPort":"same-as-remote"}'
+          '"_ssmLocalPort":"same-as-remote","_autoDownloadUpdates":true}'
       );
     } catch (err) {
       console.log(err);
@@ -126,7 +126,7 @@ describe("Workspace Model", () => {
   test("setNewWorkspaceVersion", () => {
     const workspace = new Workspace();
     workspace.setNewWorkspaceVersion();
-    expect((workspace as any)._workspaceVersion).toBe(11);
+    expect((workspace as any)._workspaceVersion).toBe(12);
   });
 
   test("get Sessions", () => {
@@ -296,6 +296,13 @@ describe("Workspace Model", () => {
     const workspace = new Workspace();
     workspace.ssmLocalPort = constants.ssmLocalPortFree;
     expect((workspace as any)._ssmLocalPort).toBe(constants.ssmLocalPortFree);
+  });
+
+  test("autoDownloadUpdates is on by default and can be turned off", () => {
+    const workspace = new Workspace();
+    expect(workspace.autoDownloadUpdates).toBe(true);
+    workspace.autoDownloadUpdates = false;
+    expect((workspace as any)._autoDownloadUpdates).toBe(false);
   });
 
   test("get notifications", () => {

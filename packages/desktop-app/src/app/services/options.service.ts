@@ -116,6 +116,17 @@ export class OptionsService {
     this.workspaceService.persistWorkspace(workspace);
   }
 
+  // On unless it was turned off in Settings
+  get autoDownloadUpdates(): boolean {
+    return this.workspaceService.getWorkspace().autoDownloadUpdates !== false;
+  }
+
+  set autoDownloadUpdates(autoDownloadUpdates: boolean) {
+    const workspace = this.workspaceService.getWorkspace();
+    workspace.autoDownloadUpdates = autoDownloadUpdates;
+    this.workspaceService.persistWorkspace(workspace);
+  }
+
   get samlRoleSessionDuration(): number {
     const workspace = this.workspaceService.getWorkspace();
     return workspace.samlRoleSessionDuration / 60 / 60;

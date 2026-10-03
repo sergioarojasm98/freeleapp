@@ -66,14 +66,35 @@ jobs:
           chmod 600 "$KEY_PATH"
           echo "APPLE_API_KEY=$KEY_PATH" >> "$GITHUB_ENV"
 
+      # Not electron-builder's CSC_LINK import: app-builder-lib 26.15.3 passes the certificate password to
+      # `security set-key-partition-list -k`, which expects the keychain password, so the import fails and the
+      # failing command (password included) ends up in the log
+      - name: Import the Developer ID certificate
+        if: steps.signing.outputs.signed == 'true'
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+          echo "::add-mask::$KEYCHAIN_PASSWORD"
+          echo "$CSC_LINK" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$KEYCHAIN" -P "$CSC_KEY_PASSWORD" -T /usr/bin/codesign -T /usr/bin/productbuild
+          rm "$RUNNER_TEMP/certificate.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          security find-identity -v -p codesigning "$KEYCHAIN"
+          echo "CSC_KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+
       # Hardened runtime, Developer ID signature and, for releases, notarization with the ticket stapled to the app.
       # The zip and latest-mac.yml are what the in-app updater reads from GitHub Releases.
       - name: Package signed dmg and zip
         if: steps.signing.outputs.signed == 'true'
         working-directory: packages/desktop-app
         env:
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
         run: >
@@ -95,9 +116,13 @@ jobs:
             --prepackaged release/mac-arm64/Freeleapp.app \
             -c.mac.identity=null -c.mac.forceCodeSigning=false -c.mac.notarize=false -c.mac.hardenedRuntime=false
 
-      - name: Remove the App Store Connect API key
-        if: always() && inputs.notarize
-        run: rm -f "$RUNNER_TEMP/AuthKey.p8"
+      - name: Remove the signing keychain and the App Store Connect API key
+        if: always()
+        run: |
+          if [ -n "$CSC_KEYCHAIN" ]; then
+            security delete-keychain "$CSC_KEYCHAIN" || true
+          fi
+          rm -f "$RUNNER_TEMP/AuthKey.p8" "$RUNNER_TEMP/certificate.p12"
 
       # electron-builder compiles mac.icon (Icon Composer) into Assets.car for the macOS 26+ Liquid Glass icon
       - name: Check Liquid Glass icon

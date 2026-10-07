@@ -4,6 +4,22 @@ All notable changes to Freeleapp are documented here. Versions follow [Semantic 
 
 Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the [Leapp changelog](https://github.com/Noovolari/leapp/blob/v0.26.1/CHANGELOG.md).
 
+## 1.3.0 (2026-10-07)
+
+### Features
+
+- **AWS SSO sessions renew without the browser.** Freeleapp now keeps the IAM Identity Center refresh token in the keychain, so when the access token expires it gets a new one silently. The browser only opens again when your Identity Center session itself ends (its length is set by your administrator).
+- **Simpler AWS sign-in.** With the browser opening set to **In Browser**, sign-in uses the authorization code flow with PKCE, the same one as `aws sso login`: AWS only asks you to **Allow** access, there is no code to compare. The in-app window keeps the device code flow, which is also used automatically if the new flow can't start (for example behind a proxy).
+- The OIDC client is registered once and reused for about 90 days instead of on every sign-in.
+
+### Bug Fixes
+
+- When AWS rejected a stored access token that still looked valid, Freeleapp retried with the same token instead of renewing it.
+
+### How to check
+
+Sign in to your AWS SSO integration once after updating. The next time the access token expires (usually after a few hours), sessions start without opening the browser.
+
 ## 1.2.1 (2026-10-03)
 
 ### Bug Fixes

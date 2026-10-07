@@ -6,10 +6,24 @@ import {
   StartDeviceAuthorizationResponse,
   VerificationResponse,
 } from "./session/aws/aws-sso-role-service";
-import { IAwsSsoOidcVerificationWindowService } from "../interfaces/i-aws-sso-oidc-verification-window-service";
+import { IAwsSsoOidcVerificationWindowService, OidcClient, OidcTokens } from "../interfaces/i-aws-sso-oidc-verification-window-service";
+import { IKeychainService } from "../interfaces/i-keychain-service";
 import { BrowserWindowClosing } from "../interfaces/i-browser-window-closing";
 import { LoggedException, LogLevel } from "./log-service";
 import { CreateTokenRequest, RegisterClientRequest, SSOOIDC, StartDeviceAuthorizationRequest } from "@aws-sdk/client-sso-oidc";
+
+/** Scope that makes IAM Identity Center issue a refresh token (the same one the AWS CLI asks for). */
+export const ssoOidcScopes = ["sso:account:access"];
+/** Registered clients are reused until a day before their secret expires (AWS issues them for ~90 days). */
+const clientRenewMarginMs = 24 * 60 * 60 * 1000;
+/** createToken errors that mean the stored refresh token can never work again. */
+const deadRefreshTokenErrors = ["InvalidGrantException", "ExpiredTokenException", "InvalidClientException", "UnauthorizedClientException"];
+
+interface StoredRefreshToken {
+  refreshToken: string;
+  clientId: string;
+  clientSecret: string;
+}
 
 export class AwsSsoOidcService {
   public readonly listeners: BrowserWindowClosing[];
@@ -24,7 +38,8 @@ export class AwsSsoOidcService {
   constructor(
     private verificationWindowService: IAwsSsoOidcVerificationWindowService,
     private repository: Repository,
-    private disableInAppBrowser: boolean = false
+    private disableInAppBrowser: boolean = false,
+    private keychainService: IKeychainService = null
   ) {
     this.listeners = [];
     this.ssoOidc = null;
@@ -53,17 +68,8 @@ export class AwsSsoOidcService {
       this.timeoutOccurred = false;
       this.interruptOccurred = false;
 
-      const registerClientResponse = await this.registerSsoOidcClient();
-      const startDeviceAuthorizationResponse = await this.startDeviceAuthorization(registerClientResponse, portalUrl);
-      const windowModality = this.repository.getAwsSsoIntegration(configurationId).browserOpening;
-      const verificationResponse = await this.verificationWindowService.openVerificationWindow(
-        registerClientResponse,
-        startDeviceAuthorizationResponse,
-        windowModality,
-        () => this.closeVerificationWindow()
-      );
       try {
-        this.generateSSOTokenResponse = await this.createToken(configurationId, verificationResponse);
+        this.generateSSOTokenResponse = await this.interactiveLogin(configurationId, region, portalUrl);
       } catch (err) {
         this.loginMutex = false;
         throw err;
@@ -105,6 +111,38 @@ export class AwsSsoOidcService {
     }
   }
 
+  /**
+   * Gets a new access token with the stored refresh token, without any browser. Returns null when there is no usable
+   * refresh token (never signed in with this version, signed out, or the IAM Identity Center session has ended).
+   */
+  async refreshAccessToken(configurationId: string | number, region: string): Promise<GenerateSSOTokenResponse> {
+    const stored = await this.readJsonSecret<StoredRefreshToken>(this.refreshTokenKey(configurationId));
+    if (!stored?.refreshToken) {
+      return null;
+    }
+    try {
+      const response = await new SSOOIDC({ region }).createToken({
+        clientId: stored.clientId,
+        clientSecret: stored.clientSecret,
+        grantType: "refresh_token",
+        refreshToken: stored.refreshToken,
+      });
+      await this.saveRefreshToken(configurationId, response.refreshToken ?? stored.refreshToken, stored.clientId, stored.clientSecret);
+      return { accessToken: response.accessToken, expirationTime: new Date(Date.now() + response.expiresIn * 1000) };
+    } catch (err) {
+      if (deadRefreshTokenErrors.includes(err?.name)) {
+        await this.forgetRefreshToken(configurationId);
+      }
+      return null;
+    }
+  }
+
+  async forgetRefreshToken(configurationId: string | number): Promise<void> {
+    if (this.keychainService) {
+      await this.keychainService.deleteSecret(constants.appName, this.refreshTokenKey(configurationId));
+    }
+  }
+
   closeVerificationWindow(): void {
     this.loginMutex = false;
 
@@ -123,9 +161,86 @@ export class AwsSsoOidcService {
     return this.ssoOidc;
   }
 
-  private async registerSsoOidcClient(): Promise<RegisterClientResponse> {
-    const registerClientRequest: RegisterClientRequest = { clientName: "freeleapp", clientType: "public" };
-    return await this.getAwsSsoOidcClient().registerClient(registerClientRequest);
+  /**
+   * Browser opening "external": authorization code + PKCE (the user only clicks "Allow"). In-app windows, or any
+   * failure before the browser opens (e.g. a proxy the direct OIDC calls can't use), use the device code flow.
+   * Both flows keep a refresh token, so later renewals skip the browser.
+   */
+  private async interactiveLogin(configurationId: string | number, region: string, portalUrl: string): Promise<GenerateSSOTokenResponse> {
+    const windowModality = this.repository.getAwsSsoIntegration(configurationId).browserOpening;
+    const external = this.disableInAppBrowser || windowModality !== constants.inApp;
+    const windowService = this.verificationWindowService;
+    if (external && this.keychainService && windowService.registerAuthorizationCodeClient && windowService.signInWithAuthorizationCode) {
+      let client: OidcClient;
+      try {
+        client = await this.getClient("pkce", region, portalUrl, () =>
+          windowService.registerAuthorizationCodeClient(region, portalUrl, ssoOidcScopes)
+        );
+      } catch (err) {
+        client = null;
+      }
+      if (client) {
+        const tokens: OidcTokens = await windowService.signInWithAuthorizationCode(region, client, ssoOidcScopes);
+        await this.saveRefreshToken(configurationId, tokens.refreshToken, client.clientId, client.clientSecret);
+        return { accessToken: tokens.accessToken, expirationTime: new Date(Date.now() + tokens.expiresIn * 1000) };
+      }
+    }
+
+    const registerClientResponse = await this.registerSsoOidcClient(region, portalUrl);
+    const startDeviceAuthorizationResponse = await this.startDeviceAuthorization(registerClientResponse, portalUrl);
+    const verificationResponse = await this.verificationWindowService.openVerificationWindow(
+      registerClientResponse,
+      startDeviceAuthorizationResponse,
+      windowModality,
+      () => this.closeVerificationWindow()
+    );
+    return await this.createToken(configurationId, verificationResponse);
+  }
+
+  private async registerSsoOidcClient(region: string, portalUrl: string): Promise<RegisterClientResponse> {
+    const registerClientRequest: RegisterClientRequest = { clientName: "freeleapp", clientType: "public", scopes: ssoOidcScopes };
+    return (await this.getClient("device", region, portalUrl, async () => {
+      const response = await this.getAwsSsoOidcClient().registerClient(registerClientRequest);
+      return { clientId: response.clientId, clientSecret: response.clientSecret, clientSecretExpiresAt: response.clientSecretExpiresAt };
+    })) as RegisterClientResponse;
+  }
+
+  /** Reuses a registered client from the keychain until it is about to expire; registers a new one otherwise. */
+  private async getClient(kind: "device" | "pkce", region: string, portalUrl: string, register: () => Promise<OidcClient>): Promise<OidcClient> {
+    const key = `aws-sso-oidc-client-${kind}-${region}-${portalUrl}`;
+    const stored = await this.readJsonSecret<OidcClient>(key);
+    if (stored?.clientId && stored.clientSecretExpiresAt * 1000 - Date.now() > clientRenewMarginMs) {
+      return stored;
+    }
+    const client = await register();
+    if (this.keychainService) {
+      await this.keychainService.saveSecret(constants.appName, key, JSON.stringify(client));
+    }
+    return client;
+  }
+
+  private refreshTokenKey(configurationId: string | number): string {
+    return `aws-sso-integration-refresh-token-${configurationId}`;
+  }
+
+  private async saveRefreshToken(configurationId: string | number, refreshToken: string, clientId: string, clientSecret: string): Promise<void> {
+    if (!this.keychainService || !refreshToken) {
+      return;
+    }
+    const value: StoredRefreshToken = { refreshToken, clientId, clientSecret };
+    await this.keychainService.saveSecret(constants.appName, this.refreshTokenKey(configurationId), JSON.stringify(value));
+  }
+
+  private async readJsonSecret<T>(key: string): Promise<T> {
+    if (!this.keychainService) {
+      return null;
+    }
+    try {
+      const raw = await this.keychainService.getSecret(constants.appName, key);
+      return raw ? (JSON.parse(raw) as T) : null;
+    } catch (err) {
+      return null;
+    }
   }
 
   private async startDeviceAuthorization(
@@ -159,6 +274,7 @@ export class AwsSsoOidcService {
       createTokenResponse = await this.waitForToken(createTokenRequest);
     }
 
+    await this.saveRefreshToken(configurationId, createTokenResponse.refreshToken, verificationResponse.clientId, verificationResponse.clientSecret);
     const expirationTime: Date = new Date(Date.now() + createTokenResponse.expiresIn * 1000);
     return { accessToken: createTokenResponse.accessToken, expirationTime };
   }

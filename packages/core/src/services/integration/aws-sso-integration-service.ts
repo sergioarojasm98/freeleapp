@@ -199,20 +199,25 @@ export class AwsSsoIntegrationService implements IIntegrationService {
     // Clean clients
     this.ssoPortal = null;
 
-    // Delete access token and remove sso integration info from workspace
+    // Delete access and refresh tokens and remove sso integration info from workspace
     await this.keyChainService.deleteSecret(constants.appName, this.getIntegrationAccessTokenKey(integrationId));
+    await this.awsSsoOidcService?.forgetRefreshToken(integrationId);
     this.repository.unsetAwsSsoIntegrationExpiration(integrationId);
 
     await this.setOnline(integration, false);
     this.behaviouralNotifier.setIntegrations([...this.repository.listAwsSsoIntegrations(), ...this.repository.listAzureIntegrations()]);
   }
 
-  async getAccessToken(integrationId: string, region: string, portalUrl: string): Promise<string> {
-    const isAwsSsoAccessTokenExpired = await this.isAwsSsoAccessTokenExpired(integrationId);
+  async getAccessToken(integrationId: string, region: string, portalUrl: string, forceRefresh = false): Promise<string> {
+    const isAwsSsoAccessTokenExpired = forceRefresh || (await this.isAwsSsoAccessTokenExpired(integrationId));
 
     if (isAwsSsoAccessTokenExpired) {
-      const loginResponse = await this.login(integrationId, region, portalUrl);
       const integration: AwsSsoIntegration = this.repository.getAwsSsoIntegration(integrationId);
+      // A stored refresh token renews the session without opening the browser; sign in only when it can't.
+      const refreshed = this.awsSsoOidcService ? await this.awsSsoOidcService.refreshAccessToken(integrationId, region) : null;
+      const loginResponse = refreshed
+        ? { portalUrlUnrolled: integration.portalUrl, accessToken: refreshed.accessToken, expirationTime: refreshed.expirationTime }
+        : await this.login(integrationId, region, portalUrl);
 
       await this.configureAwsSso(
         integrationId,

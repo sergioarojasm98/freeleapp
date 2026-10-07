@@ -303,6 +303,44 @@ describe("AwsSsoIntegrationService", () => {
     );
   });
 
+  test("getAccessToken, token expired, renews with the refresh token without signing in", async () => {
+    const integration = { alias: "fake-alias", browserOpening: "fake-browser-opening", portalUrl: "fake-portal-url-unrolled" };
+    const repository = { getAwsSsoIntegration: jest.fn(() => integration) } as any;
+    const refreshed = { accessToken: "refreshed-access-token", expirationTime: new Date(0) };
+    const awsSsoOidcService = { refreshAccessToken: jest.fn(async () => refreshed) } as any;
+    const awsIntegrationService = new AwsSsoIntegrationService(repository, null, null, null, null, awsSsoOidcService, null) as any;
+    awsIntegrationService.isAwsSsoAccessTokenExpired = jest.fn(async () => true);
+    awsIntegrationService.login = jest.fn();
+    awsIntegrationService.configureAwsSso = jest.fn(async () => {});
+
+    const actualAccessToken = await awsIntegrationService.getAccessToken("fake-integration-id", "fake-region", "fake-portal-url");
+
+    expect(actualAccessToken).toBe(refreshed.accessToken);
+    expect(awsSsoOidcService.refreshAccessToken).toHaveBeenCalledWith("fake-integration-id", "fake-region");
+    expect(awsIntegrationService.login).not.toHaveBeenCalled();
+    expect(awsIntegrationService.configureAwsSso).toHaveBeenCalledWith(
+      "fake-integration-id",
+      integration.alias,
+      "fake-region",
+      integration.portalUrl,
+      integration.browserOpening,
+      "1970-01-01T00:00:00.000Z",
+      refreshed.accessToken
+    );
+  });
+
+  test("getAccessToken, forceRefresh renews even if the stored token looks valid", async () => {
+    const integration = { alias: "a", browserOpening: "b", portalUrl: "p" };
+    const repository = { getAwsSsoIntegration: jest.fn(() => integration) } as any;
+    const awsSsoOidcService = { refreshAccessToken: jest.fn(async () => ({ accessToken: "fresh", expirationTime: new Date(0) })) } as any;
+    const awsIntegrationService = new AwsSsoIntegrationService(repository, null, null, null, null, awsSsoOidcService, null) as any;
+    awsIntegrationService.isAwsSsoAccessTokenExpired = jest.fn(async () => false);
+    awsIntegrationService.configureAwsSso = jest.fn(async () => {});
+
+    expect(await awsIntegrationService.getAccessToken("id", "r", "p", true)).toBe("fresh");
+    expect(awsIntegrationService.isAwsSsoAccessTokenExpired).not.toHaveBeenCalled();
+  });
+
   test("getAccessToken, token not expired", async () => {
     const awsIntegrationService = new AwsSsoIntegrationService(null, null, null, null, null, null, null) as any;
     awsIntegrationService.isAwsSsoAccessTokenExpired = jest.fn(async () => false);

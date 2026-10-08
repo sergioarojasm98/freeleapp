@@ -40,6 +40,8 @@ export interface SsoSessionsDiff {
 export class AwsSsoIntegrationService implements IIntegrationService {
   private ssoPortal: SSO;
   private listAccountRolesCall: ThrottleService;
+  /** Renewals in flight per integration: a refresh token rotates on use, so concurrent refreshes would race. */
+  private pendingRenewals = new Map<string, Promise<string>>();
 
   constructor(
     public repository: Repository,
@@ -210,29 +212,17 @@ export class AwsSsoIntegrationService implements IIntegrationService {
 
   async getAccessToken(integrationId: string, region: string, portalUrl: string, forceRefresh = false): Promise<string> {
     const isAwsSsoAccessTokenExpired = forceRefresh || (await this.isAwsSsoAccessTokenExpired(integrationId));
-
-    if (isAwsSsoAccessTokenExpired) {
-      const integration: AwsSsoIntegration = this.repository.getAwsSsoIntegration(integrationId);
-      // A stored refresh token renews the session without opening the browser; sign in only when it can't.
-      const refreshed = this.awsSsoOidcService ? await this.awsSsoOidcService.refreshAccessToken(integrationId, region) : null;
-      const loginResponse = refreshed
-        ? { portalUrlUnrolled: integration.portalUrl, accessToken: refreshed.accessToken, expirationTime: refreshed.expirationTime }
-        : await this.login(integrationId, region, portalUrl);
-
-      await this.configureAwsSso(
-        integrationId,
-        integration.alias,
-        region,
-        loginResponse.portalUrlUnrolled,
-        integration.browserOpening,
-        loginResponse.expirationTime.toISOString(),
-        loginResponse.accessToken
-      );
-
-      return loginResponse.accessToken;
-    } else {
+    if (!isAwsSsoAccessTokenExpired) {
       return await this.getAccessTokenFromKeychain(integrationId);
     }
+
+    // Callers that need a new token while a renewal is running share it instead of spending the refresh token again
+    let renewal = this.pendingRenewals.get(integrationId);
+    if (!renewal) {
+      renewal = this.renewAccessToken(integrationId, region, portalUrl).finally(() => this.pendingRenewals.delete(integrationId));
+      this.pendingRenewals.set(integrationId, renewal);
+    }
+    return await renewal;
   }
 
   async getRoleCredentials(accessToken: string, region: string, roleArn: string): Promise<GetRoleCredentialsResponse> {
@@ -307,6 +297,27 @@ export class AwsSsoIntegrationService implements IIntegrationService {
 
   private getIntegrationAccessTokenKey(integrationId: string | number) {
     return `aws-sso-integration-access-token-${integrationId}`;
+  }
+
+  private async renewAccessToken(integrationId: string, region: string, portalUrl: string): Promise<string> {
+    const integration: AwsSsoIntegration = this.repository.getAwsSsoIntegration(integrationId);
+    // A stored refresh token renews the session without opening the browser; sign in only when it can't.
+    const refreshed = this.awsSsoOidcService ? await this.awsSsoOidcService.refreshAccessToken(integrationId, region) : null;
+    const loginResponse = refreshed
+      ? { portalUrlUnrolled: integration.portalUrl, accessToken: refreshed.accessToken, expirationTime: refreshed.expirationTime }
+      : await this.login(integrationId, region, portalUrl);
+
+    await this.configureAwsSso(
+      integrationId,
+      integration.alias,
+      region,
+      loginResponse.portalUrlUnrolled,
+      integration.browserOpening,
+      loginResponse.expirationTime.toISOString(),
+      loginResponse.accessToken
+    );
+
+    return loginResponse.accessToken;
   }
 
   private async login(integrationId: string | number, region: string, portalUrl: string): Promise<LoginResponse> {

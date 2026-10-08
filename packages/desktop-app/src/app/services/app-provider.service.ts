@@ -228,7 +228,13 @@ export class AppProviderService {
 
   public get awsSsoOidcService(): AwsSsoOidcService {
     if (!this.awsSsoOidcServiceInstance) {
-      this.awsSsoOidcServiceInstance = new AwsSsoOidcService(this.verificationWindowService, this.repository, false, this.keychainService);
+      this.awsSsoOidcServiceInstance = new AwsSsoOidcService(
+        this.verificationWindowService,
+        this.repository,
+        false,
+        this.keychainService,
+        this.logService
+      );
     }
     return this.awsSsoOidcServiceInstance;
   }

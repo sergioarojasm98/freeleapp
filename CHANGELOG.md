@@ -4,6 +4,14 @@ All notable changes to Freeleapp are documented here. Versions follow [Semantic 
 
 Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the [Leapp changelog](https://github.com/Noovolari/leapp/blob/v0.26.1/CHANGELOG.md).
 
+## 1.3.1 (2026-10-08)
+
+### Bug Fixes
+
+- **The browser sign-in no longer opens when the session could still be renewed silently.** When several sessions needed a new token at once, they all spent the same refresh token; AWS rotates it on use, so all but one were rejected and Freeleapp fell back to the browser. Sessions now share a single renewal.
+- Network errors, throttling and AWS server errors while renewing are retried twice before opening the browser.
+- Every silent renewal, and the reason whenever the browser sign-in opens, is now written to the log (`~/Library/Logs/Freeleapp`). Tokens are never logged.
+
 ## 1.3.0 (2026-10-07)
 
 ### Features

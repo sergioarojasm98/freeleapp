@@ -9,7 +9,7 @@ import {
 import { IAwsSsoOidcVerificationWindowService, OidcClient, OidcTokens } from "../interfaces/i-aws-sso-oidc-verification-window-service";
 import { IKeychainService } from "../interfaces/i-keychain-service";
 import { BrowserWindowClosing } from "../interfaces/i-browser-window-closing";
-import { LoggedException, LogLevel } from "./log-service";
+import { LoggedEntry, LoggedException, LogLevel, LogService } from "./log-service";
 import { CreateTokenRequest, RegisterClientRequest, SSOOIDC, StartDeviceAuthorizationRequest } from "@aws-sdk/client-sso-oidc";
 
 /** Scope that makes IAM Identity Center issue a refresh token (the same one the AWS CLI asks for). */
@@ -18,12 +18,18 @@ export const ssoOidcScopes = ["sso:account:access"];
 const clientRenewMarginMs = 24 * 60 * 60 * 1000;
 /** createToken errors that mean the stored refresh token can never work again. */
 const deadRefreshTokenErrors = ["InvalidGrantException", "ExpiredTokenException", "InvalidClientException", "UnauthorizedClientException"];
+/** Waits before retrying a refresh that failed for another reason (network, throttling, 5xx). */
+const refreshRetryDelaysMs = [2000, 5000];
 
 interface StoredRefreshToken {
   refreshToken: string;
   clientId: string;
   clientSecret: string;
 }
+
+/** Error name, HTTP status and OAuth error code of a failed SSO OIDC call; never includes tokens. */
+const describeOidcError = (err: any): string =>
+  [err?.name ?? "Error", err?.$metadata?.httpStatusCode, err?.error, err?.error_description ?? err?.message].filter((part) => part).join(" ");
 
 export class AwsSsoOidcService {
   public readonly listeners: BrowserWindowClosing[];
@@ -34,12 +40,14 @@ export class AwsSsoOidcService {
   private loginMutex: boolean;
   private timeoutOccurred: boolean;
   private interruptOccurred: boolean;
+  private refreshRetryDelaysMs = refreshRetryDelaysMs;
 
   constructor(
     private verificationWindowService: IAwsSsoOidcVerificationWindowService,
     private repository: Repository,
     private disableInAppBrowser: boolean = false,
-    private keychainService: IKeychainService = null
+    private keychainService: IKeychainService = null,
+    private logService: LogService = null
   ) {
     this.listeners = [];
     this.ssoOidc = null;
@@ -118,22 +126,47 @@ export class AwsSsoOidcService {
   async refreshAccessToken(configurationId: string | number, region: string): Promise<GenerateSSOTokenResponse> {
     const stored = await this.readJsonSecret<StoredRefreshToken>(this.refreshTokenKey(configurationId));
     if (!stored?.refreshToken) {
+      this.log(`AWS SSO integration ${configurationId}: no stored refresh token, signing in with the browser`, LogLevel.info);
       return null;
     }
-    try {
-      const response = await new SSOOIDC({ region }).createToken({
-        clientId: stored.clientId,
-        clientSecret: stored.clientSecret,
-        grantType: "refresh_token",
-        refreshToken: stored.refreshToken,
-      });
-      await this.saveRefreshToken(configurationId, response.refreshToken ?? stored.refreshToken, stored.clientId, stored.clientSecret);
-      return { accessToken: response.accessToken, expirationTime: new Date(Date.now() + response.expiresIn * 1000) };
-    } catch (err) {
-      if (deadRefreshTokenErrors.includes(err?.name)) {
-        await this.forgetRefreshToken(configurationId);
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const response = await new SSOOIDC({ region }).createToken({
+          clientId: stored.clientId,
+          clientSecret: stored.clientSecret,
+          grantType: "refresh_token",
+          refreshToken: stored.refreshToken,
+        });
+        await this.saveRefreshToken(configurationId, response.refreshToken ?? stored.refreshToken, stored.clientId, stored.clientSecret);
+        const expirationTime = new Date(Date.now() + response.expiresIn * 1000);
+        const rotated = response.refreshToken && response.refreshToken !== stored.refreshToken ? ", refresh token rotated" : "";
+        this.log(
+          `AWS SSO integration ${configurationId}: token refreshed silently, expires ${expirationTime.toISOString()}${rotated}`,
+          LogLevel.info
+        );
+        return { accessToken: response.accessToken, expirationTime };
+      } catch (err) {
+        if (deadRefreshTokenErrors.includes(err?.name)) {
+          await this.forgetRefreshToken(configurationId);
+          this.log(
+            `AWS SSO integration ${configurationId}: refresh token rejected (${describeOidcError(err)}), signing in with the browser`,
+            LogLevel.warn
+          );
+          return null;
+        }
+        if (attempt >= this.refreshRetryDelaysMs.length) {
+          this.log(
+            `AWS SSO integration ${configurationId}: refresh failed ${attempt + 1} times (${describeOidcError(err)}), signing in with the browser`,
+            LogLevel.warn
+          );
+          return null;
+        }
+        this.log(
+          `AWS SSO integration ${configurationId}: refresh attempt ${attempt + 1} failed (${describeOidcError(err)}), retrying`,
+          LogLevel.warn
+        );
+        await new Promise((resolve) => setTimeout(resolve, this.refreshRetryDelaysMs[attempt]));
       }
-      return null;
     }
   }
 
@@ -217,6 +250,10 @@ export class AwsSsoOidcService {
       await this.keychainService.saveSecret(constants.appName, key, JSON.stringify(client));
     }
     return client;
+  }
+
+  private log(message: string, level: LogLevel): void {
+    this.logService?.log(new LoggedEntry(message, this, level));
   }
 
   private refreshTokenKey(configurationId: string | number): string {

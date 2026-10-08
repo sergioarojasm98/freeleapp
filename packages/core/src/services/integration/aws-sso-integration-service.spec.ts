@@ -341,6 +341,47 @@ describe("AwsSsoIntegrationService", () => {
     expect(awsIntegrationService.isAwsSsoAccessTokenExpired).not.toHaveBeenCalled();
   });
 
+  test("getAccessToken, concurrent callers share one renewal so the rotating refresh token is spent once", async () => {
+    const integration = { alias: "a", browserOpening: "b", portalUrl: "p" };
+    const repository = { getAwsSsoIntegration: jest.fn(() => integration) } as any;
+    let finishRefresh: (value: any) => void;
+    const awsSsoOidcService = {
+      refreshAccessToken: jest.fn(() => new Promise((resolve) => (finishRefresh = resolve))),
+    } as any;
+    const awsIntegrationService = new AwsSsoIntegrationService(repository, null, null, null, null, awsSsoOidcService, null) as any;
+    awsIntegrationService.isAwsSsoAccessTokenExpired = jest.fn(async () => true);
+    awsIntegrationService.login = jest.fn();
+    awsIntegrationService.configureAwsSso = jest.fn(async () => {});
+
+    const first = awsIntegrationService.getAccessToken("id", "r", "p");
+    const second = awsIntegrationService.getAccessToken("id", "r", "p", true);
+    await new Promise((resolve) => setImmediate(resolve));
+    finishRefresh({ accessToken: "fresh", expirationTime: new Date(0) });
+
+    expect(await Promise.all([first, second])).toEqual(["fresh", "fresh"]);
+    expect(awsSsoOidcService.refreshAccessToken).toHaveBeenCalledTimes(1);
+    expect(awsIntegrationService.login).not.toHaveBeenCalled();
+
+    // Once finished, the next expiry starts a new renewal
+    awsSsoOidcService.refreshAccessToken.mockResolvedValueOnce({ accessToken: "fresher", expirationTime: new Date(0) });
+    expect(await awsIntegrationService.getAccessToken("id", "r", "p")).toBe("fresher");
+    expect(awsSsoOidcService.refreshAccessToken).toHaveBeenCalledTimes(2);
+  });
+
+  test("getAccessToken, a failed renewal is not reused by later callers", async () => {
+    const repository = { getAwsSsoIntegration: jest.fn(() => ({ alias: "a", browserOpening: "b", portalUrl: "p" })) } as any;
+    const awsSsoOidcService = { refreshAccessToken: jest.fn(async () => null) } as any;
+    const awsIntegrationService = new AwsSsoIntegrationService(repository, null, null, null, null, awsSsoOidcService, null) as any;
+    awsIntegrationService.isAwsSsoAccessTokenExpired = jest.fn(async () => true);
+    awsIntegrationService.login = jest.fn(async () => {
+      throw new Error("closed");
+    });
+
+    await expect(awsIntegrationService.getAccessToken("id", "r", "p")).rejects.toThrow("closed");
+    await expect(awsIntegrationService.getAccessToken("id", "r", "p")).rejects.toThrow("closed");
+    expect(awsIntegrationService.login).toHaveBeenCalledTimes(2);
+  });
+
   test("getAccessToken, token not expired", async () => {
     const awsIntegrationService = new AwsSsoIntegrationService(null, null, null, null, null, null, null) as any;
     awsIntegrationService.isAwsSsoAccessTokenExpired = jest.fn(async () => false);

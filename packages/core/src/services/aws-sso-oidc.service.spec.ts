@@ -64,19 +64,50 @@ describe("AwsSsoOidcService refresh tokens", () => {
     expect(JSON.parse(kc.store.get(refreshKey))).toEqual({ refreshToken: "new-refresh", clientId: "cid", clientSecret: "csecret" });
   });
 
-  test("refreshAccessToken forgets a dead refresh token but keeps it on transient errors", async () => {
+  test("refreshAccessToken retries transient errors and keeps the token, forgets it when AWS rejects it", async () => {
     const kc = keychain();
     const stored = JSON.stringify({ refreshToken: "r", clientId: "cid", clientSecret: "cs" });
     kc.store.set(refreshKey, stored);
-    const service = new AwsSsoOidcService(null, null, false, kc as any);
+    const logService = { log: jest.fn() };
+    const service = new AwsSsoOidcService(null, null, false, kc as any, logService as any);
+    (service as any).refreshRetryDelaysMs = [0, 0];
+    const timeout = () => Object.assign(new Error("network"), { name: "TimeoutError" });
 
-    mockCreateToken.mockRejectedValueOnce(Object.assign(new Error("network"), { name: "TimeoutError" }));
+    mockCreateToken.mockRejectedValueOnce(timeout()).mockRejectedValueOnce(timeout()).mockRejectedValueOnce(timeout());
     expect(await service.refreshAccessToken("int-1", "us-east-1")).toBeNull();
+    expect(mockCreateToken).toHaveBeenCalledTimes(3);
     expect(kc.store.get(refreshKey)).toBe(stored);
 
-    mockCreateToken.mockRejectedValueOnce(Object.assign(new Error("expired"), { name: "InvalidGrantException" }));
+    mockCreateToken.mockRejectedValueOnce(
+      Object.assign(new Error("expired"), { name: "InvalidGrantException", error: "invalid_grant", ["$metadata"]: { httpStatusCode: 400 } })
+    );
     expect(await service.refreshAccessToken("int-1", "us-east-1")).toBeNull();
+    expect(mockCreateToken).toHaveBeenCalledTimes(4);
     expect(kc.store.has(refreshKey)).toBe(false);
+
+    const messages = logService.log.mock.calls.map((call: any) => call[0].message);
+    expect(messages).toContain("AWS SSO integration int-1: refresh failed 3 times (TimeoutError network), signing in with the browser");
+    expect(messages).toContain(
+      "AWS SSO integration int-1: refresh token rejected (InvalidGrantException 400 invalid_grant expired), signing in with the browser"
+    );
+  });
+
+  test("refreshAccessToken recovers when a retry succeeds and logs the refresh without tokens", async () => {
+    const kc = keychain();
+    kc.store.set(refreshKey, JSON.stringify({ refreshToken: "old-refresh", clientId: "cid", clientSecret: "cs" }));
+    const logService = { log: jest.fn() };
+    const service = new AwsSsoOidcService(null, null, false, kc as any, logService as any);
+    (service as any).refreshRetryDelaysMs = [0, 0];
+    mockCreateToken
+      .mockRejectedValueOnce(Object.assign(new Error("slow down"), { name: "ThrottlingException" }))
+      .mockResolvedValueOnce({ accessToken: "new-access", expiresIn: 3600, refreshToken: "new-refresh" });
+
+    expect((await service.refreshAccessToken("int-1", "us-east-1")).accessToken).toBe("new-access");
+    const logged = JSON.stringify(logService.log.mock.calls.map((call: any) => call[0].message));
+    expect(logged).toContain("token refreshed silently");
+    expect(logged).toContain("refresh token rotated");
+    expect(logged).not.toContain("new-access");
+    expect(logged).not.toContain("new-refresh");
   });
 
   test("login with an external browser uses the authorization code flow and stores the refresh token", async () => {

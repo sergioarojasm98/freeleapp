@@ -4,6 +4,12 @@ All notable changes to Freeleapp are documented here. Versions follow [Semantic 
 
 Freeleapp is based on **Leapp 0.26.1**. For the history before the fork, see the [Leapp changelog](https://github.com/Noovolari/leapp/blob/v0.26.1/CHANGELOG.md).
 
+## 1.4.0 (2026-11-26)
+
+### Features
+
+- **Start every session of a saved filter at once.** Hover a saved filter in the sidebar (PROD, QA…) and its tag icon becomes a play button: it starts all the inactive sessions that filter shows, without applying the filter. When they are all active, the button stops them all. Sessions start one after another, so with AWS SSO you sign in at most once. Sessions already active are left as they are; a session whose named profile is already taken by another session of the filter isn't started; and if an SSO session fails, the rest of that integration is skipped instead of opening the sign-in again. A message at the end says what started and what failed. The button can also be reached with Tab and pressed with Enter.
+
 ## 1.3.2 (2026-10-13)
 
 ### Bug Fixes

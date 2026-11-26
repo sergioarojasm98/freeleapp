@@ -14,15 +14,14 @@ import { syncAllEvent } from "../integration-bar/integration-bar.component";
 import { AppProviderService } from "../../services/app-provider.service";
 import { AppNativeService } from "../../services/app-native.service";
 import { AppService } from "../../services/app.service";
-import { AwsSsoRoleSession } from "@noovolari/leapp-core/models/aws/aws-sso-role-session";
 import { constants } from "@noovolari/leapp-core/models/constants";
 import { WindowService } from "../../services/window.service";
 import { OptionsService } from "../../services/options.service";
-import { AzureSession } from "@noovolari/leapp-core/models/azure/azure-session";
 import { UpdaterService } from "../../services/updater.service";
 import { LeappNotification } from "@noovolari/leapp-core/models/notification";
 import { InfoDialogComponent } from "../dialogs/info-dialog/info-dialog.component";
 import { NotificationService } from "@noovolari/leapp-core/services/notification-service";
+import { filterSessions } from "../../services/session-filter";
 
 // Narrow layout (fewer columns, shorter labels): derived from the window width by MainLayoutComponent
 export const compactMode = new BehaviorSubject<boolean>(false);
@@ -340,86 +339,27 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
   }
 
   private applyFiltersToSessions(globalFilters: GlobalFilters, sessions: Session[]) {
-    let filteredSessions = sessions;
-    const searchText = this.filterForm.get("searchFilter").value;
-    if (searchText !== "") {
-      filteredSessions = filteredSessions.filter((session) => {
-        let test = false;
-        test ||= session.sessionName.toLowerCase().indexOf(searchText.toLowerCase()) > -1;
-        test ||= session.type.toLowerCase().indexOf(searchText.toLowerCase()) > -1;
-        test ||= session.region.toLowerCase().indexOf(searchText.toLowerCase()) > -1;
-        test ||= (session as any).email?.toLowerCase().indexOf(searchText.toLowerCase()) > -1;
-        test ||= (session as any).roleArn?.toLowerCase().indexOf(searchText.toLowerCase()) > -1;
-        test ||= (session as any).idpArn?.toLowerCase().indexOf(searchText.toLowerCase()) > -1;
-        test ||= (session as any).roleSessionName?.toLowerCase().indexOf(searchText.toLowerCase()) > -1;
-
-        try {
-          test ||=
-            this.appProviderService.namedProfileService
-              .getProfileName((session as any).profileId)
-              ?.toLowerCase()
-              .indexOf(searchText.toLowerCase()) > -1;
-        } catch (e) {
-          test ||= false;
-        }
-        return test;
-      });
-    }
+    // The form says which dimensions are active; the chip lists hold the options (as before the shared filter)
+    const active = (name: string, options: any[]) => (this.filterForm.get(name).value.filter((v) => v.value).length > 0 ? options : []);
+    const filters: GlobalFilters = {
+      searchFilter: this.filterForm.get("searchFilter").value,
+      dateFilter: this.filterForm.get("dateFilter").value,
+      providerFilter: active("providerFilter", this.providers),
+      profileFilter: active("profileFilter", this.profiles),
+      regionFilter: active("regionFilter", this.regions),
+      typeFilter: active("typeFilter", this.types),
+      pinnedFilter: globalFilters ? globalFilters.pinnedFilter : false,
+      integrationFilter: globalFilters ? globalFilters.integrationFilter : [],
+    };
+    let filteredSessions = filterSessions(sessions, filters, {
+      profileName: (profileId) => this.appProviderService.namedProfileService.getProfileName(profileId),
+      pinned: this.optionsService.pinned,
+    });
 
     if (this.filterForm.get("dateFilter").value) {
       filteredSessions = this.orderByDate(filteredSessions);
     } else {
       filteredSessions = filteredSessions.sort((a, b) => a.sessionName.localeCompare(b.sessionName));
-    }
-
-    if (this.filterForm.get("providerFilter").value.filter((v) => v.value).length > 0) {
-      filteredSessions = filteredSessions.filter((session) => {
-        let test = false;
-        this.providers.forEach((provider) => {
-          if (provider.value) {
-            test ||= session.type.indexOf(provider.id) > -1;
-          }
-        });
-        return test;
-      });
-    }
-
-    if (this.filterForm.get("profileFilter").value.filter((v) => v.value).length > 0) {
-      filteredSessions = filteredSessions.filter((session) => {
-        let test = false;
-        this.profiles.forEach((profile) => {
-          if (profile.value) {
-            if ((session as any).profileId) {
-              test ||= (session as any).profileId.indexOf(profile.id) > -1;
-            }
-          }
-        });
-        return test;
-      });
-    }
-
-    if (this.filterForm.get("regionFilter").value.filter((v) => v.value).length > 0) {
-      filteredSessions = filteredSessions.filter((session) => {
-        let test = false;
-        this.regions.forEach((region) => {
-          if (region.value) {
-            test ||= session.region.indexOf(region.name) > -1;
-          }
-        });
-        return test;
-      });
-    }
-
-    if (this.filterForm.get("typeFilter").value.filter((v) => v.value).length > 0) {
-      filteredSessions = filteredSessions.filter((session) => {
-        let test = false;
-        this.types.forEach((type) => {
-          if (type.value) {
-            test ||= session.type.indexOf(type.id) > -1;
-          }
-        });
-        return test;
-      });
     }
 
     filteredSessions = filteredSessions.sort((x, y) => {
@@ -432,19 +372,6 @@ export class CommandBarComponent implements OnInit, OnDestroy, AfterContentCheck
         return 1;
       }
     });
-
-    // Filtering using globalFilters
-    if (globalFilters && globalFilters.pinnedFilter) {
-      filteredSessions = filteredSessions.filter((s: Session) => this.optionsService.pinned.includes(s.sessionId));
-    }
-
-    if (globalFilters && globalFilters.integrationFilter.length > 0) {
-      const allowedIntegrationIds = globalFilters.integrationFilter.filter((filter) => filter.value).map((filter) => filter.name);
-      filteredSessions = filteredSessions.filter((session) => {
-        const sessionIntegrationId = (session as AwsSsoRoleSession).awsSsoConfigurationId || (session as AzureSession).azureIntegrationId;
-        return allowedIntegrationIds.includes(sessionIntegrationId);
-      });
-    }
 
     return globalFilteredSessions.next(filteredSessions);
   }

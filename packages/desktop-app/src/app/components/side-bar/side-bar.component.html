@@ -26,9 +26,15 @@
       </mat-expansion-panel-header>
 
       <mat-list-item [disableRipple]="true" *ngFor="let segment of segments" [ngClass]="selectedSegmentCheck(segment)"
-                     (click)="applySegmentFilter(segment, $event);">
-        <div mat-line class="visible-option-menu segment-row"><i class="moon-Tag"></i> <span>{{segment.name}}</span><i class="moon-Close"
-                                                                                                                       (click)="showConfirmationDialog(segment, $event)"></i>
+                     (click)="applySegmentFilter(segment, $event);" (mouseenter)="updateSegmentActions()">
+        <div mat-line class="visible-option-menu segment-row">
+          <i class="moon-Tag segment-tag" [class.has-action]="segmentActions[segment.name]"></i>
+          <i *ngIf="segmentActions[segment.name] as action" role="button" tabindex="0"
+             class="segment-action {{action.kind === 'stop' ? 'moon-Stop' : 'moon-Play-filled'}}"
+             [class.busy]="busySegments.has(segment.name)" [attr.aria-label]="action.tooltip" [matTooltip]="action.tooltip"
+             (click)="runSegmentAction(segment, $event)" (keydown.enter)="runSegmentAction(segment, $event)"
+             (keydown.space)="runSegmentAction(segment, $event)"></i>
+          <span>{{segment.name}}</span><i class="moon-Close" (click)="showConfirmationDialog(segment, $event)"></i>
         </div>
       </mat-list-item>
 

@@ -17,6 +17,10 @@ import { constants } from "@noovolari/leapp-core/models/constants";
 import { integrationHighlight } from "../integration-bar/integration-bar.component";
 import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
 import { UpdaterService } from "../../services/updater.service";
+import { Session } from "@noovolari/leapp-core/models/session";
+import { filterSessions } from "../../services/session-filter";
+import { OptionsService } from "../../services/options.service";
+import { SelectedSessionActionsService } from "../../services/selected-session-actions.service";
 
 export interface SelectedSegment {
   name: string;
@@ -30,6 +34,14 @@ export interface HighlightSettings {
   // The Tunnels view replaces the session list; pinnedTunnels shows only the pinned ones
   showTunnels?: boolean;
   pinnedTunnels?: boolean;
+}
+
+// What the start/stop button on a saved filter's row does: start its inactive sessions, or stop them all once every
+// one of them is active
+export interface SegmentAction {
+  kind: "start" | "stop";
+  sessions: Session[];
+  tooltip: string;
 }
 
 export const segmentFilter = new BehaviorSubject<Segment[]>([]);
@@ -51,6 +63,10 @@ export class SideBarComponent implements OnInit, OnDestroy {
   runningTunnels = 0;
   activeSessions = 0;
   modalRef: BsModalRef;
+  // Keyed by saved filter name; no entry = the filter matches no session, so the row shows no button
+  segmentActions: { [name: string]: SegmentAction } = {};
+  // Saved filters whose start/stop is still running; a second click waits for it
+  busySegments = new Set<string>();
 
   private unsubscribe: () => void;
   private behaviouralSubjectService: BehaviouralSubjectService;
@@ -59,7 +75,9 @@ export class SideBarComponent implements OnInit, OnDestroy {
     private bsModalService: BsModalService,
     private appProviderService: AppProviderService,
     private ngZone: NgZone,
-    public updaterService: UpdaterService
+    public updaterService: UpdaterService,
+    private optionsService: OptionsService,
+    private selectedSessionActionsService: SelectedSessionActionsService
   ) {
     this.behaviouralSubjectService = appProviderService.behaviouralSubjectService;
     this.showAll = true;
@@ -70,6 +88,7 @@ export class SideBarComponent implements OnInit, OnDestroy {
     const segmentFilterSubscription = segmentFilter.subscribe((segments) => {
       this.segments = segments;
       this.selectedS = this.segments.map((segment) => ({ name: segment.name, selected: false }));
+      this.updateSegmentActions();
     });
     segmentFilter.next(this.appProviderService.segmentService.list());
 
@@ -79,9 +98,10 @@ export class SideBarComponent implements OnInit, OnDestroy {
       this.showPinnedTunnels = !!value.showTunnels && !!value.pinnedTunnels;
     });
     // Tunnel processes report outside Angular's zone
-    const sessionsSubscription = this.behaviouralSubjectService.sessions$.subscribe(
-      (sessions) => (this.activeSessions = sessions.filter((session) => session.status === SessionStatus.active).length)
-    );
+    const sessionsSubscription = this.behaviouralSubjectService.sessions$.subscribe((sessions) => {
+      this.activeSessions = sessions.filter((session) => session.status === SessionStatus.active).length;
+      this.updateSegmentActions();
+    });
     const tunnelsSubscription = this.appProviderService.ssmTunnelService.states$.subscribe(() =>
       this.ngZone.run(() => (this.runningTunnels = this.appProviderService.ssmTunnelService.runningCount))
     );
@@ -146,6 +166,54 @@ export class SideBarComponent implements OnInit, OnDestroy {
 
     this.appProviderService.segmentService.removeSegment(segment);
     this.segments = JSON.parse(JSON.stringify(this.appProviderService.segmentService.list()));
+    this.updateSegmentActions();
+  }
+
+  // Recomputed when sessions change, when saved filters change and when the pointer enters a row (pins change too)
+  updateSegmentActions(): void {
+    const sessions = this.behaviouralSubjectService.sessions ?? [];
+    const segments = this.segments ?? [];
+    const context = {
+      profileName: (profileId: string) => this.appProviderService.namedProfileService.getProfileName(profileId),
+      // Read from the workspace only when a saved filter needs it
+      pinned: segments.some((segment) => segment.filterGroup?.pinnedFilter) ? this.optionsService.pinned ?? [] : [],
+    };
+    const actions: { [name: string]: SegmentAction } = {};
+    for (const segment of segments) {
+      const matching = filterSessions(sessions, segment.filterGroup, context);
+      if (matching.length === 0) {
+        continue;
+      }
+      const inactive = matching.filter((session) => session.status === SessionStatus.inactive);
+      const plural = (n: number) => (n === 1 ? "session" : "sessions");
+      actions[segment.name] =
+        inactive.length > 0
+          ? { kind: "start", sessions: matching, tooltip: `Start ${inactive.length} ${plural(inactive.length)} in ${segment.name}` }
+          : { kind: "stop", sessions: matching, tooltip: `Stop all ${matching.length} ${plural(matching.length)} in ${segment.name}` };
+    }
+    this.segmentActions = actions;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+  async runSegmentAction(segment: Segment, event: any): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    this.updateSegmentActions();
+    const action = this.segmentActions[segment.name];
+    if (!action || this.busySegments.has(segment.name)) {
+      return;
+    }
+    this.busySegments.add(segment.name);
+    try {
+      if (action.kind === "start") {
+        await this.selectedSessionActionsService.startSessions(action.sessions, segment.name);
+      } else {
+        await this.selectedSessionActionsService.stopSessions(action.sessions, segment.name);
+      }
+    } finally {
+      this.busySegments.delete(segment.name);
+      this.updateSegmentActions();
+    }
   }
 
   selectedSegmentCheck(segment: Segment): string {

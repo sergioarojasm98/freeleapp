@@ -20,6 +20,14 @@ import { CreateDialogComponent } from "../components/dialogs/create-dialog/creat
 import { AwsIamRoleFederatedSession } from "@noovolari/leapp-core/models/aws/aws-iam-role-federated-session";
 import { AwsIamUserService } from "@noovolari/leapp-core/services/session/aws/aws-iam-user-service";
 import { SessionService } from "@noovolari/leapp-core/services/session/session-service";
+import { SessionStatus } from "@noovolari/leapp-core/models/session-status";
+
+export interface SessionBatchResult {
+  done: Session[];
+  failed: Session[];
+  // Left inactive because an earlier session in the batch uses the same named profile (only one can be active)
+  sameProfile: Session[];
+}
 
 @Injectable({
   providedIn: "root",
@@ -57,6 +65,79 @@ export class SelectedSessionActionsService {
     this.behaviouralSubjectService.unselectSessions();
     this.logSessionData(session, `Stopped Session`);
     await this.getSelectedSessionService(session).stop(session.sessionId);
+  }
+
+  /**
+   * Start the inactive sessions among `sessions` (a saved filter's), one after another: with AWS SSO the first one
+   * signs in if needed and the rest reuse that token, and every start rewrites ~/.aws/credentials. Sessions that share
+   * a named profile with an earlier one are left alone (starting them would stop it). A failure doesn't stop the rest.
+   */
+  async startSessions(sessions: Session[], label: string): Promise<SessionBatchResult> {
+    this.behaviouralSubjectService.unselectSessions();
+    const result: SessionBatchResult = { done: [], failed: [], sameProfile: [] };
+    const profilesInBatch = new Set<string>();
+    // An SSO session that fails (sign-in cancelled, portal unreachable) would fail, or reopen the sign-in, for every
+    // other session of the same integration: skip those and report them as failed
+    const failedIntegrations = new Set<string>();
+    for (const session of sessions) {
+      const current = this.behaviouralSubjectService.getSessionById(session.sessionId);
+      if (!current || current.status !== SessionStatus.inactive) {
+        continue;
+      }
+      const integrationId: string | undefined = (current as any).awsSsoConfigurationId;
+      if (integrationId && failedIntegrations.has(integrationId)) {
+        result.failed.push(current);
+        continue;
+      }
+      const profileId: string | undefined = (current as any).profileId;
+      if (profileId && profilesInBatch.has(profileId)) {
+        result.sameProfile.push(current);
+        continue;
+      }
+      if (profileId) {
+        profilesInBatch.add(profileId);
+      }
+      try {
+        this.logSessionData(current, `Starting Session (saved filter "${label}")`);
+        await this.getSelectedSessionService(current).start(current.sessionId);
+        const after = this.behaviouralSubjectService.getSessionById(current.sessionId);
+        if (after?.status === SessionStatus.active) {
+          result.done.push(current);
+          continue;
+        }
+        result.failed.push(current);
+      } catch (error) {
+        result.failed.push(current);
+        this.logService.log(new LoggedException(error?.message ?? `${error}`, this, LogLevel.warn, false, error?.stack));
+      }
+      if (integrationId) {
+        failedIntegrations.add(integrationId);
+      }
+    }
+    this.toastBatch(label, "started", result);
+    return result;
+  }
+
+  /** Stop the active (or starting) sessions among `sessions`, one after another. */
+  async stopSessions(sessions: Session[], label: string): Promise<SessionBatchResult> {
+    this.behaviouralSubjectService.unselectSessions();
+    const result: SessionBatchResult = { done: [], failed: [], sameProfile: [] };
+    for (const session of sessions) {
+      const current = this.behaviouralSubjectService.getSessionById(session.sessionId);
+      if (!current || current.status === SessionStatus.inactive) {
+        continue;
+      }
+      try {
+        this.logSessionData(current, `Stopped Session (saved filter "${label}")`);
+        await this.getSelectedSessionService(current).stop(current.sessionId);
+        result.done.push(current);
+      } catch (error) {
+        result.failed.push(current);
+        this.logService.log(new LoggedException(error?.message ?? `${error}`, this, LogLevel.warn, false, error?.stack));
+      }
+    }
+    this.toastBatch(label, "stopped", result);
+    return result;
   }
 
   async openAwsWebConsole(session: Session): Promise<void> {
@@ -259,5 +340,23 @@ export class SelectedSessionActionsService {
         JSON.stringify({ timestamp: new Date().toISOString(), id: session.sessionId, account: session.sessionName, type: session.type }, null, 3)
       )
     );
+  }
+
+  private toastBatch(label: string, verb: "started" | "stopped", result: SessionBatchResult): void {
+    const names = (list: Session[]) => list.map((session) => session.sessionName).join(", ");
+    const total = result.done.length + result.failed.length;
+    const count = (n: number) => `${n} ${n === 1 ? "session" : "sessions"}`;
+    if (total === 0 && result.sameProfile.length === 0) {
+      return;
+    }
+    const parts = [result.failed.length === 0 ? `${count(result.done.length)} ${verb}.` : `${result.done.length} of ${count(total)} ${verb}.`];
+    if (result.failed.length > 0) {
+      parts.push(`Failed: ${names(result.failed)}.`);
+    }
+    if (result.sameProfile.length > 0) {
+      parts.push(`Not started, named profile already used by another session in the filter: ${names(result.sameProfile)}.`);
+    }
+    const level = result.failed.length > 0 || result.sameProfile.length > 0 ? ToastLevel.warn : ToastLevel.success;
+    this.messageToasterService.toast(parts.join(" "), level, label);
   }
 }

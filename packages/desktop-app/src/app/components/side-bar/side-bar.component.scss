@@ -282,6 +282,48 @@ i.moon-Caret-down {
     top: 2px!important;
     right: 2px!important;
   }
+
+  // Start/stop every session of the saved filter: takes the tag's place while the row is hovered or focused. Hidden
+  // with opacity, not display, so Tab can still reach it (focusing it shows it). Same color as the tag in both themes.
+  i.segment-action {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 20px;
+    text-align: center;
+    border-radius: 4px;
+
+    &:hover {
+      opacity: 0.8;
+    }
+
+    &:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
+    }
+
+    &.busy {
+      opacity: 0.4;
+      cursor: progress;
+    }
+  }
+}
+
+mat-list-item:hover,
+mat-list-item:focus-within {
+  .segment-row i.segment-tag.has-action {
+    display: none;
+  }
+
+  .segment-row i.segment-action {
+    position: relative;
+    opacity: 1;
+    pointer-events: auto;
+
+    &.busy {
+      opacity: 0.4;
+    }
+  }
 }
 
 ::ng-deep {
